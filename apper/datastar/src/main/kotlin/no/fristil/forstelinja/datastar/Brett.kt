@@ -357,26 +357,76 @@ val BRETT_CSS =
 
   .resultat {
     --fs-dialog-width: min(34rem, 100%, calc(100vw - var(--size-8)));
-    /* Utfallet står som en strek i toppen, ikke som en farget flate: teksten
-       skal ha samme kontrast uansett hvordan det gikk. */
-    border-block-start: var(--size-1) solid var(--semantic-divider-30);
+    /* Innholdet får sin egen luft, siden toppfeltet går helt ut til kanten. */
+    --fs-dialog-padding: 0;
   }
 
-  .resultat[data-utfall="full"] { border-block-start-color: var(--semantic-success-foreground); }
-  .resultat[data-utfall="delvis"] { border-block-start-color: var(--semantic-interactive-main); }
-  .resultat[data-utfall="ingen"] { border-block-start-color: var(--semantic-warning-foreground); }
-  .resultat[data-utfall="avvik"] { border-block-start-color: var(--semantic-danger-main); }
-  .resultat[data-utfall="sent"] { border-block-start-color: var(--semantic-muted-foreground); }
+  /*
+   * Utfallet står som et eget felt øverst, ikke som en strek langs kanten.
+   * Streken var ment som en farge, men leste som noe som hadde havnet feil:
+   * en linje uten forklaring, i en farge uten noe å høre til.
+   *
+   * Feltet bruker de samme parene som `fs-alert`, altså bakgrunn og
+   * forgrunn fra samme token, så kontrasten holder i begge temaer.
+   */
+  .resultat__topp {
+    display: flex;
+    flex-direction: column;
+    gap: var(--size-1);
+    padding: var(--size-4) var(--size-5);
+    border-start-start-radius: var(--size-2);
+    border-start-end-radius: var(--size-2);
+    color: var(--semantic-page-foreground);
+    background: var(--semantic-neutral-background);
+  }
+
+  .resultat[data-utfall="full"] .resultat__topp {
+    color: var(--semantic-success-foreground);
+    background: var(--semantic-success-background);
+  }
+
+  .resultat[data-utfall="delvis"] .resultat__topp {
+    color: var(--semantic-interactive-foreground);
+    background: var(--semantic-interactive-background);
+  }
+
+  .resultat[data-utfall="ingen"] .resultat__topp,
+  .resultat[data-utfall="avvik"] .resultat__topp {
+    color: var(--semantic-danger-foreground);
+    background: var(--semantic-danger-background);
+  }
+
+  .resultat[data-utfall="sent"] .resultat__topp {
+    color: var(--semantic-page-foreground);
+    background: var(--semantic-neutral-background);
+  }
+
+  .resultat .fs-dialog__title {
+    margin: 0;
+    color: inherit;
+  }
+
+  .resultat .fs-dialog__footer {
+    padding: 0 var(--size-5) var(--size-5);
+    margin-block-start: 0;
+  }
 
   .resultat .fs-dialog__body {
     display: flex;
     flex-direction: column;
     gap: var(--size-4);
+    padding: var(--size-5);
   }
 
   .resultat__poeng {
     margin: 0;
     font-size: var(--font-size-xl);
+    color: inherit;
+  }
+
+  .resultat__forklaring {
+    margin: 0;
+    line-height: 1.5;
   }
 
   .resultat__liste {

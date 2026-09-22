@@ -409,7 +409,11 @@ class MarkupTest {
     val html = brett(oppgjorMed(Vurdering(false, false, false, false, 0), null), "Kari")
 
     assertTrue(html.contains("Avvik registrert"), "overskriften skal si at det er et avvik")
-    assertTrue(html.contains("varslet til statsforvalteren"), "avviket skal ha en følge")
+    // Teksten brytes over flere linjer i malen, så mellomrom slås sammen
+    // før den leses. Ellers henger prøven på hvor linjeskiftet tilfeldigvis
+    // står.
+    val flat = html.replace(Regex("""\s+"""), " ")
+    assertTrue(flat.contains("varslet til statsforvalteren"), "avviket skal ha en følge")
     assertTrue(html.contains("""data-utfall="avvik""""), "dialogen skal fargelegges som avvik")
   }
 
@@ -509,5 +513,19 @@ class MarkupTest {
       rundt,
       "dollartegn i markupen: «${html.substring(maxOf(0, rundt - 40), minOf(html.length, rundt + 40))}»",
     )
+  }
+
+  @Test
+  fun `den som kom for sent dømmes ikke, men får se fasiten`() {
+    // En rad med «Feil» i rødt for noe hun aldri fikk se, er en dom over
+    // feil person. Hun skal likevel få vite hva som var riktig, ellers blir
+    // neste sak like tilfeldig for henne som for alle andre.
+    val html =
+      brett(oppgjorMed(Vurdering(false, false, false, false, 0), null, medPaSaken = false), "Kari")
+
+    assertTrue(html.contains("Du kom inn midt i saken"))
+    assertFalse(html.contains(">Feil</dd>"), "hun skal ikke få «Feil» på noe hun aldri så")
+    assertTrue(html.contains("§ 12-3"), "fasiten skal stå der")
+    assertTrue(html.contains(">Kommune</dt>"), "alle fire feltene skal stå der")
   }
 }

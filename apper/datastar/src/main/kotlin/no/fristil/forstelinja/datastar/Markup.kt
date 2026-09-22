@@ -717,8 +717,23 @@ fun resultatdialog(tilstand: Tilstand): String {
     else ""
 
   // Radene vises også til den som ikke svarte. Uten dem fikk hun aldri vite
-  // hva som var riktig, og neste sak ble like tilfeldig.
+  // hva som var riktig, og neste sak ble like tilfeldig. Den som kom inn
+  // midt i saken får bare fasiten: en rad med «Feil» i rødt for noe hun
+  // aldri fikk se, er en dom over feil person.
   val rader =
+    if (utfall == "sent")
+      listOf(
+          fasitrad("Utfall", vedtaksord(fasit.vedtak)),
+          fasitrad("Hjemmel", fasit.hjemmel),
+          fasitrad("Kommune", tilstand.fasitKommune ?: "Ingen, kommunen finnes ikke lenger"),
+          fasitrad(
+            "Feil i søknaden",
+            fasit.felle?.let { feltnavn(it).replaceFirstChar { t -> t.uppercase() } }
+              ?: "Ingen, saken var i orden",
+          ),
+        )
+        .joinToString("\n")
+    else
       listOf(
           resultatrad(
             "Utfall",
@@ -752,16 +767,16 @@ fun resultatdialog(tilstand: Tilstand): String {
     when (utfall) {
       "sent" ->
         """
-        <div class="fs-alert" data-color="info">
-          <p class="fs-alert__title">Saken lå alt på bordet da du møtte</p>
-          <p>Ingen poeng denne runden. Du er med fra neste sak.</p>
-        </div>"""
+        <p class="resultat__forklaring">
+          Saken lå alt på bordet da du møtte. Ingen poeng denne runden, og du
+          er med fra neste sak.
+        </p>"""
       "avvik" ->
         """
-        <div class="fs-alert" data-color="danger">
-          <p class="fs-alert__title">Saken ble ikke behandlet innen fristen</p>
-          <p>Avviket er varslet til statsforvalteren. Null poeng for runden.</p>
-        </div>"""
+        <p class="resultat__forklaring">
+          Saken ble ikke behandlet innen fristen. Avviket er varslet til
+          statsforvalteren, og runden gir null poeng.
+        </p>"""
       else ->
         """
         <p class="resultat__poeng">
@@ -773,16 +788,21 @@ fun resultatdialog(tilstand: Tilstand): String {
     <fs-dialog id="resultat" open>
       <dialog class="fs-dialog resultat" aria-labelledby="resultat-tittel"
               data-utfall="$utfall" data-preserve-attr="open">
-        <h2 class="fs-dialog__title" id="resultat-tittel">${overskrift.trygg()}</h2>
+        <div class="resultat__topp">
+          <h2 class="fs-dialog__title" id="resultat-tittel">${overskrift.trygg()}</h2>
+          $innledning
+        </div>
 
         <div class="fs-dialog__body">
-          $innledning
 
           <dl class="resultat__liste">$rader</dl>
 
           $advarsel
 
-          <div class="fs-alert" data-color="info">
+          <!-- Nøytral farge med vilje: toppfeltet over bærer utfallet, og to
+               fargede flater oppå hverandre gjør det uklart hvilken av dem
+               som betyr noe. -->
+          <div class="fs-alert">
             <p class="fs-alert__title">Sak ${tilstand.sak.id.trygg()}</p>
             <p>${(tilstand.forklaring ?: "").trygg()}</p>
           </div>
@@ -803,6 +823,16 @@ private fun vedtaksord(vedtak: String?) =
     "avslatt" -> "Avslått"
     else -> "Ikke besvart"
   }
+
+/** En rad uten dom: bare hva som var riktig. */
+private fun fasitrad(navn: String, riktig: String) =
+  """
+  <div class="resultat__rad">
+    <dt class="resultat__felt">${navn.trygg()}</dt>
+    <dd class="resultat__ditt">${riktig.trygg()}</dd>
+  </div>
+  """
+    .trimIndent()
 
 private fun resultatrad(navn: String, ditt: String, riktig: String, erRiktig: Boolean) =
   """
