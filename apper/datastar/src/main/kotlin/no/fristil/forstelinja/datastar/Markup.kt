@@ -45,7 +45,11 @@ fun side(tilstand: Tilstand, spillerNavn: String?, kommuner: List<String> = empt
     <!-- Meldinger og sambandslinja eier sitt eget innhold, og serveren har
          ingenting å sende for dem. `data-ignore-morph` hindrer at en patch
          river bort en melding midt i visningen. -->
-    <fs-toast class="fs-toast" label="Meldinger" data-ignore-morph></fs-toast>
+    <!-- Regionen har ingen klasse: `fs-toast` hører på selve meldingene,
+         som komponenten lager. Med klassen her ble en tom region tegnet som
+         en tom melding. -->
+    <fs-toast role="status" aria-live="polite" aria-label="Meldinger"
+      data-ignore-morph></fs-toast>
     <!-- Vakta. Komponenten teller sekunder uten aktivitet, så en spiller
          som går fra maskinen får beskjed framfor å bli stående på tavla.
          Den eier sin egen dialog, derfor `data-ignore-morph`. -->
@@ -89,7 +93,7 @@ fun topp(tilstand: Tilstand): String {
 
   return """
     <header id="topp" class="topp">
-      <h1 class="fs-heading" data-size="m">Førstelinja</h1>
+      <h1 class="fs-heading" data-size="l">Førstelinja</h1>
       <p class="fs-paragraph topp__fase">$fase</p>
       <p class="fs-paragraph topp__tid">
         <span id="nedtelling" data-frist="${tilstand.fristMs}">…</span> sekunder
@@ -211,7 +215,7 @@ fun runde(tilstand: Tilstand, kommuner: List<String>, feil: List<Feil> = emptyLi
     <section class="fs-card kort">
       $feiloppsummering
       <span class="fs-tag">${sak.id.trygg()}</span>
-      <h2 class="fs-heading" data-size="s">${sak.tittel.trygg()}</h2>
+      <h2 class="fs-heading" data-size="m">${sak.tittel.trygg()}</h2>
       <p class="fs-paragraph">${sak.sammendrag.trygg()}</p>
 
       <!-- Fanene: serveren skriver roller, kobling og hvilken som er valgt.

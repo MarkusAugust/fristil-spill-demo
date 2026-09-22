@@ -85,12 +85,27 @@ Arbeidet er ekte saksbehandling. Vitsen er saken:
 
 `SakerTest` avviser en fasit som viser til en hjemmel som ikke finnes, to saker med samme id, en felle som ikke er et felt, og en forklaring som er for kort til å være en forklaring.
 
-## Kjøre lokalt
+## Spille det lokalt
 
 ```bash
-cd apper/spilltjener
-./gradlew test          # reglene, med falsk klokke
-./gradlew installDist
+./kjor.sh
+```
+
+Åpne så **http://localhost:8081**. Skriptet bygger og starter begge
+tjenestene, og stopper dem med Ctrl+C.
+
+Åpne adressen i **to vinduer, ett vanlig og ett privat**. Da er du to
+spillere, og du ser tavla oppdatere seg begge steder uten at du gjør noe.
+Det er hele poenget med demoen.
+
+Vil du se deg om i ro, gir `./kjor.sh rolig` runder på tre minutter.
+
+Krever Java 21 eller nyere. Gradle henter seg selv.
+
+### Eller hver for seg
+
+```bash
+cd apper/spilltjener && ./gradlew test && ./gradlew installDist
 ./build/install/spilltjener/bin/spilltjener
 ```
 

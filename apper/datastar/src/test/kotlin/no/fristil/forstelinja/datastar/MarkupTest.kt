@@ -160,4 +160,28 @@ class MarkupTest {
     assertTrue(html.contains("defineFsField"), "komponentene må registreres")
     assertTrue(html.contains(FRISTIL_VERSJON), "versjonen skal være pinnet")
   }
+
+  @Test
+  fun `hver klasse markupen bruker har et stilark`() {
+    // Uten dette kan en komponent tas i bruk uten at CSS-en følger med, og
+    // da ser den ut som nettleserens egen. Radioknappene og feltsettet sto
+    // slik en stund uten at noe sa fra.
+    val html = side(tilstand, "Kari", listOf("Bergen")) + brett(tilstand, "Kari", listOf("Bergen"))
+
+    val brukt =
+      Regex("""class="(fs-[a-z-]+)""").findAll(html).map { it.groupValues[1] }.toSet() +
+        Regex("""<(fs-[a-z-]+)""").findAll(html).map { it.groupValues[1] }.toSet()
+
+    val lastet = STILARK.joinToString(" ")
+
+    // `field.css` samler ledetekst, felt, hjelpetekst og feilmelding.
+    val samlet = setOf("fs-label", "fs-input", "fs-help-text", "fs-error-text", "fs-legend")
+
+    val uten =
+      brukt.filterNot { klasse ->
+        klasse in samlet || lastet.contains(klasse.removePrefix("fs-") + ".css")
+      }
+
+    assertEquals(emptyList(), uten, "disse klassene har ingen stilark")
+  }
 }

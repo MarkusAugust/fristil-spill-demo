@@ -14,7 +14,14 @@ val BRETT_CSS =
   body {
     margin: 0;
     padding: var(--size-4);
-    font-family: inherit;
+    /* Fristil arver skrift med vilje, så appen må si hvilken. Uten dette
+       er det nettleserens egen, som er en serif. */
+    font-family:
+      system-ui,
+      -apple-system,
+      "Segoe UI",
+      Roboto,
+      sans-serif;
     color: var(--semantic-page-foreground);
     background: var(--semantic-neutral-background);
   }
@@ -38,6 +45,10 @@ val BRETT_CSS =
   }
 
   .kort { padding: var(--size-4); }
+
+  /* `.fs-card` er en flex-kolonne, så en `inline-flex` merkelapp strekkes
+     over hele bredden. Den skal ta plassen den trenger. */
+  .kort > .fs-tag { align-self: start; }
 
   .poeng { font-size: var(--font-size-l); }
 
