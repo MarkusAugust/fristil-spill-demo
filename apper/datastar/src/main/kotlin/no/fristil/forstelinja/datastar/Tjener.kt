@@ -168,6 +168,7 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
       // Forrige tilstand, så vi kan sende bare det som faktisk har endret
       // seg. Endres tavla, sendes tavla. Skifter runden, sendes saken også.
       var forrige: Tilstand? = null
+      var sambandNede = false
 
       suspend fun sendRamme(html: String) {
         val innmat =
@@ -197,8 +198,47 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
         )
       }
 
+      /**
+       * Sier fra til nettleseren om at spilltjeneren er borte, eller tilbake.
+       *
+       * Å la strømmen ryke ville vært det opplagte, men Datastar kobler bare
+       * til igjen når lesingen kaster, og en strøm som avsluttes pent gir
+       * ingen ny forsøk. Enda verre: en app som ikke skriver noe, ryker
+       * aldri i det hele tatt. Skjermene ble stående helt normale og aldri
+       * oppdatert mer.
+       *
+       * Derfor sies det over strømmen i stedet, på et merke skriptet i siden
+       * lytter på. Da kan strømmen bli stående, og spillet tar seg inn igjen
+       * av seg selv når spilltjeneren er tilbake.
+       */
+      suspend fun meldSamband(nede: Boolean) {
+        sendRamme(
+          patch(
+            """<div id="samband" hidden data-nede="$nede"></div>"""
+          )
+        )
+      }
+
       suspend fun send() {
-        val na = spilltjener.tilstand(spillerId)
+        val na =
+          try {
+            spilltjener.tilstand(spillerId)
+          } catch (e: Exception) {
+            if (!sambandNede) {
+              sambandNede = true
+              meldSamband(true)
+            }
+            return
+          }
+
+        if (sambandNede) {
+          sambandNede = false
+          meldSamband(false)
+          // Alt kan ha skjedd mens vi var borte, så neste patch skal være
+          // hele brettet.
+          forrige = null
+        }
+
         val forr = forrige
         forrige = na
 

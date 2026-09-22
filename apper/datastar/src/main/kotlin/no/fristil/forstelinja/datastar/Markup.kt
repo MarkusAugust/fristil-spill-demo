@@ -90,6 +90,11 @@ fun side(tilstand: Tilstand, spillerNavn: String?, kommuner: List<String> = empt
       online-text="Sambandet er tilbake"
       data-ignore-morph></fs-connection-status>
 
+    <!-- Merket serveren skriver når sambandet ryker. Det er skjult, og
+         finnes bare for at skriptet skal ha noe å lytte på: en komponent
+         som eier sitt eget innhold kan ikke patches. -->
+    <div id="samband" hidden data-nede="false"></div>
+
     <header class="topplinje">
       <div class="topplinje__innhold stamme">
         ${topp(tilstand)}
@@ -143,6 +148,19 @@ fun side(tilstand: Tilstand, spillerNavn: String?, kommuner: List<String> = empt
       // registreres i en modul, og moduler kjører etter denne blokka. Ved
       // oppstart er `<fs-connection-status>` derfor et vanlig element uten
       // metodene ennå.
+      // Serveren sier fra over strømmen når spilltjeneren bak er borte.
+      // Merket morfes i stedet for å byttes ut, så noden består og
+      // observatøren henger med.
+      const merke = document.getElementById("samband")
+      if (merke) {
+        new MutationObserver(() => {
+          const samband = document.querySelector("fs-connection-status")
+          if (typeof samband?.reportFailure !== "function") return
+          if (merke.dataset.nede === "true") samband.reportFailure()
+          else samband.reportSuccess()
+        }).observe(merke, { attributes: true, attributeFilter: ["data-nede"] })
+      }
+
       document.addEventListener("datastar-fetch", (e) => {
         const samband = document.querySelector("fs-connection-status")
         const type = e.detail?.type

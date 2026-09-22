@@ -1,0 +1,25 @@
+<!--
+  Loggoppsettet.
+
+  Uten denne fila står Logback på DEBUG, og Ktor skriver ut hele
+  stakksporingen hver gang en nettleser lukker en fane. En SSE-strøm som
+  ryker er ikke en feil, og en terminal full av «Broken pipe» skjuler det som
+  faktisk er verdt å se.
+
+  Ktor selv står på WARN: forespørselsloggen sier lite her, og spillet
+  skriver selv det som betyr noe.
+-->
+<configuration>
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{HH:mm:ss} %-5level %logger{20} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <root level="INFO">
+    <appender-ref ref="STDOUT" />
+  </root>
+
+  <logger name="io.ktor" level="WARN" />
+  <logger name="no.fristil" level="INFO" />
+</configuration>

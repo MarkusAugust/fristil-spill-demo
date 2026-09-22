@@ -183,9 +183,17 @@ nå at hver komponent som registreres faktisk står i markupen.
 er et kall, og en server som bare sender HTML kan ikke kalle noe. Demoen fant
 hullet, og det ble tettet i designsystemet framfor i appen.
 
-Sambandslinja er koblet til Datastars egen `datastar-fetch`-hendelse. Uten
-det ville den bare sett `navigator.onLine`, som ikke merker at spilltjeneren
-er nede.
+Sambandslinja sier fra på to måter, fordi det er to ulike feil. Mister
+nettleseren appserveren, kaster Datastars egen henting, og `datastar-fetch`
+sier fra. Mister **appserveren spilltjeneren**, er strømmen ned til
+nettleseren fortsatt i orden, og da måtte serveren si det selv: den patcher
+et skjult merke, og skriptet i siden melder det videre til komponenten.
+
+Den andre veien var ikke åpenbar. Det opplagte var å la strømmen ryke, men
+Datastar kobler bare til igjen når lesingen kaster, og en app som ikke
+skriver noe ryker aldri. Skjermene ble stående helt normale og aldri
+oppdatert mer. Prøvd ved å drepe spilltjeneren med en nettleser åpen, og
+starte den igjen: linja kommer, og spillet tar seg inn av seg selv.
 
 Kommunesøket er verdt en forklaring. `felles/kommuner.json` inneholder ikke
 Mosvik, som ble slått sammen med Inderøy i 2012. Søkeren i sak 2024/1902

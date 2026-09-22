@@ -528,4 +528,17 @@ class MarkupTest {
     assertTrue(html.contains("§ 12-3"), "fasiten skal stå der")
     assertTrue(html.contains(">Kommune</dt>"), "alle fire feltene skal stå der")
   }
+
+  @Test
+  fun `siden har et merke serveren kan si fra på`() {
+    // Sambandslinja eier sitt eget innhold og kan ikke patches. Serveren
+    // skriver derfor på et skjult merke i stedet, og skriptet i siden lytter
+    // på det. Uten merket kunne ingenting si fra om at spilltjeneren bak var
+    // borte, og skjermen ville stått helt normal og aldri oppdatert seg mer.
+    val html = side(tilstand, "Kari", listOf("Bergen"))
+
+    assertTrue(html.contains("""<div id="samband" hidden data-nede="false">"""))
+    assertTrue(html.contains("""attributeFilter: ["data-nede"]"""), "skriptet må lytte på merket")
+    assertTrue(html.contains("reportFailure"), "og si fra til komponenten")
+  }
 }

@@ -82,6 +82,16 @@ class Spilltjener(private val adresse: String) {
       } catch (e: Exception) {
         println("Mistet spilltjeneren (${e.message}). Prøver igjen om to sekunder.")
       }
+
+      // Et pulsslag også når forbindelsen ryker, ikke bare når noe skjer.
+      //
+      // Uten dette hadde appen ingenting å sende ned til nettleserne, og en
+      // strøm som ikke skriver ryker aldri. Skjermene ble stående helt
+      // normale og aldri oppdatert mer, uten at noen kunne se det. Med
+      // pulsen prøver hver strøm å hente tilstanden, det kallet feiler, og
+      // strømmen ryker slik den skal: Datastar kobler til igjen, og
+      // sambandslinja sier fra.
+      puls.emit(Unit)
       delay(2000)
     }
   }
