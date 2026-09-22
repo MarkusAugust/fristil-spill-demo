@@ -42,6 +42,76 @@ fun venteside(): String =
   """
     .trimIndent()
 
+/**
+ * Velkomsthilsenen, som forklarer hvorfor det finnes tre utgaver.
+ *
+ * Den står i `side()` og ikke i brettet, altså utenfor det serveren patcher.
+ * Lå den inne i `#sak`, ville `open` kommet tilbake ved hver patch, og
+ * hilsenen spratt opp igjen hvert par minutt for den som sitter og leser
+ * innmeldingsskjemaet.
+ */
+fun velkomst(): String =
+  """
+  <fs-dialog id="velkomst" open>
+    <dialog class="fs-dialog velkomst" aria-labelledby="velkomst-tittel"
+            data-preserve-attr="open">
+      <div class="velkomst__topp">
+        <h2 class="fs-dialog__title" id="velkomst-tittel">Velkommen til Førstelinja</h2>
+      </div>
+
+      <div class="fs-dialog__body">
+        <p>
+          Etaten for alminnelige søknader har de siste årene fått et økende
+          antall henvendelser om hvilket rammeverk saksbehandlingsløsningen er
+          skrevet i. Vi tar slike tilbakemeldinger på alvor.
+        </p>
+        <p>
+          Løsningen leveres derfor i tre utgaver, skreddersydd til hvert sitt
+          rammeverk: TanStack Start, Datastar og Astro. Du sitter nå i
+          <strong>$APPNAVN</strong>-utgaven.
+        </p>
+        <p>Vi er trygge på at du vil merke forskjellen.</p>
+
+        <h3 class="fs-heading velkomst__valg" data-size="xs">Velg din foretrukne utgave</h3>
+        <ul class="fs-list velkomst__liste" data-variant="plain">
+          ${UTGAVER.joinToString("\n") { utgave ->
+            if (utgave.navn == APPNAVN)
+              """
+              <li>
+                <span class="velkomst__her">
+                  <strong>${utgave.navn}</strong>
+                  <span class="velkomst__om">${utgave.rammeverk}</span>
+                  <span class="fs-badge" data-color="success">Du er her</span>
+                </span>
+              </li>"""
+            else
+              """
+              <li>
+                <a class="velkomst__lenke" href="${utgave.adresse}">
+                  <strong>${utgave.navn}</strong>
+                  <span class="velkomst__om">${utgave.rammeverk}</span>
+                </a>
+              </li>"""
+          }}
+        </ul>
+
+        <p class="velkomst__fotnote">
+          Alle tre er bygget med det samme designsystemet, og det er nettopp
+          poenget: du skal ikke merke forskjellen. Bytt utgave, og skjermen er
+          den samme.
+        </p>
+      </div>
+
+      <form method="dialog" class="fs-dialog__footer">
+        <!-- `autofocus` her, ellers tar `showModal()` den første lenken i
+             lista, og et tilfeldig Enter sender deg til en annen utgave. -->
+        <button class="fs-button" value="lukk" autofocus>Jeg merker nok forskjellen</button>
+      </form>
+    </dialog>
+  </fs-dialog>
+  """
+    .trimIndent()
+
 /** Hele siden, første gang. */
 fun side(tilstand: Tilstand, spillerNavn: String?, kommuner: List<String> = emptyList()): String {
   val stilark = STILARK.joinToString("\n    ") { """<link rel="stylesheet" href="$it">""" }
@@ -90,6 +160,8 @@ fun side(tilstand: Tilstand, spillerNavn: String?, kommuner: List<String> = empt
       online-text="Sambandet er tilbake"
       data-ignore-morph></fs-connection-status>
 
+    ${if (spillerNavn == null) velkomst() else ""}
+
     <!-- Merket serveren skriver når sambandet ryker. Det er skjult, og
          finnes bare for at skriptet skal ha noe å lytte på: en komponent
          som eier sitt eget innhold kan ikke patches. -->
@@ -98,6 +170,7 @@ fun side(tilstand: Tilstand, spillerNavn: String?, kommuner: List<String> = empt
     <header class="topplinje">
       <div class="topplinje__innhold stamme">
         ${topp(tilstand)}
+        ${utgavevelger()}
         ${temavelger()}
       </div>
     </header>
@@ -273,11 +346,52 @@ fun topp(tilstand: Tilstand): String {
               data-lengde="${tilstand.faseLengdeMs}" data-preserve-attr="style data-rister">–</span>
       </p>
 
-      <span class="topplinje__stack">Kotlin · Datastar</span>
+      <span class="topplinje__stack">Kotlin · $APPNAVN</span>
+
+      ${if (tilstand.meg == null) "" else """
+      <p class="topplinje__meg">
+        <span class="fs-avatar" data-size="s" aria-hidden="true">${initialer(tilstand.meg.navn)}</span>
+        <span class="topplinje__navnet">${tilstand.meg.navn.trygg()}</span>
+      </p>"""}
     </div>
   """
     .trimIndent()
 }
+
+/**
+ * Initialene i avataren.
+ *
+ * Avataren er `aria-hidden`: navnet står ved siden av, og to bokstaver lest
+ * opp foran det samme navnet er støy.
+ */
+private fun initialer(navn: String): String =
+  navn
+    .trim()
+    .split(Regex("\\s+"))
+    .filter { it.isNotBlank() }
+    .take(2)
+    .joinToString("") { it.first().uppercase() }
+    .ifBlank { "?" }
+    .trygg()
+
+/**
+ * Bytt utgave underveis.
+ *
+ * Står utenfor det serveren patcher, som temavelgeren. Lenker og ikke
+ * knapper: det er tre adresser, og en lenke er det HTML har for det.
+ */
+fun utgavevelger(): String =
+  """
+  <nav class="utgavevelger" aria-label="Utgave">
+    ${UTGAVER.joinToString("\n") { utgave ->
+      if (utgave.navn == APPNAVN)
+        """<span class="utgavevelger__her" aria-current="page">${utgave.navn}</span>"""
+      else
+        """<a class="utgavevelger__lenke" href="${utgave.adresse}">${utgave.navn}</a>"""
+    }}
+  </nav>
+  """
+    .trimIndent()
 
 /**
  * Lyst, mørkt eller det maskinen sier.
@@ -478,6 +592,37 @@ private fun feilmelding(feil: List<Feil>, felt: String, id: String): String {
   return """<p class="fs-error-text" id="$id">${melding.melding.trygg()}</p>"""
 }
 
+/**
+ * Hvor mange som har levert på saken som ligger på bordet.
+ *
+ * Uten den vet du ikke om det er deg de andre venter på, og en runde som
+ * brått tar slutt fordi de var ferdige, ser ut som en feil.
+ *
+ * Den står på tavla og ikke i skjemakortet, fordi det er tavla serveren
+ * patcher når noen leverer. I skjemakortet ville tallet stått stille til
+ * runden skiftet.
+ *
+ * Tallene leses av tavla, ikke av tellingen fra spilltjeneren: den teller
+ * bare dem som var med da saken kom på bordet, og i den første runden etter
+ * at du meldte deg på er det ingen. Alle på tavla kan svare, og det er dem
+ * du ser.
+ */
+private fun svartSaLangt(tilstand: Tilstand): String {
+  val paVakt = tilstand.tavle.size
+  if (paVakt <= 1) return ""
+
+  val levert = tilstand.tavle.count { it.harSvart }
+  val alle = levert >= paVakt
+
+  return """
+    <p class="vedtakskort__svart" data-alle="$alle">
+      ${if (alle) "Alle har levert. Oppgjøret kommer straks."
+        else "$levert av $paVakt saksbehandlere har levert."}
+    </p>
+  """
+    .trimIndent()
+}
+
 /** Skjemaet saksbehandleren fyller ut. */
 private fun vedtakskort(tilstand: Tilstand, kommuner: List<String>, feil: List<Feil>): String {
   val hjemler =
@@ -524,7 +669,9 @@ private fun vedtakskort(tilstand: Tilstand, kommuner: List<String>, feil: List<F
   return """
     <section class="fs-card kort vedtakskort">
       <h2 class="fs-heading" data-size="s">Ditt vedtak</h2>
-      <p class="vedtakskort__ingress">Fire spørsmål, ${tilstand.poeng.fullPott} poeng. Du kan svare én gang.</p>
+      <p class="vedtakskort__ingress">
+        Fire spørsmål, ${tilstand.poeng.fullPott} poeng. Du kan svare én gang.
+      </p>
 
       $feiloppsummering
 
@@ -688,6 +835,35 @@ private fun kvittering(tilstand: Tilstand): String {
 
       <p class="vedtakskort__ingress">Fasiten og begrunnelsen kommer når runden er over, og alle har levert.</p>
     </section>
+  """
+    .trimIndent()
+}
+
+/**
+ * Hvem som kom best ut av saken.
+ *
+ * Tavla viser totalen, og den sier ingenting om hvem som faktisk leste denne
+ * saken best. Med bare én på vakt er det ingen å sammenligne med, og da står
+ * det ingenting.
+ */
+private fun besteIRunden(tilstand: Tilstand): String {
+  if (tilstand.tavle.size < 2) return ""
+  val beste = tilstand.tavle.maxByOrNull { it.sistePoeng } ?: return ""
+  if (beste.sistePoeng <= 0) return ""
+
+  val delt = tilstand.tavle.filter { it.sistePoeng == beste.sistePoeng }
+  val hvem =
+    when {
+      delt.size == 1 && beste.erMeg -> "Du kom best ut av saken"
+      delt.size == 1 -> "${beste.navn.trygg()} kom best ut av saken"
+      delt.size == tilstand.tavle.size -> "Alle kom likt ut av saken"
+      else -> "${delt.joinToString(" og ") { it.navn.trygg() }} kom likt best ut"
+    }
+
+  return """
+    <p class="fs-alert beste" data-color="success">
+      <strong>$hvem</strong> med ${beste.sistePoeng} av ${tilstand.poeng.fullPott} poeng.
+    </p>
   """
     .trimIndent()
 }
@@ -894,6 +1070,8 @@ fun oppgjor(tilstand: Tilstand): String {
   return """
     ${sakskort(tilstand.sak)}
 
+    ${besteIRunden(tilstand)}
+
     <section class="fs-card kort fasitkort">
       <div class="fasitkort__topp">
         <h2 class="fs-heading" data-size="s">Fasit</h2>
@@ -989,14 +1167,28 @@ fun slutt(tilstand: Tilstand): String {
 
 /** Tavla. Den samme i alle tre appene, og det er hele poenget. */
 fun tavle(tilstand: Tilstand): String {
+  // I runden sier den fjerde kolonnen hvem som har levert; det er det du
+  // lurer på da. I oppgjøret sier den hvilken app hver spiller sitter i, som
+  // er hele poenget med demoen.
+  val oppgjor = tilstand.fase != "runde"
+
   val rader =
     tilstand.tavle.joinToString("\n") {
       """
       <tr${if (it.erMeg) " class=\"meg\"" else ""}>
         <td>${it.plass}</td>
-        <td>${it.navn.trygg()}</td>
-        <td class="tavle__poeng">${it.poeng}</td>
-        <td><span class="fs-badge" data-color="${farge(it.stack)}">${appnavn(it.stack)}</span></td>
+        <td>
+          <span class="tavle__navn">
+            <span class="fs-avatar" data-size="xs" aria-hidden="true">${initialer(it.navn)}</span>
+            <span>${it.navn.trygg()}${if (it.erMeg) """ <span class="tavle__deg">(deg)</span>""" else ""}</span>
+          </span>
+        </td>
+        <td class="tavle__poeng">
+          ${it.poeng}${if (oppgjor && it.sistePoeng > 0) """ <span class="tavle__runde">+${it.sistePoeng}</span>""" else ""}
+        </td>
+        <td>${if (oppgjor) """<span class="fs-badge" data-color="${farge(it.stack)}">${appnavn(it.stack)}</span>"""
+             else if (it.harSvart) """<span class="fs-badge" data-color="success">Levert</span>"""
+             else """<span class="fs-badge">Jobber</span>"""}</td>
       </tr>
       """
         .trimIndent()
@@ -1004,9 +1196,12 @@ fun tavle(tilstand: Tilstand): String {
 
   return """
       <h2 class="fs-heading" data-size="s">På vakt nå</h2>
+      ${if (oppgjor) "" else svartSaLangt(tilstand)}
       <div class="fs-table-scroll" tabindex="0">
         <table class="fs-table tavle__tabell">
-        <thead><tr><th>#</th><th>Navn</th><th>Poeng</th><th>App</th></tr></thead>
+        <thead>
+          <tr><th>#</th><th>Navn</th><th>Poeng</th><th>${if (oppgjor) "App" else "Status"}</th></tr>
+        </thead>
         <tbody>${rader.ifBlank { "<tr><td colspan=\"4\">Ingen på vakt.</td></tr>" }}</tbody>
         </table>
       </div>

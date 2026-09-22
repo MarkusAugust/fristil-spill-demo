@@ -156,6 +156,23 @@ To ting å passe på, notert før vi kom dit:
 
 Og én ting som **ikke er etterprøvd ennå**: jeg mener Railways private nett er IPv6-bare, slik at tjenesten må lytte på `::` og ikke `0.0.0.0` for å være synlig internt. Standarden her er `::`, men det må bekreftes mot Railways egen dokumentasjon når vi setter opp.
 
+## Velkomsthilsenen, og valget mellom de tre
+
+Den som åpner spillet får en hilsen fra Etaten for alminnelige søknader: de
+har fått mange henvendelser om hvilket rammeverk saksbehandlingsløsningen er
+skrevet i, de tar det på alvor, og løsningen leveres derfor i tre utgaver,
+skreddersydd til hvert sitt rammeverk. De er trygge på at du vil merke
+forskjellen.
+
+Det er hele demoen sagt som en vits, og hilsenen er samtidig valget: du
+plukker utgave der, og kan bytte når som helst fra topplinja. Lokalt deler de
+tre kapselen, siden kapsler ikke bryr seg om portnummer, så du beholder navnet
+ditt og plassen din på tavla når du bytter.
+
+Derfor er det ingen egen skallside med tre rammer. Valget hører hjemme i
+appen, og da tar du med deg dine egne øyne mellom utgavene framfor å se dem
+gjennom tre vinduer samtidig.
+
 ## Datastar-appen
 
 Kotlin med Ktor. Den kan ikke kalle `fs.field()`, så den skriver klassene selv og lar `<fs-field>` gjøre koblingen i nettleseren. Fordi serveren sender det samme området på nytt ved hver patch, står `data-preserve-attr` på det komponenten lager, med verdiene hentet fra pakken selv.

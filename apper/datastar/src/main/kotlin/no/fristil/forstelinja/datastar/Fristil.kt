@@ -59,6 +59,42 @@ object Bevar {
   const val FORSLAG_TOM = "hidden"
 }
 
+/**
+ * Navnet denne utgaven har utad.
+ *
+ * De tre appene er den samme skjermen i hvert sitt rammeverk, og hver av dem
+ * sier hvem den er i velkomsthilsenen og i topplinja.
+ */
+const val APPNAVN = "Datastar"
+
+/**
+ * De tre utgavene, og hvor de kjører.
+ *
+ * Adressene settes med miljøvariabler, slik at det samme oppsettet virker
+ * lokalt og utrullet. Lokalt deler de tre kapselen, siden kapsler ikke bryr
+ * seg om portnummer, og da beholder du navnet ditt når du bytter utgave.
+ */
+data class Utgave(val navn: String, val rammeverk: String, val adresse: String)
+
+val UTGAVER =
+  listOf(
+    Utgave(
+      "TanStack Start",
+      "React, tegnet i nettleseren",
+      System.getenv("TANSTACK_URL") ?: "http://localhost:8082",
+    ),
+    Utgave(
+      "Datastar",
+      "Kotlin, ferdige HTML-biter fra serveren",
+      System.getenv("DATASTAR_URL") ?: "http://localhost:8081",
+    ),
+    Utgave(
+      "Astro",
+      "hele sider fra serveren, med én øy",
+      System.getenv("ASTRO_URL") ?: "http://localhost:8083",
+    ),
+  )
+
 /** Versjonen av designsystemet siden henter fra CDN. */
 const val FRISTIL_VERSJON = "0.7.0"
 
@@ -86,6 +122,7 @@ val STILARK =
       "components/css/fieldset/fieldset.css",
       "components/css/table/table.css",
       "components/css/card/card.css",
+      "components/css/avatar/avatar.css",
       "components/css/badge/badge.css",
       "components/css/tag/tag.css",
       "components/css/toggle-group/toggle-group.css",

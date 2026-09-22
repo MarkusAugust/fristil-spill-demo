@@ -432,6 +432,8 @@ class Spill(
               plass = i + 1,
               navn = s.navn,
               poeng = s.poeng,
+              sistePoeng = s.sistePoeng,
+              harSvart = s.svar != null,
               stack = s.stack,
               erMeg = s.id == spillerId,
             )
@@ -451,6 +453,8 @@ class Spill(
               vurdering = it.svar?.let { svar -> vurder(svar, sak) },
             )
           },
+        harSvart = spillere.values.count { it.medPaSaken && it.svar != null },
+        medPaSaken = spillere.values.count { it.medPaSaken },
         evigToppliste = evig,
       )
     }

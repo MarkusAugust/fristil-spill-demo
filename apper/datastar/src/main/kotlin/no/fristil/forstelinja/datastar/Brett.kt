@@ -169,6 +169,22 @@ val BRETT_CSS =
     font-variant-numeric: tabular-nums;
   }
 
+  /* Hvem du er. Med flere vinduer oppe er det ikke til å se ellers. */
+  .topplinje__meg {
+    display: flex;
+    align-items: center;
+    gap: var(--size-2);
+    margin: 0;
+    padding-inline-start: var(--size-3);
+    border-inline-start: 1px solid color-mix(in oklab, var(--palette-graphite-0) 30%, transparent);
+    font-size: var(--font-size-s);
+  }
+
+  .topplinje__meg .fs-avatar {
+    color: var(--palette-denim-100);
+    background: var(--palette-graphite-0);
+  }
+
   .topplinje__stack {
     padding: var(--size-0-5) var(--size-2);
     font-size: var(--font-size-xs);
@@ -204,6 +220,120 @@ val BRETT_CSS =
   .temavelger .fs-toggle-group__option:has(input:checked) {
     color: var(--palette-denim-100);
     background: var(--palette-graphite-0);
+  }
+
+  /* Velgeren mellom de tre utgavene
+     ------------------------------------------------------------------ */
+
+  .utgavevelger {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--size-1);
+    font-size: var(--font-size-xs);
+  }
+
+  .utgavevelger__lenke,
+  .utgavevelger__her {
+    padding: var(--size-0-5) var(--size-2);
+    border-radius: var(--size-1);
+    border: 1px solid transparent;
+  }
+
+  .utgavevelger__lenke {
+    color: color-mix(in oklab, var(--palette-graphite-0) 80%, transparent);
+    text-decoration: none;
+    border-color: color-mix(in oklab, var(--palette-graphite-0) 30%, transparent);
+  }
+
+  .utgavevelger__lenke:hover {
+    color: var(--palette-graphite-0);
+    background: color-mix(in oklab, var(--palette-graphite-0) 12%, transparent);
+  }
+
+  .utgavevelger__lenke:focus-visible {
+    outline: var(--semantic-focus-ring);
+    outline-color: var(--palette-graphite-0);
+    outline-offset: 2px;
+  }
+
+  .utgavevelger__her {
+    color: var(--palette-denim-100);
+    background: var(--palette-graphite-0);
+    font-weight: 600;
+  }
+
+  /* Velkomsthilsenen
+     ------------------------------------------------------------------ */
+
+  .velkomst {
+    --fs-dialog-width: min(38rem, 100%, calc(100vw - var(--size-8)));
+  }
+
+  .velkomst__topp {
+    padding: var(--size-4) var(--size-5);
+    color: var(--palette-graphite-0);
+    background: var(--palette-denim-100);
+    border-start-start-radius: var(--size-2);
+    border-start-end-radius: var(--size-2);
+  }
+
+  .velkomst .fs-dialog__title { color: inherit; }
+
+  .velkomst .fs-dialog__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--size-3);
+    padding: var(--size-5);
+  }
+
+  .velkomst .fs-dialog__body p { margin: 0; line-height: 1.6; }
+
+  .velkomst__valg { margin: var(--size-2) 0 0; }
+
+  .velkomst__liste {
+    display: flex;
+    flex-direction: column;
+    gap: var(--size-2);
+    margin: 0;
+    padding: 0;
+  }
+
+  .velkomst__lenke,
+  .velkomst__her {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--size-2);
+    padding: var(--size-3) var(--size-4);
+    border: 1px solid var(--semantic-divider-30);
+    border-radius: var(--size-1);
+    color: var(--semantic-page-foreground);
+    text-decoration: none;
+  }
+
+  .velkomst__lenke:hover {
+    border-color: var(--semantic-interactive-main);
+    background: var(--semantic-neutral-background);
+  }
+
+  .velkomst__lenke:focus-visible {
+    outline: var(--semantic-focus-ring);
+    outline-offset: 2px;
+  }
+
+  .velkomst__her { background: var(--semantic-neutral-background); }
+
+  .velkomst__om {
+    flex: 1 1 auto;
+    color: var(--semantic-muted-foreground);
+    font-size: var(--font-size-s);
+  }
+
+  .velkomst__fotnote {
+    margin-block-start: var(--size-2);
+    font-size: var(--font-size-s);
+    color: var(--semantic-muted-foreground);
   }
 
   /* Brettet
@@ -515,6 +645,38 @@ val BRETT_CSS =
      ------------------------------------------------------------------ */
 
   .tavle__tabell { font-size: var(--font-size-s); }
+
+  .tavle__navn {
+    display: flex;
+    align-items: center;
+    gap: var(--size-2);
+  }
+
+  .tavle__navn .fs-avatar { flex: none; }
+
+  .tavle__deg { color: var(--semantic-muted-foreground); }
+
+  /* Poengene fra runden som nettopp ble gjort opp, ved siden av totalen. */
+  .tavle__runde {
+    color: var(--semantic-success-foreground);
+    font-weight: 600;
+  }
+
+  .beste {
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  .vedtakskort__svart {
+    margin: 0;
+    font-size: var(--font-size-s);
+    color: var(--semantic-muted-foreground);
+  }
+
+  .vedtakskort__svart[data-alle="true"] {
+    color: var(--semantic-success-foreground);
+    font-weight: 600;
+  }
   .tavle__poeng { font-variant-numeric: tabular-nums; }
   .tavle .meg { font-weight: 600; }
 

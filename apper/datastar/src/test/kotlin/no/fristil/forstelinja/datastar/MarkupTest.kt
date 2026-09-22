@@ -38,7 +38,20 @@ class MarkupTest {
           soker = Soker("Bjørg", "31.02.1974", "Bergen", "b@example.no"),
         ),
       hjemler = listOf(Hjemmel("§ 4-1", "Alminnelig")),
-      tavle = listOf(TavleRad(1, "Kari", 0, "datastar", true)),
+      tavle =
+        listOf(
+          TavleRad(
+            plass = 1,
+            navn = "Kari",
+            poeng = 0,
+            sistePoeng = 0,
+            harSvart = false,
+            stack = "datastar",
+            erMeg = true,
+          )
+        ),
+      harSvart = 0,
+      medPaSaken = 1,
       meg = MegUt("Kari", 0, 0, 1, 0, false),
       evigToppliste = emptyList(),
     )
@@ -584,5 +597,87 @@ class MarkupTest {
       html.contains("""data-preserve-attr="style data-rister""""),
       "klokka freder ikke det skriptet setter",
     )
+  }
+
+  @Test
+  fun `du ser hvem du er, og hvem som har levert`() {
+    // Med flere vinduer oppe er det ikke til å se hvem som er hvem.
+    val toPaVakt =
+      tilstand.copy(
+        tavle =
+          listOf(
+            TavleRad(1, "Kari Nordmann", 0, 0, true, "datastar", true),
+            TavleRad(2, "Ola Hansen", 0, 0, false, "datastar", false),
+          )
+      )
+
+    val html = brett(toPaVakt, "Kari Nordmann", listOf("Bergen"))
+
+    assertTrue(html.contains(""">KN</span>"""), "initialene i avataren")
+    assertTrue(html.contains("Kari Nordmann"), "navnet ditt i topplinja")
+    assertTrue(html.contains("(deg)"), "din egen rad skal være merket")
+    assertTrue(html.contains("1 av 2 saksbehandlere har levert."))
+    assertTrue(html.contains(">Levert<") && html.contains(">Jobber<"), "status per spiller")
+  }
+
+  @Test
+  fun `oppgjøret sier hvem som kom best ut av saken`() {
+    val to =
+      oppgjorMed(Vurdering(true, true, true, true, 25), Svar("avslatt", "§ 12-3", "Bergen", "fodselsdato"))
+        .copy(
+          tavle =
+            listOf(
+              TavleRad(1, "Kari", 25, 25, true, "datastar", false),
+              TavleRad(2, "Ola", 10, 10, true, "datastar", true),
+            )
+        )
+
+    val html = brett(to, "Ola")
+
+    assertTrue(html.contains("Kari kom best ut av saken"), "hvem som kom best ut")
+    assertTrue(html.contains("med 25 av 25 poeng"), "og med hvor mye")
+  }
+
+  @Test
+  fun `med bare én på vakt står det ingenting om hvem som er best`() {
+    val html = brett(oppgjorMed(Vurdering(true, true, true, true, 25), Svar()), "Kari")
+
+    assertFalse(html.contains("kom best ut av saken"), "det er ingen å sammenligne med")
+    assertFalse(html.contains("saksbehandlere har levert"), "heller ikke noen å vente på")
+  }
+
+  @Test
+  fun `velkomsthilsenen forklarer hvorfor det finnes tre utgaver`() {
+    val html = side(tilstand, null)
+
+    assertTrue(html.contains("<fs-dialog id=\"velkomst\" open>"), "hilsenen skal stå åpen")
+    assertTrue(html.contains("Velkommen til Førstelinja"))
+    for (utgave in UTGAVER) {
+      assertTrue(html.contains(utgave.navn), "${utgave.navn} mangler i valget")
+    }
+    assertTrue(html.contains("Du er her"), "utgaven du sitter i skal være merket")
+    // Og på knappen, ikke bare et sted på siden: kommentaren ved siden av
+    // inneholder ordet, og prøven besto på den.
+    assertTrue(
+      html.contains("""<button class="fs-button" value="lukk" autofocus>"""),
+      "fokus skal stå på knappen, ikke på en lenke til en annen utgave",
+    )
+  }
+
+  @Test
+  fun `hilsenen kommer bare før du har meldt deg på`() {
+    // Den står utenfor det serveren patcher, så den kan ikke sprette opp
+    // igjen mens du spiller.
+    assertFalse(side(tilstand, "Kari").contains("velkomst"), "hilsenen skal være borte etterpå")
+  }
+
+  @Test
+  fun `du kan bytte utgave uten å gå via hilsenen`() {
+    val html = side(tilstand, "Kari", listOf("Bergen"))
+
+    assertTrue(html.contains("""aria-current="page""""), "utgaven du er i skal være merket")
+    for (utgave in UTGAVER.filter { it.navn != APPNAVN }) {
+      assertTrue(html.contains("""href="${utgave.adresse}""""), "mangler lenke til ${utgave.navn}")
+    }
   }
 }

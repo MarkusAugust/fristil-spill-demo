@@ -44,6 +44,10 @@ data class TavleRad(
   val plass: Int,
   val navn: String,
   val poeng: Int,
+  /** Poengene fra runden som nettopp ble gjort opp. */
+  val sistePoeng: Int,
+  /** Om hun har svart på saken som ligger på bordet nå. */
+  val harSvart: Boolean,
   val stack: Stack,
   val erMeg: Boolean,
 )
@@ -106,6 +110,9 @@ data class Tilstand(
   val fasitKommune: String?,
   val forklaring: String?,
   val tavle: List<TavleRad>,
+  /** Hvor mange som har svart på saken, og hvor mange som er med på den. */
+  val harSvart: Int,
+  val medPaSaken: Int,
   val meg: MegUt?,
   val evigToppliste: List<ToppEntry>,
 )

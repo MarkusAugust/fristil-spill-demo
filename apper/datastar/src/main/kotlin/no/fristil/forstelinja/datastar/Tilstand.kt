@@ -36,7 +36,15 @@ data class Vurdering(
 @Serializable data class Fasit(val vedtak: String, val hjemmel: String, val felle: String? = null)
 
 @Serializable
-data class TavleRad(val plass: Int, val navn: String, val poeng: Int, val stack: String, val erMeg: Boolean)
+data class TavleRad(
+  val plass: Int,
+  val navn: String,
+  val poeng: Int,
+  val sistePoeng: Int,
+  val harSvart: Boolean,
+  val stack: String,
+  val erMeg: Boolean,
+)
 
 @Serializable
 data class MegUt(
@@ -74,6 +82,8 @@ data class Tilstand(
   val fasitKommune: String? = null,
   val forklaring: String? = null,
   val tavle: List<TavleRad>,
+  val harSvart: Int,
+  val medPaSaken: Int,
   val meg: MegUt? = null,
   val evigToppliste: List<ToppEntry>,
 )
