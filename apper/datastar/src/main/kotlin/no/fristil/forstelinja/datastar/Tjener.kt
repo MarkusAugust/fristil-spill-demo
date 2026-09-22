@@ -43,7 +43,7 @@ private suspend fun ApplicationCall.signaler(): Map<String, String> {
     .getOrDefault(emptyMap())
 }
 
-fun Application.datastarModul(spilltjener: Spilltjener) {
+fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) {
   install(SSE)
 
   routing {
@@ -80,20 +80,24 @@ fun Application.datastarModul(spilltjener: Spilltjener) {
       val spillerId = call.request.cookies[KAPSEL]
       val signaler = call.signaler()
 
-      if (spillerId != null) {
+      val vedtak = signaler["vedtak"]?.ifBlank { null }
+      val hjemmel = signaler["hjemmel"]?.ifBlank { null }
+      val kommune = signaler["kommune"]?.ifBlank { null }
+
+      // Appen validerer skjemaet, spilltjeneren teller poeng. Et ufullstendig
+      // vedtak sendes aldri videre; det er feiloppsummeringen som svarer.
+      val feil = valider(vedtak, hjemmel, kommune, kommuner)
+
+      if (feil.isEmpty() && spillerId != null) {
         spilltjener.svar(
           spillerId,
-          Svar(
-            vedtak = signaler["vedtak"]?.ifBlank { null },
-            hjemmel = signaler["hjemmel"]?.ifBlank { null },
-            felle = signaler["felle"]?.ifBlank { null },
-          ),
+          Svar(vedtak = vedtak, hjemmel = hjemmel, felle = signaler["felle"]?.ifBlank { null }),
         )
       }
 
       val tilstand = spilltjener.tilstand(spillerId)
       call.respondText(
-        patch(topp(tilstand), brett(tilstand, tilstand.meg?.navn)),
+        patch(topp(tilstand), brett(tilstand, tilstand.meg?.navn, kommuner, feil)),
         ContentType.parse("text/event-stream"),
       )
     }
@@ -110,7 +114,7 @@ fun Application.datastarModul(spilltjener: Spilltjener) {
 
       suspend fun send() {
         val tilstand = spilltjener.tilstand(spillerId)
-        val html = patch(topp(tilstand), brett(tilstand, tilstand.meg?.navn))
+        val html = patch(topp(tilstand), brett(tilstand, tilstand.meg?.navn, kommuner))
         // `patch` lager hele SSE-rammen. Her trengs bare innmaten.
         val data = html.removePrefix("event: datastar-patch-elements\n").trimEnd()
         send(

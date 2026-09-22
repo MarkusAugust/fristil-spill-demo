@@ -80,3 +80,21 @@ fun lesSaker(sti: String = System.getenv("SAKER_FIL") ?: "../../felles/saker.jso
   require(fil.exists()) { "Fant ingen saker på «$sti». Sett SAKER_FIL." }
   return json.decodeFromString(fil.readText())
 }
+
+/**
+ * Kommunene appene lar spilleren velge mellom.
+ *
+ * Spilltjeneren bruker dem ikke selv; det er appene som validerer skjemaet.
+ * Men fila hører til de delte dataene, og invarianten om at nøyaktig én sak
+ * har en kommune som ikke finnes, hører hjemme i en test her.
+ */
+@Serializable
+data class Kommunesamling(@SerialName("_om") val om: String = "", val kommuner: List<String>)
+
+fun lesKommuner(
+  sti: String = System.getenv("KOMMUNER_FIL") ?: "../../felles/kommuner.json"
+): List<String> {
+  val fil = File(sti)
+  require(fil.exists()) { "Fant ingen kommuner på «$sti». Sett KOMMUNER_FIL." }
+  return json.decodeFromString<Kommunesamling>(fil.readText()).kommuner
+}

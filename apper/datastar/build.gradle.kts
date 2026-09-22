@@ -26,4 +26,12 @@ kotlin { jvmToolchain(21) }
 
 application { mainClass.set("no.fristil.forstelinja.datastar.MainKt") }
 
-tasks.test { useJUnitPlatform() }
+tasks.test {
+  useJUnitPlatform()
+
+  // `felles/` er delte data testene leser, men Gradle kjenner dem ikke som
+  // en inngang. Uten dette kan du endre en sak eller en kommune, kjøre
+  // testene, og få grønt på gammelt grunnlag fordi oppgaven regnes som
+  // oppdatert.
+  inputs.files(fileTree("../../felles")).withPropertyName("fellesdata")
+}

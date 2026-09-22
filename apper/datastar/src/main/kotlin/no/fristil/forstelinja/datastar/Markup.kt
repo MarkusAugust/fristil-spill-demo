@@ -18,7 +18,7 @@ private fun String.trygg(): String =
   replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
 
 /** Hele siden, første gang. */
-fun side(tilstand: Tilstand, spillerNavn: String?): String {
+fun side(tilstand: Tilstand, spillerNavn: String?, kommuner: List<String> = emptyList()): String {
   val stilark = STILARK.joinToString("\n    ") { """<link rel="stylesheet" href="$it">""" }
   val imports = KOMPONENTER.joinToString("\n      ") { (fil, fn) -> """import { $fn } from "$fil"; $fn();""" }
 
@@ -46,6 +46,11 @@ fun side(tilstand: Tilstand, spillerNavn: String?): String {
          ingenting å sende for dem. `data-ignore-morph` hindrer at en patch
          river bort en melding midt i visningen. -->
     <fs-toast class="fs-toast" label="Meldinger" data-ignore-morph></fs-toast>
+    <!-- Vakta. Komponenten teller sekunder uten aktivitet, så en spiller
+         som går fra maskinen får beskjed framfor å bli stående på tavla.
+         Den eier sin egen dialog, derfor `data-ignore-morph`. -->
+    <fs-session-timeout class="fs-session-timeout"
+      warn-at="60" expires-at="90" data-ignore-morph></fs-session-timeout>
     <fs-connection-status class="fs-connection-status"
       offline-text="Sambandet til etaten er nede"
       online-text="Sambandet er tilbake"
@@ -53,7 +58,7 @@ fun side(tilstand: Tilstand, spillerNavn: String?): String {
 
     ${topp(tilstand)}
     <main class="brett">
-      ${brett(tilstand, spillerNavn)}
+      ${brett(tilstand, spillerNavn, kommuner)}
     </main>
 
     <script>
@@ -96,11 +101,16 @@ fun topp(tilstand: Tilstand): String {
 }
 
 /** Området serveren bytter ut ved hver patch. */
-fun brett(tilstand: Tilstand, spillerNavn: String?): String =
+fun brett(
+  tilstand: Tilstand,
+  spillerNavn: String?,
+  kommuner: List<String> = emptyList(),
+  feil: List<Feil> = emptyList(),
+): String =
   """
   <div id="brett" class="brett__innhold">
     ${if (spillerNavn == null) blimed() else when (tilstand.fase) {
-      "runde" -> runde(tilstand)
+      "runde" -> runde(tilstand, kommuner, feil)
       "oppgjor" -> oppgjor(tilstand)
       else -> slutt(tilstand)
     }}
@@ -128,12 +138,9 @@ fun blimed(): String =
          uten JavaScript i det hele tatt. -->
     <form method="post" action="/bli-med">
       <fs-field>
-        <label class="fs-label" for="navn"
-               data-preserve-attr="${Bevar.LEDETEKST}">Navnet ditt</label>
-        <input class="fs-input" id="navn" name="navn" type="text" required
-               data-preserve-attr="${Bevar.KONTROLL}">
-        <p class="fs-help-text" id="navn-hjelp"
-           data-preserve-attr="${Bevar.HJELPETEKST}">Vises på tavla for alle.</p>
+        <label class="fs-label" for="navn">Navnet ditt</label>
+        <input class="fs-input" id="navn" name="navn" type="text" required>
+        <p class="fs-help-text" id="navn-hjelp">Vises på tavla for alle.</p>
       </fs-field>
 
       <button class="fs-button" type="submit">Begynn vakta</button>
@@ -143,16 +150,47 @@ fun blimed(): String =
     .trimIndent()
 
 /** Selve saksbehandlingen. */
-fun runde(tilstand: Tilstand): String {
+fun runde(tilstand: Tilstand, kommuner: List<String>, feil: List<Feil> = emptyList()): String {
   val sak = tilstand.sak
   val hjemler =
     tilstand.hjemler.joinToString("\n") {
       """<option value="${it.kode.trygg()}">${it.kode.trygg()} ${it.tekst.trygg()}</option>"""
     }
   val harSvart = tilstand.meg?.harSvart == true
+  val ugyldigHjemmel =
+    if (feil.any { it.felt == "hjemmel" }) "aria-invalid=\"true\" data-state=\"invalid\"" else ""
+  val ugyldigKommune =
+    if (feil.any { it.felt == "kommune" }) "aria-invalid=\"true\" data-state=\"invalid\"" else ""
+
+  val hjemmelforklaringer =
+    tilstand.hjemler.joinToString("\n") {
+      "<li><strong>${it.kode.trygg()}</strong> ${it.tekst.trygg()}</li>"
+    }
+
+  val kommunevalg =
+    kommuner.withIndex().joinToString("\n") { (nr, navn) ->
+      "<li class=\"fs-suggestion__option\" id=\"kommune-option-$nr\" role=\"option\" " +
+        "aria-selected=\"false\" data-preserve-attr=\"${Bevar.FORSLAG_VALG}\">${navn.trygg()}</li>"
+    }
+
+  val feiloppsummering =
+    if (feil.isEmpty()) {
+      """<fs-error-summary class="fs-error-summary" role="alert" tabindex="-1" id="feilboks" hidden></fs-error-summary>"""
+    } else {
+      """
+      <!-- Serveren skriver hele boksen, også overskriften og lista.
+           Komponenten flytter bare fokus hit og tar klikkene på lenkene. -->
+      <fs-error-summary class="fs-error-summary" role="alert" tabindex="-1" id="feilboks">
+        <h2 class="fs-error-summary__title">Du må rette ${feil.size} feil</h2>
+        <ul class="fs-list">
+          ${feil.joinToString("\n") { """<li><a href="#${it.felt}">${it.melding.trygg()}</a></li>""" }}
+        </ul>
+      </fs-error-summary>"""
+    }
 
   return """
     <section class="fs-card kort">
+      $feiloppsummering
       <span class="fs-tag">${sak.id.trygg()}</span>
       <h2 class="fs-heading" data-size="s">${sak.tittel.trygg()}</h2>
       <p class="fs-paragraph">${sak.sammendrag.trygg()}</p>
@@ -196,27 +234,62 @@ fun runde(tilstand: Tilstand): String {
             </fieldset>
 
             <fs-field>
-              <label class="fs-label" for="hjemmel"
-                     data-preserve-attr="${Bevar.LEDETEKST}">Hjemmel</label>
+              <label class="fs-label" for="hjemmel">Hjemmel</label>
               <select class="fs-select" id="hjemmel" name="hjemmel" data-bind:hjemmel
-                      data-preserve-attr="${Bevar.KONTROLL}">
+                      $ugyldigHjemmel>
                 <option value="">Velg hjemmel</option>
                 $hjemler
               </select>
             </fs-field>
 
+            <!-- Hjelpen til hjemlene. Serveren skriver koblingen mellom
+                 knappen og panelet; komponenten plasserer det og lukker det.
+                 Det brukeren gjør, står i data-preserve-attr, for serveren
+                 vet ikke om vinduet er åpent. -->
+            <fs-popover placement="bottom-start" data-preserve-attr="${Bevar.SPRETTOPP_VERT}">
+              <button type="button" class="fs-button" data-variant="ghost"
+                      aria-expanded="false" aria-controls="hjemmelhjelp"
+                      data-preserve-attr="${Bevar.SPRETTOPP_KNAPP}">Hva betyr hjemlene?</button>
+              <div class="fs-popover" id="hjemmelhjelp" popover="manual"
+                   data-preserve-attr="${Bevar.SPRETTOPP_PANEL}">
+                <ul class="fs-list">
+                  $hjemmelforklaringer
+                </ul>
+              </div>
+            </fs-popover>
+
+            <!-- Kommunefeltet. Serveren sender hele lista, komponenten
+                 filtrerer mens du skriver og tar piltastene. Finner du ikke
+                 kommunen, er det fordi den ikke finnes lenger. -->
+            <fs-suggestion>
+              <label class="fs-label" for="kommune">Bekreft kommunen søkeren hører til</label>
+              <div class="fs-suggestion__field">
+                <input class="fs-input" id="kommune" name="kommune" type="text" role="combobox"
+                       autocomplete="off" aria-autocomplete="list" aria-expanded="false"
+                       aria-controls="kommune-list" aria-describedby="kommune-hjelp kommune-status"
+                       data-bind:kommune
+                       $ugyldigKommune
+                       data-preserve-attr="${Bevar.FORSLAG_KONTROLL}">
+                <ul class="fs-suggestion__list" id="kommune-list" role="listbox" hidden
+                    data-preserve-attr="${Bevar.FORSLAG_LISTE}">
+                  $kommunevalg
+                </ul>
+                <p class="fs-suggestion__empty" hidden
+                   data-preserve-attr="${Bevar.FORSLAG_TOM}">Ingen treff. Finnes kommunen fortsatt?</p>
+                <span class="fs-sr-only" id="kommune-status" aria-live="polite" data-ignore-morph></span>
+              </div>
+              <p class="fs-help-text" id="kommune-hjelp">Begynn å skrive, så kommer forslagene.</p>
+            </fs-suggestion>
+
             <fs-field>
-              <label class="fs-label" for="felle"
-                     data-preserve-attr="${Bevar.LEDETEKST}">Er noe feil i søknaden?</label>
-              <select class="fs-select" id="felle" name="felle" data-bind:felle
-                      data-preserve-attr="${Bevar.KONTROLL}">
+              <label class="fs-label" for="felle">Er noe feil i søknaden?</label>
+              <select class="fs-select" id="felle" name="felle" data-bind:felle>
                 <option value="">Nei, saken er i orden</option>
                 <option value="fodselsdato">Fødselsdatoen</option>
                 <option value="kommune">Kommunen</option>
                 <option value="epost">E-postadressen</option>
               </select>
-              <p class="fs-help-text" id="felle-hjelp"
-                 data-preserve-attr="${Bevar.HJELPETEKST}">Å se at alt er i orden teller like mye.</p>
+              <p class="fs-help-text" id="felle-hjelp">Å se at alt er i orden teller like mye.</p>
             </fs-field>
 
             <button class="fs-button" type="submit" ${if (harSvart) "disabled" else ""}>

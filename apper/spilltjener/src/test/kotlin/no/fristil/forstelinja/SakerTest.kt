@@ -70,6 +70,20 @@ class SakerTest {
   }
 
   @Test
+  fun `nøyaktig én sak har en kommune som ikke finnes`() {
+    // Det er fella i 2024/1902: Mosvik ble slått sammen med Inderøy i 2012.
+    // Er det flere, har noen ved et uhell laget en felle til, og da blir
+    // spillet urettferdig.
+    val samling = lesSaker("../../felles/saker.json")
+    val kommuner = lesKommuner("../../felles/kommuner.json")
+
+    val utenfor = samling.saker.filter { it.soker.kommune !in kommuner }
+
+    assertEquals(1, utenfor.size, "fant ${utenfor.size} saker med ukjent kommune: ${utenfor.map { it.id }}")
+    assertEquals("kommune", utenfor.single().fasit.felle, "den ene må være kommunefella")
+  }
+
+  @Test
   fun `hver ekte sak har en forklaring som sier hvorfor`() {
     val samling = lesSaker("../../felles/saker.json")
 

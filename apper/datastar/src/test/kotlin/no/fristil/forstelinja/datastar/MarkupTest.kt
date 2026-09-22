@@ -39,25 +39,61 @@ class MarkupTest {
     )
 
   @Test
-  fun `feltene bærer bevaringslistene komponenten trenger`() {
-    val html = brett(tilstand, "Kari")
+  fun `feltene fredes ikke, for serveren skriver dem selv`() {
+    val html = brett(tilstand, "Kari", listOf("Bergen"))
 
-    assertTrue(html.contains("""data-preserve-attr="${Bevar.LEDETEKST}""""), "ledeteksten")
-    assertTrue(html.contains("""data-preserve-attr="${Bevar.KONTROLL}""""), "kontrollen")
-    assertTrue(html.contains("""data-preserve-attr="${Bevar.HJELPETEKST}""""), "hjelpeteksten")
+    // `data-preserve-attr` betyr «ikke rør», og det gjelder begge veier.
+    // Fredet vi `aria-invalid` på hjemmelen, kunne serveren aldri melde
+    // feltet som ugyldig: morfingen ville nektet å sette den.
+    for (liste in listOf(Bevar.LEDETEKST, Bevar.KONTROLL, Bevar.HJELPETEKST)) {
+      assertFalse(
+        html.contains("""data-preserve-attr="$liste""""),
+        "feltene skal ikke fredes: $liste",
+      )
+    }
+  }
+
+  @Test
+  fun `serveren kan melde et felt som ugyldig`() {
+    val html = brett(tilstand, "Kari", listOf("Bergen"), listOf(Feil("hjemmel", "Mangler")))
+
+    assertTrue(html.contains("""aria-invalid="true""""), "hjemmelen skal være ugyldig")
+    assertTrue(html.contains("Du må rette 1 feil"), "feiloppsummeringen")
+  }
+
+  @Test
+  fun `bare det brukeren eier fredes`() {
+    val html = brett(tilstand, "Kari", listOf("Bergen"))
+
+    // Fanevalget, sprettoppvinduet og forslagslista endres i nettleseren,
+    // og serveren får aldri vite om det.
+    for (liste in listOf(Bevar.FANE, Bevar.SPRETTOPP_VERT, Bevar.FORSLAG_KONTROLL)) {
+      assertTrue(
+        html.contains("""data-preserve-attr="$liste""""),
+        "dette må fredes: $liste",
+      )
+    }
   }
 
   @Test
   fun `fanene bærer sine, siden komponenten flytter valget`() {
-    val html = brett(tilstand, "Kari")
+    val html = brett(tilstand, "Kari", listOf("Bergen"))
 
+    // «aria-selected tabindex» er unik for fanene.
     assertEquals(2, Regex("""data-preserve-attr="${Regex.escape(Bevar.FANE)}"""").findAll(html).count())
-    assertEquals(2, Regex("""data-preserve-attr="${Regex.escape(Bevar.FANEPANEL)}"""").findAll(html).count())
+
+    // «hidden» er det ikke: forslagslista og «ingen treff» freder den samme
+    // strengen. Her teller vi derfor panelene, og at det finnes minst like
+    // mange fredninger som paneler.
+    assertEquals(2, Regex("""role="tabpanel"""").findAll(html).count())
+    assertTrue(
+      Regex("""data-preserve-attr="${Regex.escape(Bevar.FANEPANEL)}"""").findAll(html).count() >= 2,
+    )
   }
 
   @Test
   fun `ledetekst og felt er koblet, slik fs-field ville gjort det`() {
-    val html = brett(tilstand, "Kari")
+    val html = brett(tilstand, "Kari", listOf("Bergen"))
 
     for (id in listOf("hjemmel", "felle")) {
       assertTrue(html.contains("""<label class="fs-label" for="$id""""), "ledetekst for $id")
@@ -88,7 +124,7 @@ class MarkupTest {
 
   @Test
   fun `fasiten står ikke i markupen mens runden pågår`() {
-    val html = brett(tilstand, "Kari")
+    val html = brett(tilstand, "Kari", listOf("Bergen"))
 
     assertFalse(html.contains("Fasit"), "fasiten skal ikke være å finne i kildekoden")
   }

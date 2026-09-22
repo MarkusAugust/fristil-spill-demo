@@ -140,10 +140,41 @@ Fire ting kostet tid, og alle fire er notert i koden:
 
 Etterprøvd med to nettlesere mot den publiserte pakken: den ene blir med, den andre ser henne dukke opp uten å gjøre noe, og et halvutfylt skjema beholder både fanevalget, feltverdiene og koblingen `<fs-field>` laget, gjennom en patch fra serveren.
 
+## Alle åtte komponentene er i bruk
+
+| Komponent | Rolle i spillet |
+| --- | --- |
+| `<fs-field>` | feltene i vedtaket |
+| `<fs-tabs>` | Søkeren / Vedtak |
+| `<fs-popover>` | «Hva betyr hjemlene?» |
+| `<fs-error-summary>` | et ufullstendig vedtak |
+| `<fs-suggestion>` | kommunesøket, der en av fellene ligger |
+| `<fs-toast>` | meldinger |
+| `<fs-connection-status>` | når sambandet ryker |
+| `<fs-session-timeout>` | vakta di, hvis du går fra maskinen |
+
+Kommunesøket er verdt en forklaring. `felles/kommuner.json` inneholder ikke
+Mosvik, som ble slått sammen med Inderøy i 2012. Søkeren i sak 2024/1902
+oppgir Mosvik, og finner du den ikke i lista, er det svaret. En test krever
+at nøyaktig én sak har en kommune som ikke finnes, så ingen lager en felle
+til ved et uhell.
+
+### To ting som kostet tid her
+
+**`data-preserve-attr` betyr «ikke rør», og det gjelder begge veier.**
+Feltene fredet `aria-invalid`, og da kunne serveren aldri melde et felt som
+ugyldig: morfingen nektet å sette verdien den selv hadde sendt. Feltene
+fredes ikke lenger, for serveren skriver dem komplett. Bare det brukeren
+eier fredes: fanevalget, sprettoppvinduet og forslagslista.
+
+**Gradle kjenner ikke `felles/` som en inngang.** Endret du en sak og kjørte
+testene, kunne du få grønt på gammelt grunnlag fordi oppgaven regnes som
+oppdatert. Begge modulene sier nå fra om at fila er en inngang.
+
 ## Status
 
 - [x] Spilltjeneren: regler, poeng, runder, SSE, SQLite
-- [x] Datastar-appen (Kotlin)
+- [x] Datastar-appen (Kotlin), med alle åtte komponentene
 - [ ] TanStack Start-appen
 - [ ] Astro-appen
 - [ ] Skallet med bryteren

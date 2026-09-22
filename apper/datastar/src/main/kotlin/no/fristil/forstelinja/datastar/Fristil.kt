@@ -28,6 +28,11 @@ object Bevar {
 
   const val FANE = "aria-selected tabindex"
   const val FANEPANEL = "hidden"
+
+  const val FORSLAG_KONTROLL = "aria-expanded aria-activedescendant"
+  const val FORSLAG_LISTE = "hidden"
+  const val FORSLAG_VALG = "aria-selected hidden"
+  const val FORSLAG_TOM = "hidden"
 }
 
 /** Versjonen av designsystemet siden henter fra CDN. */
@@ -48,6 +53,8 @@ val STILARK =
       "components/ramme/tabs/tabs.css",
       "components/ramme/popover/popover.css",
       "components/ramme/error-summary/error-summary.css",
+      "components/ramme/suggestion/suggestion.css",
+      "components/frittstaende/session-timeout/session-timeout.css",
       "components/frittstaende/toast/toast.css",
       "components/frittstaende/connection-status/connection-status.css",
       "components/css/button/button.css",
@@ -73,6 +80,10 @@ val KOMPONENTER =
       "components/frittstaende/toast/fs-toast.js" to "defineFsToast",
       "components/frittstaende/connection-status/fs-connection-status.js" to
         "defineFsConnectionStatus",
+      "components/ramme/error-summary/fs-error-summary.js" to "defineFsErrorSummary",
+      "components/ramme/suggestion/fs-suggestion.js" to "defineFsSuggestion",
+      "components/frittstaende/session-timeout/fs-session-timeout.js" to
+        "defineFsSessionTimeout",
     )
     .map { (fil, funksjon) -> "$CDN/dist/$fil" to funksjon }
 
