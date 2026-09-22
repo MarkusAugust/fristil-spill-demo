@@ -43,9 +43,9 @@ Spilltjeneren er med vilje ikke den samme prosessen som Datastar-appen. Ellers v
 
 ## Omgangen
 
-Fire runder à 30 sekunder, med ti sekunders oppgjør mellom. Rundt tre minutter, og så begynner en ny.
+Fire runder à to minutter, med femten sekunders oppgjør mellom. Rundt ni minutter, og så begynner en ny. Saken skal leses, ikke gjettes: to faner, en tabell, tre felt og en hjelpetekst om hjemlene.
 
-**Ingen lobby.** Rundene går uavbrutt. Den som åpner adressen er med i neste runde innen et halvt minutt. En lobby ville betydd at den første som kom satt og ventet på noen som aldri kom.
+**Ingen lobby.** Rundene går uavbrutt. Den som åpner adressen er med fra neste runde, og venter aldri lenger enn én runde. En lobby ville betydd at den første som kom satt og ventet på noen som aldri kom.
 
 Hver runde er én sak, og full pott er 20 poeng:
 
@@ -69,7 +69,7 @@ Når runden er over bytter saksområdet innhold der det står: fasit, din plasse
 | Spillere, runde, svar | minutter | minne |
 | Evig toppliste | for alltid | SQLite |
 
-En omgang varer tre minutter, altså kortere enn en utrulling. Alt annet enn topplista er kortere enn levetiden til prosessen. En database å drifte ville vært én ting til som kan feile under en demonstrasjon, og den lærer ingen noe om Fristil.
+En omgang varer noen minutter, altså kortere enn en utrulling. Alt annet enn topplista er kortere enn levetiden til prosessen. En database å drifte ville vært én ting til som kan feile under en demonstrasjon, og den lærer ingen noe om Fristil.
 
 Starter prosessen på nytt, er omgangen borte og en ny begynner. Spillerne får beskjed gjennom `<fs-connection-status>` framfor en ødelagt skjerm.
 
@@ -98,7 +98,7 @@ tjenestene, og stopper dem med Ctrl+C.
 spillere, og du ser tavla oppdatere seg begge steder uten at du gjør noe.
 Det er hele poenget med demoen.
 
-Vil du se deg om i ro, gir `./kjor.sh rolig` runder på tre minutter.
+Skal du bare se at det virker, gir `./kjor.sh rask` runder på 30 sekunder.
 
 Krever Java 21 eller nyere. Gradle henter seg selv.
 

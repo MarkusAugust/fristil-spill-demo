@@ -184,4 +184,38 @@ class MarkupTest {
 
     assertEquals(emptyList(), uten, "disse klassene har ingen stilark")
   }
+
+  @Test
+  fun `ingen id står to ganger i siden`() {
+    // Nedtellingen sto med samme id både i toppen og i panelet når omgangen
+    // var over. `getElementById` finner bare den første, så panelet ble
+    // stående med «… sekunder» mens toppen talte ned.
+    for (fase in listOf("runde", "oppgjor", "slutt")) {
+      val html = side(tilstand.copy(fase = fase), "Kari", listOf("Bergen"))
+      val ider = Regex("""id="([^"]+)""").findAll(html).map { it.groupValues[1] }.toList()
+      val doble = ider.groupBy { it }.filterValues { it.size > 1 }.keys
+
+      assertEquals(emptySet(), doble, "disse id-ene står flere ganger i fasen $fase")
+    }
+  }
+
+  @Test
+  fun `en ny sak tømmer skjemaet, et nytt oppgjør gjør det ikke`() {
+    // Signalene bor i nettleseren og overlever en morfing. Uten en
+    // nullstilling sto forrige rundes vedtak ferdig avkrysset i den nye
+    // saken, og en spiller kunne sende inn uten å ta stilling til noe.
+    val neste =
+      tilstand.copy(rundeNr = 2, sak = tilstand.sak.copy(id = "2024/0904", tittel = "Noe annet"))
+
+    assertTrue(erNySak(null, tilstand), "den første saken er alltid ny")
+    assertTrue(erNySak(tilstand, neste), "runde to er en ny sak")
+    assertTrue(
+      erNySak(tilstand, tilstand.copy(sak = tilstand.sak.copy(id = "2024/0904"))),
+      "en ny omgang begynner på runde én igjen, men med en annen sak",
+    )
+    assertFalse(
+      erNySak(tilstand, tilstand.copy(fase = "oppgjor")),
+      "oppgjøret gjelder den samme saken, og svaret skal bli stående",
+    )
+  }
 }

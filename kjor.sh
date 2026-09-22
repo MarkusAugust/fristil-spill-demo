@@ -2,18 +2,28 @@
 #
 # Starter Førstelinja lokalt: spilltjeneren og Datastar-appen.
 #
-#   ./kjor.sh              vanlige runder på 30 sekunder
-#   ./kjor.sh rolig        lange runder, til å se seg om i
+#   ./kjor.sh              vanlige runder på tre minutter
+#   ./kjor.sh rask         korte runder, til å prøve spillet fort
 #
 # Krever Java 21 eller nyere. Gradle henter seg selv.
 
 set -euo pipefail
 cd "$(dirname "$0")"
 
-if [ "${1:-}" = "rolig" ]; then
-  export RUNDE_MS=180000 OPPGJOR_MS=30000 SLUTT_MS=60000
-  echo "Rolig modus: tre minutter per runde."
+if [ "${1:-}" = "rask" ]; then
+  export RUNDE_MS=30000 OPPGJOR_MS=8000 SLUTT_MS=15000
+  echo "Rask modus: runder på 30 sekunder."
 fi
+
+# Ligger det igjen en tjener fra sist, feiler starten med «Address already in
+# use» langt nede i en stakksporing. Si det heller her, og si hvordan.
+for port in 8080 8081; do
+  if lsof -ti "tcp:$port" >/dev/null 2>&1; then
+    echo "Port $port er opptatt. Noe kjører fra før."
+    echo "Stopp det med:  lsof -ti tcp:8080,tcp:8081 | xargs kill"
+    exit 1
+  fi
+done
 
 java -version 2>&1 | head -1
 
@@ -21,19 +31,29 @@ echo "Bygger …"
 (cd apper/spilltjener && ./gradlew --quiet installDist)
 (cd apper/datastar && ./gradlew --quiet installDist)
 
-rydd() {
-  echo
-  echo "Stopper."
-  kill "${PIDER[@]}" 2>/dev/null || true
-}
-trap rydd EXIT INT TERM
 PIDER=()
 
-(cd apper/spilltjener && PORT=8080 HOST=127.0.0.1 ./build/install/spilltjener/bin/spilltjener) &
+rydd() {
+  trap - EXIT INT TERM
+  echo
+  echo "Stopper."
+  for pid in "${PIDER[@]:-}"; do
+    [ -n "$pid" ] && kill "$pid" 2>/dev/null || true
+  done
+  wait 2>/dev/null || true
+}
+trap rydd EXIT INT TERM
+
+# `exec` er ikke pynt. Uten den er $! skallet rundt, ikke Java, og Ctrl+C
+# felte skallet mens tjeneren ble stående og holdt porten. Med `exec` blir
+# oppstartsskriptet til Gradle selve prosessen, og det kjører Java med `exec`
+# igjen, så $! er den prosessen som faktisk lytter.
+(cd apper/spilltjener && exec env PORT=8080 HOST=127.0.0.1 \
+  ./build/install/spilltjener/bin/spilltjener) &
 PIDER+=($!)
 sleep 6
 
-(cd apper/datastar && PORT=8081 HOST=127.0.0.1 SPILLTJENER=http://127.0.0.1:8080 \
+(cd apper/datastar && exec env PORT=8081 HOST=127.0.0.1 SPILLTJENER=http://127.0.0.1:8080 \
   ./build/install/datastar-app/bin/datastar-app) &
 PIDER+=($!)
 sleep 4

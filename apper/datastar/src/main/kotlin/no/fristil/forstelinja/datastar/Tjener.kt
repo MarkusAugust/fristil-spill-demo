@@ -155,6 +155,24 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
         send(ServerSentEvent(event = "datastar-patch-elements", data = innmat))
       }
 
+      /**
+       * Tømmer skjemaet når en ny sak kommer på bordet.
+       *
+       * Signalene bor i nettleseren og overlever en morfing. Uten dette sto
+       * forrige rundes vedtak ferdig avkrysset i den nye saken, sammen med
+       * hjemmelen og kommunen, og en spiller kunne sende inn uten å ha tatt
+       * stilling til noe. Serveren vet når en ny sak begynner, så det er
+       * serveren som nullstiller.
+       */
+      suspend fun tomSkjemaet() {
+        send(
+          ServerSentEvent(
+            event = "datastar-patch-signals",
+            data = """signals {"vedtak": "", "hjemmel": "", "kommune": "", "felle": ""}""",
+          )
+        )
+      }
+
       suspend fun send() {
         val na = spilltjener.tilstand(spillerId)
         val forr = forrige
@@ -169,6 +187,8 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
             forr.meg?.harSvart != na.meg?.harSvart
 
         if (nyRunde) {
+          if (erNySak(forr, na)) tomSkjemaet()
+
           // Hele brettet. Her er det serveren som eier innholdet uansett.
           sendRamme(patch(topp(na), brett(na, na.meg?.navn, kommuner)))
           return
@@ -186,3 +206,12 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
     }
   }
 }
+
+/**
+ * Om det er en ny sak på bordet, og skjemaet dermed skal stå blankt.
+ *
+ * Dette er ikke det samme som en ny fase. Går spillet fra runde til oppgjør,
+ * står saken fast, og svaret skal bli stående til det er talt opp.
+ */
+fun erNySak(forrige: Tilstand?, na: Tilstand): Boolean =
+  forrige == null || forrige.sak.id != na.sak.id || forrige.rundeNr != na.rundeNr

@@ -69,11 +69,14 @@ fun side(tilstand: Tilstand, spillerNavn: String?, kommuner: List<String> = empt
       // Nedtellingen regnes ut i nettleseren fra et absolutt tidspunkt.
       // Serveren sender aldri «30 sekunder igjen», for da ville et forsinket
       // bud flyttet fristen, og de tre appene kommet i utakt.
+      // Klassen, ikke en id: nedtellingen står både i toppen og i panelet
+      // når omgangen er over. Med samme id på begge fant getElementById
+      // bare den første, og panelet ble stående med « … sekunder».
       setInterval(() => {
-        const el = document.getElementById("nedtelling")
-        if (!el) return
-        const igjen = Math.max(0, Math.round((Number(el.dataset.frist) - Date.now()) / 1000))
-        el.textContent = igjen
+        for (const el of document.querySelectorAll(".nedtelling")) {
+          const igjen = Math.max(0, Math.round((Number(el.dataset.frist) - Date.now()) / 1000))
+          el.textContent = igjen
+        }
       }, 250)
     </script>
     </body>
@@ -96,7 +99,7 @@ fun topp(tilstand: Tilstand): String {
       <h1 class="fs-heading" data-size="l">Førstelinja</h1>
       <p class="fs-paragraph topp__fase">$fase</p>
       <p class="fs-paragraph topp__tid">
-        <span id="nedtelling" data-frist="${tilstand.fristMs}">…</span> sekunder
+        <span class="nedtelling" data-frist="${tilstand.fristMs}">…</span> sekunder
       </p>
       <span class="fs-badge" data-color="info">Kotlin · Datastar</span>
     </header>
@@ -381,7 +384,7 @@ fun slutt(tilstand: Tilstand): String {
   return """
     <section class="fs-card kort">
       <h2 class="fs-heading" data-size="s">Vakta er over</h2>
-      <p class="fs-paragraph">Ny omgang starter om <span id="nedtelling" data-frist="${tilstand.fristMs}">…</span> sekunder.</p>
+      <p class="fs-paragraph">Ny omgang starter om <span class="nedtelling" data-frist="${tilstand.fristMs}">…</span> sekunder.</p>
 
       <h3 class="fs-heading" data-size="xs">Evig toppliste</h3>
       <table class="fs-table">

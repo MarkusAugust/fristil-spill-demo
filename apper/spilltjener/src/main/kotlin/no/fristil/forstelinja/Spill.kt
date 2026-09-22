@@ -10,30 +10,31 @@ import kotlinx.serialization.Serializable
 /**
  * Reglene i Førstelinja, og all tilstanden spillet har.
  *
- * Alt her lever i minnet, og det er et bevisst valg: en omgang varer tre
+ * Alt her lever i minnet, og det er et bevisst valg: en omgang varer noen
  * minutter, altså kortere enn en utrulling. Det eneste som skal overleve en
  * omstart er den evige topplista, og den har sin egen fil.
  *
- * Omgangene går uavbrutt, uten lobby. Den som åpner adressen er med i neste
- * runde innen et halvt minutt. En lobby ville betydd at den første som kom
- * satt og ventet på noen som aldri kom.
+ * Omgangene går uavbrutt, uten lobby. Den som åpner adressen er med fra
+ * neste runde, og venter aldri lenger enn en runde. En lobby ville betydd at
+ * den første som kom satt og ventet på noen som aldri kom.
  *
  * Tilstanden ligger bak én lås. Ved demo-skala trengs ikke mer, og en lås er
  * lettere å resonnere om enn flere.
  */
 
 const val RUNDER_PER_SPILL = 4
-const val RUNDE_MS = 30_000L
-const val OPPGJOR_MS = 10_000L
-const val SLUTT_MS = 20_000L
+const val RUNDE_MS = 120_000L
+const val OPPGJOR_MS = 15_000L
+const val SLUTT_MS = 30_000L
 
 /**
  * Hvor lenge hver fase varer.
  *
- * Kan settes med miljøvariabler. Standarden gir en omgang på rundt tre
- * minutter, som er så lenge folk gidder å stå foran en skjerm. Skal noen
- * snakke over spillet i en presentasjon, er lengre runder bedre, og da
- * slipper man å bygge på nytt.
+ * Kan settes med miljøvariabler. To minutter per runde er valgt fordi saken
+ * skal leses: to faner, en tabell, tre felt og en hjelpetekst om hjemlene.
+ * Med et halvt minutt rakk man å gjette, ikke å saksbehandle, og det er
+ * saksbehandlingen som er poenget. Fire runder gir da en omgang på rundt ni
+ * minutter. Skal spillet vises fram i full fart, settes `RUNDE_MS` ned.
  */
 data class Tider(
   val runde: Long = RUNDE_MS,
