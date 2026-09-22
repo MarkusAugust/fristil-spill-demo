@@ -46,6 +46,8 @@ data class MegUt(
   val plass: Int,
   val forrigePlass: Int,
   val harSvart: Boolean,
+  /** Om du var med da saken kom på bordet. */
+  val medPaSaken: Boolean = true,
   val svar: Svar? = null,
   val vurdering: Vurdering? = null,
 )

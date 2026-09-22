@@ -43,7 +43,7 @@ Spilltjeneren er med vilje ikke den samme prosessen som Datastar-appen. Ellers v
 
 ## Omgangen
 
-Fire runder à to minutter, med femten sekunders oppgjør mellom. Rundt ni minutter, og så begynner en ny. Saken skal leses, ikke gjettes: to faner, en tabell, tre felt og en hjelpetekst om hjemlene.
+Fire runder à to minutter, med 25 sekunders oppgjør mellom. Rundt ti minutter, og så begynner en ny. Saken skal leses, ikke gjettes: to faner, en tabell, tre felt og en hjelpetekst om hjemlene.
 
 **Ingen lobby.** Rundene går uavbrutt. Den som åpner adressen er med fra neste runde, og venter aldri lenger enn én runde. En lobby ville betydd at den første som kom satt og ventet på noen som aldri kom.
 
@@ -124,9 +124,9 @@ cd apper/spilltjener && ./gradlew test && ./gradlew installDist
 | `HOST` | `::` | Railways private nett er IPv6 |
 | `SAKER_FIL` | `../../felles/saker.json` | |
 | `TOPPLISTE_FIL` | `toppliste.db` | på Railway: et volum |
-| `RUNDE_MS` | `30000` | lengre runder når noen skal snakke over spillet |
-| `OPPGJOR_MS` | `10000` | |
-| `SLUTT_MS` | `20000` | |
+| `RUNDE_MS` | `120000` | lengre runder når noen skal snakke over spillet |
+| `OPPGJOR_MS` | `25000` | |
+| `SLUTT_MS` | `40000` | |
 
 ## Railway
 

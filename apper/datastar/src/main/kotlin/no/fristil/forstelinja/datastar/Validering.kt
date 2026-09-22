@@ -10,7 +10,13 @@ package no.fristil.forstelinja.datastar
  */
 data class Feil(val felt: String, val melding: String)
 
-fun valider(vedtak: String?, hjemmel: String?, kommune: String?, kommuner: List<String>): List<Feil> =
+fun valider(
+  vedtak: String?,
+  hjemmel: String?,
+  kommune: String?,
+  felle: String?,
+  kommuner: List<String>,
+): List<Feil> =
   buildList {
     if (vedtak.isNullOrBlank()) {
       add(Feil("v-innvilget", "Du må velge om saken innvilges eller avslås"))
@@ -20,5 +26,10 @@ fun valider(vedtak: String?, hjemmel: String?, kommune: String?, kommuner: List<
     }
     if (!kommune.isNullOrBlank() && kommune !in kommuner) {
       add(Feil("kommune", "«$kommune» er ikke en kommune. Slå den opp i lista."))
+    }
+    // «Nei, saken er i orden» er et svar, og tomt er ikke. Uten dette kunne
+    // en spiller låse svar på et spørsmål hun aldri tok stilling til.
+    if (felle.isNullOrBlank()) {
+      add(Feil("felle", "Du må si om noe er feil i søknaden"))
     }
   }

@@ -112,10 +112,14 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
       val vedtak = signaler["vedtak"]?.ifBlank { null }
       val hjemmel = signaler["hjemmel"]?.ifBlank { null }
       val kommune = signaler["kommune"]?.ifBlank { null }
+      // «nei» er et svar: saken er i orden. Spilltjeneren kjenner bare
+      // feltnavn og `null`, så valget oversettes her.
+      val felleValg = signaler["felle"]?.ifBlank { null }
+      val felle = felleValg?.takeIf { it != "nei" }
 
       // Appen validerer skjemaet, spilltjeneren teller poeng. Et ufullstendig
       // vedtak sendes aldri videre; det er feiloppsummeringen som svarer.
-      val feil = valider(vedtak, hjemmel, kommune, kommuner)
+      val feil = valider(vedtak, hjemmel, kommune, felleValg, kommuner)
 
       if (feil.isEmpty() && spillerId != null) {
         spilltjener.svar(
@@ -124,7 +128,7 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
             vedtak = vedtak,
             hjemmel = hjemmel,
             kommune = kommune,
-            felle = signaler["felle"]?.ifBlank { null },
+            felle = felle,
           ),
         )
       }

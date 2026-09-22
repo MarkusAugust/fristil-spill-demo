@@ -58,6 +58,14 @@ val BRETT_CSS =
     padding-block: var(--size-3);
   }
 
+  .topplinje__hoved {
+    display: flex;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--size-3) var(--size-5);
+  }
+
   .topplinje__merke {
     display: flex;
     flex: 1 1 auto;
@@ -78,6 +86,9 @@ val BRETT_CSS =
   }
 
   .topplinje__navn {
+    /* `<h1>` har egne marger fra nettleseren, og de skilte navnet fra
+       etatsnavnet under. */
+    margin: 0;
     font-size: var(--font-size-xl);
     font-weight: 600;
     letter-spacing: 0.01em;
@@ -109,12 +120,21 @@ val BRETT_CSS =
     color: color-mix(in oklab, var(--palette-graphite-0) 75%, transparent);
   }
 
-  .topplinje .nedtelling {
-    /* Fargen settes av skriptet, som blander de to under etter hvor mye av
-       fristen som er igjen. Den står her også, slik at klokka har en farge
-       før første tikk. */
+  /* Fargene nedtellingen blandes av. De står på alle nedtellinger, ikke bare
+     den i toppen: skriptet skriver `color` på hver av dem, og en variabel som
+     ikke finnes ville gjort erklæringen ugyldig. */
+  .nedtelling {
     --fs-spill-frist-start: var(--palette-graphite-0);
     --fs-spill-frist-slutt: var(--palette-burgundy-30);
+  }
+
+  /* Inne i et kort står tallet på sidens egen flate, ikke på den mørkeblå. */
+  .brett .nedtelling {
+    --fs-spill-frist-start: var(--semantic-page-foreground);
+    --fs-spill-frist-slutt: var(--semantic-danger-main);
+  }
+
+  .topplinje .nedtelling {
     color: var(--fs-spill-frist-start);
     font-size: var(--font-size-mega);
     font-weight: 600;
@@ -128,6 +148,36 @@ val BRETT_CSS =
     font-size: var(--font-size-xs);
     border: 1px solid color-mix(in oklab, var(--palette-graphite-0) 45%, transparent);
     border-radius: var(--size-1);
+  }
+
+  /*
+   * Temavelgeren står på den mørkeblå flata og må se ut deretter.
+   *
+   * Størrelsen settes med komponentvariablene, som er veien Fristil peker
+   * på. Fargene finnes det ingen variabler for, og skal ikke finnes: all
+   * komponent-CSS ligger i `@layer fristil`, så appens egne regler vinner
+   * uansett spesifisitet. Dette er den tilpasningen dokumentasjonen lover.
+   */
+  .temavelger {
+    --fs-toggle-group-height: var(--size-8);
+    --fs-toggle-group-padding: 0 var(--size-3);
+    border-color: color-mix(in oklab, var(--palette-graphite-0) 45%, transparent);
+  }
+
+  .temavelger .fs-toggle-group__option {
+    font-size: var(--font-size-xs);
+    color: color-mix(in oklab, var(--palette-graphite-0) 85%, transparent);
+    background: transparent;
+    border-inline-start-color: color-mix(in oklab, var(--palette-graphite-0) 45%, transparent);
+  }
+
+  .temavelger .fs-toggle-group__option:hover {
+    background: color-mix(in oklab, var(--palette-graphite-0) 12%, transparent);
+  }
+
+  .temavelger .fs-toggle-group__option:has(input:checked) {
+    color: var(--palette-denim-100);
+    background: var(--palette-graphite-0);
   }
 
   /* Brettet
@@ -443,6 +493,13 @@ val BRETT_CSS =
     .resultat__felt { grid-column: 1 / -1; }
     .resultat__ditt { grid-column: 1; }
     .resultat__dom { grid-column: 2; }
+    /* Den sto igjen på `2 / -1`, altså den smale kolonnen ved siden av
+       «Feil», og klemte ditt eget svar sammen. */
+    .resultat__riktig { grid-column: 1 / -1; }
+
+    /* Med 12rem til ledeteksten fikk verdien rundt 95 piksler, og
+       «Ingen, saken var i orden» brakk over fem linjer. */
+    .fasit__rad { grid-template-columns: 1fr; gap: 0; }
   }
   """
     .trimIndent()

@@ -28,6 +28,17 @@ const val OPPGJOR_MS = 25_000L
 const val SLUTT_MS = 40_000L
 
 /**
+ * Hvor mange runder på rad en spiller kan la være å svare før hun ryddes
+ * bort fra tavla.
+ *
+ * En lukket fane sier ikke fra til noen, så uten dette blir hvert besøk
+ * stående som et navn på tavla til prosessen starter på nytt. Runder og ikke
+ * sekunder: en spiller som leser en sak i to minutter er ikke borte, og en
+ * klokke ville ryddet henne bort midt i lesingen.
+ */
+const val RUNDER_UTEN_SVAR_FOR_BORTE = 2
+
+/**
  * Hvor lenge hver fase varer.
  *
  * Kan settes med miljøvariabler. To minutter per runde er valgt fordi saken
@@ -109,6 +120,16 @@ data class Spiller(
   val id: String,
   val navn: String,
   val stack: Stack,
+  /**
+   * Om spilleren var med da saken kom på bordet.
+   *
+   * Den som melder seg på midt i en runde får gjerne svare, og får poeng for
+   * det. Det hun ikke skal få, er «avvik registrert, varslet til
+   * fylkesmannen» for en sak hun aldri så.
+   */
+  var medPaSaken: Boolean = false,
+  /** Runder på rad uten svar. Nok av dem, og hun regnes som gått hjem. */
+  var rundervUtenSvar: Int = 0,
   var poeng: Int = 0,
   var svar: Svar? = null,
   var sistePoeng: Int = 0,
@@ -139,6 +160,14 @@ class Spill(
   val endringer = MutableSharedFlow<Unit>(replay = 1, extraBufferCapacity = 16)
 
   private val spillere = LinkedHashMap<String, Spiller>()
+
+  /**
+   * Den evige topplista, husket mellom lagringene.
+   *
+   * `tilstand()` kalles for hver ramme til hver spiller, og lå før med en
+   * SQL-spørring inne i låsen. Lista endrer seg bare når en omgang er over.
+   */
+  private var evig: List<ToppEntry> = toppliste.topp(10)
   private var rekkefolge: List<Sak> = trekkSaker()
 
   var fase: Fase = Fase.RUNDE
@@ -222,8 +251,11 @@ class Spill(
     val endret =
       laas.withLock {
         if (fase != Fase.RUNDE) return@withLock false
-        if (spillere.isEmpty()) return@withLock false
-        if (spillere.values.any { it.svar == null }) return@withLock false
+        // Den som alt har sittet over en runde har trolig lukket fana, og
+        // skal ikke holde de andre igjen til fristen går ut.
+        val med = spillere.values.filter { it.rundervUtenSvar == 0 }
+        if (med.isEmpty()) return@withLock false
+        if (med.any { it.svar == null }) return@withLock false
         telleOpp()
         fase = Fase.OPPGJOR
         faseSlutt = klokke.na() + tider.oppgjor
@@ -269,21 +301,35 @@ class Spill(
     val plasseringFor = tavleliste().withIndex().associate { (i, s) -> s.id to i + 1 }
 
     for (spiller in spillere.values) {
+      if (spiller.svar == null && spiller.medPaSaken) spiller.rundervUtenSvar += 1
+      else spiller.rundervUtenSvar = 0
+
       val poeng = vurder(spiller.svar, sak).poeng
       spiller.sistePoeng = poeng
       spiller.poeng += poeng
       spiller.forrigePlass = plasseringFor[spiller.id] ?: 0
     }
+
+    ryddBortBorte()
   }
 
   private fun nullstillSvar() {
-    for (spiller in spillere.values) spiller.svar = null
+    for (spiller in spillere.values) {
+      spiller.svar = null
+      spiller.medPaSaken = true
+    }
+  }
+
+  /** Spillere som har sittet over nok runder til at de nok har gått hjem. */
+  private fun ryddBortBorte() {
+    spillere.values.removeAll { it.rundervUtenSvar >= RUNDER_UTEN_SVAR_FOR_BORTE }
   }
 
   private fun lagreToppliste() {
     for (spiller in spillere.values) {
       if (spiller.poeng > 0) toppliste.lagre(spiller.navn, spiller.poeng, spiller.stack)
     }
+    evig = toppliste.topp(10)
   }
 
   /**
@@ -302,6 +348,7 @@ class Spill(
       spiller.sistePoeng = 0
       spiller.forrigePlass = 0
       spiller.svar = null
+      spiller.medPaSaken = true
     }
   }
 
@@ -365,11 +412,12 @@ class Spill(
               plass = tavle.indexOfFirst { rad -> rad.id == it.id } + 1,
               forrigePlass = it.forrigePlass,
               harSvart = it.svar != null,
+              medPaSaken = it.medPaSaken,
               svar = it.svar,
               vurdering = it.svar?.let { svar -> vurder(svar, sak) },
             )
           },
-        evigToppliste = toppliste.topp(10),
+        evigToppliste = evig,
       )
     }
 }

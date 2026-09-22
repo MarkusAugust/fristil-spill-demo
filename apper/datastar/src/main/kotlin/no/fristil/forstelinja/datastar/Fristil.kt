@@ -17,10 +17,34 @@ package no.fristil.forstelinja.datastar
  * hukommelsen.
  */
 object Bevar {
+  /**
+   * Hele lista Fristil oppgir, for markup ingen rår over.
+   *
+   * Den er med for fullstendighetens skyld. Denne appen bruker den ikke:
+   * `aria-invalid` og `data-state` er serverens, og fredet vi dem, kunne
+   * serveren aldri meldt et felt som ugyldig. Morfingen ville nektet å sette
+   * dem.
+   */
   const val LEDETEKST = "class for data-required data-optional aria-disabled"
   const val KONTROLL = "id aria-describedby aria-invalid data-state disabled aria-disabled"
   const val HJELPETEKST = "id"
   const val FEILMELDING = "id hidden"
+
+  /**
+   * Det `<fs-field>` fyller inn når serveren bare sender struktur.
+   *
+   * Sender serveren et felt uten id-er, lager komponenten dem i nettleseren.
+   * Serveren skriver dem aldri, så morfingen river dem bort ved neste patch
+   * av samme område, og feltet mister koblingen mellom ledetekst, kontroll
+   * og hjelpetekst. Det skjer her hver gang et skjema sendes inn med feil,
+   * og hver gang runden skifter.
+   *
+   * Smalere enn listene over med vilje: bare det komponenten legger til, og
+   * ingenting serveren selv skriver.
+   */
+  const val KOBLING_LEDETEKST = "class for"
+  const val KOBLING_KONTROLL = "id aria-describedby"
+  const val KOBLING_HJELPETEKST = "id"
 
   const val SPRETTOPP_VERT = "open"
   const val SPRETTOPP_KNAPP = "aria-expanded"
@@ -36,7 +60,7 @@ object Bevar {
 }
 
 /** Versjonen av designsystemet siden henter fra CDN. */
-const val FRISTIL_VERSJON = "0.6.1"
+const val FRISTIL_VERSJON = "0.7.0"
 
 private const val CDN = "https://cdn.jsdelivr.net/npm/@fristil/designsystem@$FRISTIL_VERSJON"
 
@@ -56,7 +80,6 @@ val STILARK =
       "components/ramme/error-summary/error-summary.css",
       "components/ramme/suggestion/suggestion.css",
       "components/frittstaende/session-timeout/session-timeout.css",
-      "components/frittstaende/toast/toast.css",
       "components/frittstaende/connection-status/connection-status.css",
       "components/css/button/button.css",
       "components/css/select/select.css",
@@ -66,11 +89,11 @@ val STILARK =
       "components/css/card/card.css",
       "components/css/badge/badge.css",
       "components/css/tag/tag.css",
+      "components/css/toggle-group/toggle-group.css",
       "components/css/alert/alert.css",
       "components/css/heading/heading.css",
       "components/css/paragraph/paragraph.css",
       "components/css/list/list.css",
-      "components/css/divider/divider.css",
       "components/css/sr-only/sr-only.css",
     )
     .map { "$CDN/src/$it" }
@@ -82,7 +105,6 @@ val KOMPONENTER =
       "components/ramme/tabs/fs-tabs.js" to "defineFsTabs",
       "components/ramme/popover/fs-popover.js" to "defineFsPopover",
       "components/ramme/dialog/fs-dialog.js" to "defineFsDialog",
-      "components/frittstaende/toast/fs-toast.js" to "defineFsToast",
       "components/frittstaende/connection-status/fs-connection-status.js" to
         "defineFsConnectionStatus",
       "components/ramme/error-summary/fs-error-summary.js" to "defineFsErrorSummary",

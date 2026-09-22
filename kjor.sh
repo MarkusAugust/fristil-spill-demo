@@ -2,7 +2,7 @@
 #
 # Starter Førstelinja lokalt: spilltjeneren og Datastar-appen.
 #
-#   ./kjor.sh              vanlige runder på tre minutter
+#   ./kjor.sh              vanlige runder på to minutter
 #   ./kjor.sh rask         korte runder, til å prøve spillet fort
 #
 # Krever Java 21 eller nyere. Gradle henter seg selv.

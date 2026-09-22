@@ -42,25 +42,29 @@ fun side(tilstand: Tilstand, spillerNavn: String?, kommuner: List<String> = empt
          er ikke et attributt i Datastar 1.0.4, og ble ignorert i stillhet,
          uten en eneste feil i konsollen. -->
     <body data-init="@get('/hendelser')">
-    <!-- Meldinger og sambandslinja eier sitt eget innhold, og serveren har
-         ingenting å sende for dem. `data-ignore-morph` hindrer at en patch
-         river bort en melding midt i visningen. -->
-    <!-- Regionen har ingen klasse: `fs-toast` hører på selve meldingene,
-         som komponenten lager. Med klassen her ble en tom region tegnet som
-         en tom melding. -->
-    <fs-toast role="status" aria-live="polite" aria-label="Meldinger"
-      data-ignore-morph></fs-toast>
+    <!-- Sambandslinja eier sitt eget innhold, og serveren har ingenting å
+         sende for den. `data-ignore-morph` hindrer at en patch river bort en
+         melding midt i visningen. -->
     <!-- Vakta. Komponenten teller sekunder uten aktivitet, så en spiller
          som går fra maskinen får beskjed framfor å bli stående på tavla.
-         Den eier sin egen dialog, derfor `data-ignore-morph`. -->
+         Den eier sin egen dialog, derfor `data-ignore-morph`.
+         Tallene må være større enn en runde pluss et oppgjør: å lese en sak
+         er verken klikk, tastetrykk eller rulling, og med et minutt gikk
+         vakta av midt i lesingen. -->
     <fs-session-timeout class="fs-session-timeout"
-      warn-at="60" expires-at="90" data-ignore-morph></fs-session-timeout>
+      warn-at="420" expires-at="480" data-ignore-morph></fs-session-timeout>
     <fs-connection-status class="fs-connection-status"
       offline-text="Sambandet til etaten er nede"
       online-text="Sambandet er tilbake"
       data-ignore-morph></fs-connection-status>
 
-    ${topp(tilstand)}
+    <header class="topplinje">
+      <div class="topplinje__innhold stamme">
+        ${topp(tilstand)}
+        ${temavelger()}
+      </div>
+    </header>
+
     <main class="brett">
       <div class="stamme">
         ${brett(tilstand, spillerNavn, kommuner)}
@@ -74,6 +78,21 @@ fun side(tilstand: Tilstand, spillerNavn: String?, kommuner: List<String> = empt
       // Klassen, ikke en id: nedtellingen står både i toppen og i panelet
       // når omgangen er over. Med samme id på begge fant getElementById
       // bare den første, og panelet ble stående med « … sekunder».
+      // Temaet. Fristil bytter av seg selv etter `prefers-color-scheme`, og
+      // `data-theme` på rota overstyrer. Ingen attributt betyr «det maskinen
+      // sier», som er standarden.
+      const temaValg = localStorage.getItem("forstelinja-tema") ?? "system"
+      const settTema = (verdi) => {
+        if (verdi === "system") document.documentElement.removeAttribute("data-theme")
+        else document.documentElement.setAttribute("data-theme", verdi)
+        localStorage.setItem("forstelinja-tema", verdi)
+      }
+      settTema(temaValg)
+      for (const knapp of document.querySelectorAll('input[name="tema"]')) {
+        knapp.checked = knapp.value === temaValg
+        knapp.addEventListener("change", () => settTema(knapp.value))
+      }
+
       setInterval(() => {
         for (const el of document.querySelectorAll(".nedtelling")) {
           const igjen = Math.max(0, Math.round((Number(el.dataset.frist) - Date.now()) / 1000))
@@ -108,8 +127,12 @@ fun side(tilstand: Tilstand, spillerNavn: String?, kommuner: List<String> = empt
 /**
  * Topplinja: hvem som eier tjenesten, hvor i omgangen vi er, og hvor lenge
  * det er igjen. Patches sammen med brettet.
+ *
+ * Temavelgeren står utenfor, i `side()`. Den er brukerens valg og har ingen
+ * plass i noe serveren sender på nytt.
  */
 fun topp(tilstand: Tilstand): String {
+  val sisteRunde = tilstand.rundeNr >= tilstand.runderTotalt
   val fase =
     when (tilstand.fase) {
       "runde" -> "Runde ${tilstand.rundeNr} av ${tilstand.runderTotalt}"
@@ -117,42 +140,65 @@ fun topp(tilstand: Tilstand): String {
       else -> "Omgangen er slutt"
     }
   val merkelapp =
-    when (tilstand.fase) {
-      "runde" -> "Frist"
-      "oppgjor" -> "Neste sak"
+    when {
+      tilstand.fase == "runde" -> "Frist"
+      tilstand.fase == "oppgjor" && sisteRunde -> "Sluttstilling"
+      tilstand.fase == "oppgjor" -> "Neste sak"
       else -> "Ny omgang"
     }
 
   return """
-    <header id="topp" class="topplinje">
-      <div class="topplinje__innhold stamme">
-        <div class="topplinje__merke">
-          <svg class="topplinje__emblem" viewBox="0 0 24 24" aria-hidden="true" fill="none"
-               stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M6 2.75h6.5l5 5v13.5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3.75a1 1 0 0 1 1-1Z"/>
-            <path d="M12.5 2.75v5.5h5"/>
-            <path d="M8.5 13.5h7M8.5 17h4.5"/>
-          </svg>
-          <span class="topplinje__ord">
-            <span class="topplinje__navn">Førstelinja</span>
-            <span class="topplinje__etat">Etaten for alminnelige søknader</span>
-          </span>
-        </div>
-
-        <p class="topplinje__fase">$fase</p>
-
-        <p class="topplinje__klokke">
-          <span class="topplinje__merkelapp">$merkelapp</span>
-          <span class="nedtelling" data-klokke data-frist="${tilstand.fristMs}"
-                data-lengde="${tilstand.faseLengdeMs}">–</span>
-        </p>
-
-        <span class="topplinje__stack">Kotlin · Datastar</span>
+    <div id="topp" class="topplinje__hoved">
+      <div class="topplinje__merke">
+        <svg class="topplinje__emblem" viewBox="0 0 24 24" aria-hidden="true" fill="none"
+             stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 2.75h6.5l5 5v13.5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3.75a1 1 0 0 1 1-1Z"/>
+          <path d="M12.5 2.75v5.5h5"/>
+          <path d="M8.5 13.5h7M8.5 17h4.5"/>
+        </svg>
+        <span class="topplinje__ord">
+          <h1 class="topplinje__navn">Førstelinja</h1>
+          <span class="topplinje__etat">Etaten for alminnelige søknader</span>
+        </span>
       </div>
-    </header>
+
+      <p class="topplinje__fase">$fase</p>
+
+      <p class="topplinje__klokke">
+        <span class="topplinje__merkelapp">$merkelapp</span>
+        <span class="nedtelling" data-klokke data-frist="${tilstand.fristMs}"
+              data-lengde="${tilstand.faseLengdeMs}" data-preserve-attr="style">–</span>
+      </p>
+
+      <span class="topplinje__stack">Kotlin · Datastar</span>
+    </div>
   """
     .trimIndent()
 }
+
+/**
+ * Lyst, mørkt eller det maskinen sier.
+ *
+ * Fristil bytter tema av seg selv etter `prefers-color-scheme`, og
+ * `data-theme` på rota overstyrer. Valget er brukerens og lagres i
+ * nettleseren; serveren vet ingenting om det, og rører det aldri.
+ */
+fun temavelger(): String =
+  """
+  <fieldset class="fs-toggle-group temavelger">
+    <legend class="fs-sr-only">Fargetema</legend>
+    <label class="fs-toggle-group__option">
+      <input type="radio" name="tema" value="light"> Lyst
+    </label>
+    <label class="fs-toggle-group__option">
+      <input type="radio" name="tema" value="system" checked> System
+    </label>
+    <label class="fs-toggle-group__option">
+      <input type="radio" name="tema" value="dark"> Mørkt
+    </label>
+  </fieldset>
+  """
+    .trimIndent()
 
 /**
  * Saken, eller det som står i stedet for den.
@@ -166,7 +212,7 @@ fun saksomrade(
   kommuner: List<String>,
   feil: List<Feil>,
 ): String =
-  if (spillerNavn == null) blimed()
+  if (spillerNavn == null) blimed(tilstand)
   else
     when (tilstand.fase) {
       "runde" -> runde(tilstand, kommuner, feil)
@@ -196,13 +242,20 @@ fun brett(
  * Her står hele kontrakten `fs.field()` ville skrevet, for hånd: klassene,
  * `for` og `id` som binder ledetekst til felt, og bevaringslistene.
  */
-fun blimed(): String =
-  """
+fun blimed(tilstand: Tilstand? = null): String {
+  val runder = tallord(tilstand?.runderTotalt ?: 4)
+  val sekunder = ((tilstand?.faseLengdeMs ?: 120_000) / 1000).toInt()
+  val minutter =
+    if (sekunder >= 60) "${tallord(sekunder / 60)} ${if (sekunder / 60 == 1) "minutt" else "minutter"}"
+    else "$sekunder sekunder"
+
+  return """
   <section class="fs-card kort blimed">
     <h2 class="fs-heading" data-size="m">Møt på vakt</h2>
     <p class="fs-paragraph blimed__ingress">
-      Du er saksbehandler i førstelinja. Fire saker, to minutter på hver.
-      Finn riktig utfall, riktig hjemmel, og feilen søkeren håpet du ikke så.
+      Du er saksbehandler i førstelinja. $runder saker, $minutter på hver.
+      Finn riktig utfall, riktig hjemmel, riktig kommune, og feilen søkeren
+      håpet du ikke så.
     </p>
 
     <!-- Et helt vanlig skjema, ikke en Datastar-innsending.
@@ -215,9 +268,10 @@ fun blimed(): String =
            `aria-describedby`: komponenten setter koblingen i nettleseren, og
            gjør det likt uansett hvilket språk serveren er skrevet i. -->
       <fs-field>
-        <label class="fs-label">Navnet ditt</label>
-        <input class="fs-input" name="navn" type="text" required>
-        <p class="fs-help-text">Vises på tavla for alle.</p>
+        <label class="fs-label" data-preserve-attr="${Bevar.KOBLING_LEDETEKST}">Navnet ditt</label>
+        <input class="fs-input" name="navn" type="text" required
+               data-preserve-attr="${Bevar.KOBLING_KONTROLL}">
+        <p class="fs-help-text" data-preserve-attr="${Bevar.KOBLING_HJELPETEKST}">Vises på tavla for alle.</p>
       </fs-field>
 
       <button class="fs-button skjema__send" type="submit">Begynn vakta</button>
@@ -225,6 +279,18 @@ fun blimed(): String =
   </section>
   """
     .trimIndent()
+}
+
+/** Små tall skrives med bokstaver i norsk brødtekst. */
+private fun tallord(n: Int) =
+  when (n) {
+    1 -> "én"
+    2 -> "to"
+    3 -> "tre"
+    4 -> "fire"
+    5 -> "fem"
+    else -> n.toString()
+  }
 
 /** Selve saksbehandlingen. */
 fun runde(tilstand: Tilstand, kommuner: List<String>, feil: List<Feil> = emptyList()): String {
@@ -299,6 +365,11 @@ private fun vedtakskort(tilstand: Tilstand, kommuner: List<String>, feil: List<F
     if (feil.any { it.felt == "hjemmel" }) "aria-invalid=\"true\" data-state=\"invalid\"" else ""
   val ugyldigKommune =
     if (feil.any { it.felt == "kommune" }) "aria-invalid=\"true\" data-state=\"invalid\"" else ""
+  val ugyldigFelle =
+    if (feil.any { it.felt == "felle" }) "aria-invalid=\"true\" data-state=\"invalid\"" else ""
+  // Et feltsett er ikke en kontroll, så det er `data-state` alene som gir
+  // ledeteksten farge. `aria-invalid` hører på selve radioknappene.
+  val ugyldigUtfall = if (feil.any { it.felt == "v-innvilget" }) "data-state=\"invalid\"" else ""
 
   val hjemmelforklaringer =
     tilstand.hjemler.joinToString("\n") {
@@ -329,7 +400,7 @@ private fun vedtakskort(tilstand: Tilstand, kommuner: List<String>, feil: List<F
   return """
     <section class="fs-card kort vedtakskort">
       <h2 class="fs-heading" data-size="s">Ditt vedtak</h2>
-      <p class="vedtakskort__ingress">Fire spørsmål, 25 poeng. Du kan svare én gang.</p>
+      <p class="vedtakskort__ingress">Fire spørsmål, $POENG_FULL_POTT poeng. Du kan svare én gang.</p>
 
       $feiloppsummering
 
@@ -337,7 +408,7 @@ private fun vedtakskort(tilstand: Tilstand, kommuner: List<String>, feil: List<F
         <!-- `.fs-radio-row` er raden som holder knappen og teksten ved
              siden av hverandre. Uten den ligger de to inntil hverandre uten
              luft, for `.fs-label` er et vanlig blokkelement. -->
-        <fieldset class="fs-fieldset">
+        <fieldset class="fs-fieldset" $ugyldigUtfall>
           <legend class="fs-legend">Utfall</legend>
           <div class="fs-radio-row">
             <input class="fs-radio" type="radio" id="v-innvilget" name="vedtak" value="innvilget"
@@ -403,15 +474,20 @@ private fun vedtakskort(tilstand: Tilstand, kommuner: List<String>, feil: List<F
           <p class="fs-help-text" id="kommune-hjelp">Begynn å skrive, så kommer forslagene. Finner du den ikke, la feltet stå tomt.</p>
         </fs-suggestion>
 
+        <!-- Feiloppsummeringen lenker hit, så serveren navngir feltet, og
+             skriver da hele koblingen selv. Da har komponenten ingenting å
+             legge til, og morfingen ingenting å ta bort. -->
         <fs-field>
-          <label class="fs-label">Er noe feil i søknaden?</label>
-          <select class="fs-select" name="felle" data-bind:felle>
-            <option value="">Nei, saken er i orden</option>
+          <label class="fs-label" for="felle">Er noe feil i søknaden?</label>
+          <select class="fs-select" id="felle" name="felle" data-bind:felle
+                  aria-describedby="felle-hjelp" $ugyldigFelle>
+            <option value="">Velg</option>
+            <option value="nei">Nei, saken er i orden</option>
             <option value="fodselsdato">Fødselsdatoen</option>
             <option value="kommune">Kommunen</option>
             <option value="epost">E-postadressen</option>
           </select>
-          <p class="fs-help-text">Å se at alt er i orden teller like mye.</p>
+          <p class="fs-help-text" id="felle-hjelp">Å se at alt er i orden teller like mye.</p>
         </fs-field>
 
         <button class="fs-button skjema__send" type="submit">Fatt vedtak</button>
@@ -504,63 +580,75 @@ fun resultatdialog(tilstand: Tilstand): String {
 
   val utfall =
     when {
-      !besvart -> "avvik"
-      vurdering!!.poeng >= POENG_FULL_POTT -> "full"
-      vurdering.poeng > 0 -> "delvis"
-      else -> "ingen"
+      besvart && vurdering!!.poeng >= POENG_FULL_POTT -> "full"
+      besvart && vurdering!!.poeng > 0 -> "delvis"
+      besvart -> "ingen"
+      // Den som meldte seg på midt i saken har aldri sett den, og skal ikke
+      // få et avvik for noe hun ikke kunne gjort noe med.
+      !meg.medPaSaken -> "sent"
+      else -> "avvik"
     }
   val overskrift =
     when (utfall) {
-      "avvik" -> "Avvik registrert"
       "full" -> "Full pott"
       "delvis" -> "Delvis truffet"
-      else -> "Ingen uttelling"
+      "ingen" -> "Ingen uttelling"
+      "sent" -> "Du kom inn midt i saken"
+      else -> "Avvik registrert"
     }
 
+  // Radene vises også til den som ikke svarte. Uten dem fikk hun aldri vite
+  // hva som var riktig, og neste sak ble like tilfeldig.
   val rader =
-    if (!besvart) ""
-    else
       listOf(
           resultatrad(
             "Utfall",
             vedtaksord(svar?.vedtak),
             vedtaksord(fasit.vedtak),
-            vurdering!!.vedtakRiktig,
+            vurdering?.vedtakRiktig == true,
           ),
           resultatrad(
             "Hjemmel",
             svar?.hjemmel?.ifBlank { null } ?: "Ikke besvart",
             fasit.hjemmel,
-            vurdering.hjemmelRiktig,
+            vurdering?.hjemmelRiktig == true,
           ),
           resultatrad(
             "Kommune",
             svar?.kommune?.ifBlank { null } ?: "Ingen",
             tilstand.fasitKommune ?: "Ingen, kommunen finnes ikke lenger",
-            vurdering.kommuneRiktig,
+            vurdering?.kommuneRiktig == true,
           ),
           resultatrad(
             "Feil i søknaden",
             svar?.felle?.let { feltnavn(it).replaceFirstChar { t -> t.uppercase() } } ?: "Ingen",
             fasit.felle?.let { feltnavn(it).replaceFirstChar { t -> t.uppercase() } }
               ?: "Ingen, saken var i orden",
-            vurdering.felleRiktig,
+            vurdering?.felleRiktig == true,
           ),
         )
         .joinToString("\n")
 
   val innledning =
-    if (!besvart)
-      """
-      <div class="fs-alert" data-color="danger">
-        <p class="fs-alert__title">Saken ble ikke behandlet innen fristen</p>
-        <p>Avviket er varslet til fylkesmannen. Null poeng for runden.</p>
-      </div>"""
-    else
-      """
-      <p class="resultat__poeng">
-        <strong>${vurdering!!.poeng}</strong> av $POENG_FULL_POTT poeng
-      </p>"""
+    when (utfall) {
+      "sent" ->
+        """
+        <div class="fs-alert" data-color="info">
+          <p class="fs-alert__title">Saken lå alt på bordet da du møtte</p>
+          <p>Ingen poeng denne runden. Du er med fra neste sak.</p>
+        </div>"""
+      "avvik" ->
+        """
+        <div class="fs-alert" data-color="danger">
+          <p class="fs-alert__title">Saken ble ikke behandlet innen fristen</p>
+          <p>Avviket er varslet til fylkesmannen. Null poeng for runden.</p>
+        </div>"""
+      else ->
+        """
+        <p class="resultat__poeng">
+          <strong>${vurdering?.poeng ?: 0}</strong> av $POENG_FULL_POTT poeng
+        </p>"""
+    }
 
   return """
     <fs-dialog id="resultat"${if (apen) " open" else ""}>
@@ -571,7 +659,7 @@ fun resultatdialog(tilstand: Tilstand): String {
         <div class="fs-dialog__body">
           $innledning
 
-          ${if (rader.isBlank()) "" else """<dl class="resultat__liste">$rader</dl>"""}
+          <dl class="resultat__liste">$rader</dl>
 
           <div class="fs-alert" data-color="info">
             <p class="fs-alert__title">Sak ${tilstand.sak.id.trygg()}</p>
@@ -632,6 +720,10 @@ fun oppgjor(tilstand: Tilstand): String {
         <div class="fasit__rad">
           <dt>Hjemmel</dt>
           <dd>${fasit.hjemmel.trygg()}</dd>
+        </div>
+        <div class="fasit__rad">
+          <dt>Kommune</dt>
+          <dd>${tilstand.fasitKommune ?: "Ingen, kommunen finnes ikke lenger"}</dd>
         </div>
         <div class="fasit__rad">
           <dt>Feil i søknaden</dt>
@@ -723,9 +815,15 @@ fun tavle(tilstand: Tilstand): String {
     .trimIndent()
 }
 
+/**
+ * Fargen på merket per app.
+ *
+ * `fs-badge` har `success`, `warning`, `danger` og `neutral`. Et
+ * `data-color="info"` ville falt tilbake på standarden uten at noe sa fra,
+ * og da er det ærligere å be om standarden.
+ */
 private fun farge(stack: String) =
   when (stack) {
-    "tanstack" -> "info"
     "datastar" -> "success"
     "astro" -> "warning"
     else -> "neutral"

@@ -326,6 +326,45 @@ class SpillTest {
   }
 
   @Test
+  fun `den som melder seg på midt i en runde var ikke med på saken`() = runTest {
+    val spill = nyttSpill()
+    val sen = spill.bliMed("Sen", Stack.DATASTAR)
+
+    // Hun får gjerne svare, og får poeng for det. Det hun ikke skal få, er
+    // et avvik for en sak hun aldri så.
+    assertEquals(false, spill.tilstand(sen.id).meg?.medPaSaken)
+
+    klokke.gaa(RUNDE_MS)
+    spill.tikk()
+    klokke.gaa(OPPGJOR_MS)
+    spill.tikk()
+
+    assertEquals(true, spill.tilstand(sen.id).meg?.medPaSaken, "fra neste sak er hun med")
+  }
+
+  @Test
+  fun `den som sitter over to runder ryddes bort fra tavla`() = runTest {
+    val spill = nyttSpill()
+    val blir = spill.bliMed("Blir", Stack.DATASTAR)
+    val gar = spill.bliMed("Går", Stack.ASTRO)
+
+    // En lukket fane sier ikke fra til noen. Uten ryddingen blir hvert besøk
+    // stående som et navn på tavla til prosessen starter på nytt.
+    repeat(RUNDER_UTEN_SVAR_FOR_BORTE + 1) {
+      val fasit = spill.sak.fasit
+      spill.svar(blir.id, Svar(fasit.vedtak, fasit.hjemmel, spill.sak.soker.kommune, fasit.felle))
+      klokke.gaa(RUNDE_MS)
+      spill.tikk()
+      klokke.gaa(OPPGJOR_MS)
+      spill.tikk()
+    }
+
+    val navn = spill.tilstand(blir.id).tavle.map { it.navn }
+    assertEquals(listOf("Blir"), navn)
+    assertNull(spill.tilstand(gar.id).meg, "den som gikk hjem står ikke igjen")
+  }
+
+  @Test
   fun `tavla er sortert, og sier hvilken stack hver spiller sitter i`() = runTest {
     val spill = nyttSpill()
     val svak = spill.bliMed("Svak", Stack.ASTRO)

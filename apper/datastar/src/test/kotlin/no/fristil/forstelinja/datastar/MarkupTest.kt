@@ -41,18 +41,30 @@ class MarkupTest {
     )
 
   @Test
-  fun `feltene fredes ikke, for serveren skriver dem selv`() {
-    val html = brett(tilstand, "Kari", listOf("Bergen"))
+  fun `serveren kan alltid melde et felt som ugyldig`() {
+    val html = brett(tilstand, "Kari", listOf("Bergen")) + blimed()
 
     // `data-preserve-attr` betyr «ikke rør», og det gjelder begge veier.
-    // Fredet vi `aria-invalid` på hjemmelen, kunne serveren aldri melde
-    // feltet som ugyldig: morfingen ville nektet å sette den.
-    for (liste in listOf(Bevar.LEDETEKST, Bevar.KONTROLL, Bevar.HJELPETEKST)) {
-      assertFalse(
-        html.contains("""data-preserve-attr="$liste""""),
-        "feltene skal ikke fredes: $liste",
-      )
+    // Fredet vi `aria-invalid` eller `data-state`, kunne serveren aldri
+    // meldt feltet som ugyldig: morfingen ville nektet å sette dem.
+    for (liste in Regex("""data-preserve-attr="([^"]*)"""").findAll(html).map { it.groupValues[1] }) {
+      assertFalse(liste.contains("aria-invalid"), "«$liste» freder serverens eget svar")
+      assertFalse(liste.contains("data-state"), "«$liste» freder serverens eget svar")
     }
+  }
+
+  @Test
+  fun `et felt som bare sender struktur freder koblingen komponenten lager`() {
+    // Sender serveren et felt uten id-er, lager `<fs-field>` dem i
+    // nettleseren. Serveren skriver dem aldri, så morfingen river dem bort
+    // ved neste patch av samme område, og feltet mister koblingen mellom
+    // ledetekst, kontroll og hjelpetekst.
+    val html = blimed()
+
+    assertFalse(html.contains("""for="""), "ledeteksten skal ikke kobles av serveren")
+    assertTrue(html.contains("""data-preserve-attr="${Bevar.KOBLING_LEDETEKST}""""))
+    assertTrue(html.contains("""data-preserve-attr="${Bevar.KOBLING_KONTROLL}""""))
+    assertTrue(html.contains("""data-preserve-attr="${Bevar.KOBLING_HJELPETEKST}""""))
   }
 
   @Test
@@ -106,8 +118,12 @@ class MarkupTest {
     // Skrev vi koblingen her, måtte hver server i hvert språk gjort det
     // samme, og da er ikke designsystemet lenger uavhengig av serveren.
     val fellefeltet = html.substringAfter("Er noe feil i søknaden?").substringBefore("</fs-field>")
-    assertFalse(fellefeltet.contains("""id="felle""""), "fellefeltet skal ikke navngis")
-    assertFalse(fellefeltet.contains("aria-describedby"), "koblingen settes i nettleseren")
+    // Feiloppsummeringen lenker også hit, så også dette feltet navngis.
+    assertTrue(fellefeltet.contains("""id="felle""""), "fellefeltet må navngis")
+    assertTrue(
+      fellefeltet.contains("""aria-describedby="felle-hjelp""""),
+      "serveren skriver koblingen når den først navngir feltet",
+    )
   }
 
   @Test
@@ -116,7 +132,7 @@ class MarkupTest {
 
     // De eier sitt eget innhold, og serveren har ingenting å sende for dem.
     // Åpningstaggen kan gå over flere linjer, så hele den leses.
-    for (tagg in listOf("fs-toast", "fs-connection-status")) {
+    for (tagg in listOf("fs-session-timeout", "fs-connection-status")) {
       val start = html.indexOf("<$tagg")
       assertTrue(start >= 0, "fant ikke <$tagg>")
       val apningstagg = html.substring(start, html.indexOf('>', start))
@@ -251,14 +267,14 @@ class MarkupTest {
       tilstand.copy(
         meg =
           MegUt(
-            "Kari",
-            15,
-            15,
-            1,
-            1,
-            true,
-            Svar("avslatt", "§ 12-3", "Bergen", "fodselsdato"),
-            Vurdering(true, false, true, true, 20),
+            navn = "Kari",
+            poeng = 15,
+            sistePoeng = 15,
+            plass = 1,
+            forrigePlass = 1,
+            harSvart = true,
+            svar = Svar("avslatt", "§ 12-3", "Bergen", "fodselsdato"),
+            vurdering = Vurdering(true, false, true, true, 20),
           ),
       )
 
@@ -290,13 +306,24 @@ class MarkupTest {
   }
 
   /** Tilstanden i oppgjøret, med fasit og et svar å vurdere. */
-  private fun oppgjorMed(vurdering: Vurdering, svar: Svar?) =
+  private fun oppgjorMed(vurdering: Vurdering, svar: Svar?, medPaSaken: Boolean = true) =
     tilstand.copy(
       fase = "oppgjor",
       fasit = Fasit("avslatt", "§ 12-3", "fodselsdato"),
       fasitKommune = "Bergen",
       forklaring = "Fødselsdatoen finnes ikke.",
-      meg = MegUt("Kari", 20, 20, 1, 1, svar != null, svar, vurdering),
+      meg =
+        MegUt(
+          navn = "Kari",
+          poeng = 20,
+          sistePoeng = 20,
+          plass = 1,
+          forrigePlass = 1,
+          harSvart = svar != null,
+          medPaSaken = medPaSaken,
+          svar = svar,
+          vurdering = vurdering,
+        ),
     )
 
   @Test
@@ -365,5 +392,18 @@ class MarkupTest {
 
     assertTrue(html.contains("""data-utfall="full" data-preserve-attr="open""""))
     assertFalse(html.contains("""<fs-dialog id="resultat" open data-preserve-attr"""))
+  }
+
+  @Test
+  fun `hver komponent som lastes er faktisk i bruk`() {
+    // `fs-toast` sto i lista uten at noen kalte `.show()`, og `divider.css`
+    // uten at noen brukte `.fs-divider`. En demo som later som den bruker
+    // flere komponenter enn den gjør, beviser ikke noe.
+    val html = side(tilstand, "Kari", listOf("Bergen")) + brett(tilstand, "Kari", listOf("Bergen"))
+
+    for ((fil, _) in KOMPONENTER) {
+      val tagg = fil.substringAfterLast("/").removeSuffix(".js")
+      assertTrue(html.contains("<$tagg"), "$tagg registreres, men står ikke i markupen")
+    }
   }
 }
