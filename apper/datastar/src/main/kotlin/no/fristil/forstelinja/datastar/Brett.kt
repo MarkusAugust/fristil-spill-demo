@@ -14,12 +14,6 @@ package no.fristil.forstelinja.datastar
  */
 val BRETT_CSS =
   """
-  :root {
-    /* Uten denne tegner nettleseren sine egne kontroller, rullefelt og
-       nedtrekkslister i lyst utseende selv når siden er mørk. */
-    color-scheme: light dark;
-  }
-
   body {
     margin: 0;
     /* Fristil arver skrift med vilje, så appen må si hvilken. Uten dette
@@ -124,18 +118,18 @@ val BRETT_CSS =
      den i toppen: skriptet skriver `color` på hver av dem, og en variabel som
      ikke finnes ville gjort erklæringen ugyldig. */
   .nedtelling {
-    --fs-spill-frist-start: var(--palette-graphite-0);
-    --fs-spill-frist-slutt: var(--palette-burgundy-30);
+    --spill-frist-start: var(--palette-graphite-0);
+    --spill-frist-slutt: var(--palette-burgundy-30);
   }
 
   /* Inne i et kort står tallet på sidens egen flate, ikke på den mørkeblå. */
   .brett .nedtelling {
-    --fs-spill-frist-start: var(--semantic-page-foreground);
-    --fs-spill-frist-slutt: var(--semantic-danger-main);
+    --spill-frist-start: var(--semantic-page-foreground);
+    --spill-frist-slutt: var(--semantic-danger-main);
   }
 
   .topplinje .nedtelling {
-    color: var(--fs-spill-frist-start);
+    color: var(--spill-frist-start);
     font-size: var(--font-size-mega);
     font-weight: 600;
     line-height: 1;
@@ -201,10 +195,6 @@ val BRETT_CSS =
   }
 
   .kort { padding: var(--size-5); }
-
-  /* `.fs-card` er en flex-kolonne, så en `inline-flex` merkelapp strekkes
-     over hele bredden. Den skal ta plassen den trenger. */
-  .kort > .fs-tag { align-self: start; }
 
   /* Saken
      ------------------------------------------------------------------ */
@@ -370,6 +360,7 @@ val BRETT_CSS =
   .resultat[data-utfall="delvis"] { border-block-start-color: var(--semantic-interactive-main); }
   .resultat[data-utfall="ingen"] { border-block-start-color: var(--semantic-warning-foreground); }
   .resultat[data-utfall="avvik"] { border-block-start-color: var(--semantic-danger-main); }
+  .resultat[data-utfall="sent"] { border-block-start-color: var(--semantic-muted-foreground); }
 
   .resultat .fs-dialog__body {
     display: flex;
@@ -452,15 +443,35 @@ val BRETT_CSS =
   /* Mørkt tema
      ------------------------------------------------------------------ */
 
+  /*
+   * I mørkt tema snus forholdet: sideflaten er den mørkeste, og kortene
+   * løftes. Samme regel begge veier ville gitt kort som er mørkere enn
+   * siden.
+   *
+   * Reglene står to ganger, med de samme selektorene Fristil bruker:
+   * mediespørringen gjelder når spilleren ikke har valgt noe, og
+   * `[data-theme]` når hun har. Bare mediespørringen ville gjort velgeren
+   * halvvirksom: et mørkt valg på en lys maskin ville snudd tokenene uten å
+   * snu disse to reglene.
+   */
   @media (prefers-color-scheme: dark) {
-    /* Her snus forholdet: sideflaten er den mørkeste, og kortene løftes.
-       Samme regel begge veier ville gitt kort som er mørkere enn siden. */
-    body { background: var(--semantic-page-background); }
+    :root:not([data-theme="light"]) body {
+      background: var(--semantic-page-background);
+    }
 
-    .fs-card {
+    :root:not([data-theme="light"]) .fs-card {
       background: color-mix(in oklab, var(--semantic-page-foreground) 8%, var(--semantic-page-background));
       border-color: color-mix(in oklab, var(--semantic-page-foreground) 18%, transparent);
     }
+  }
+
+  [data-theme="dark"] body {
+    background: var(--semantic-page-background);
+  }
+
+  [data-theme="dark"] .fs-card {
+    background: color-mix(in oklab, var(--semantic-page-foreground) 8%, var(--semantic-page-background));
+    border-color: color-mix(in oklab, var(--semantic-page-foreground) 18%, transparent);
   }
 
   @media (max-width: 900px) {

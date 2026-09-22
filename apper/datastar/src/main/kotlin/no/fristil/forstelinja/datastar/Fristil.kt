@@ -13,8 +13,8 @@ package no.fristil.forstelinja.datastar
  * beskytte seg selv: uten listene river morfingen bort koblingen ved første
  * oppdatering.
  *
- * Verdiene er hentet fra @fristil/designsystem 0.6.1, ikke skrevet av
- * hukommelsen.
+ * Verdiene er hentet fra @fristil/designsystem 0.7.0, ikke skrevet
+ * av hukommelsen.
  */
 object Bevar {
   /**
@@ -79,7 +79,6 @@ val STILARK =
       "components/ramme/dialog/dialog.css",
       "components/ramme/error-summary/error-summary.css",
       "components/ramme/suggestion/suggestion.css",
-      "components/frittstaende/session-timeout/session-timeout.css",
       "components/frittstaende/connection-status/connection-status.css",
       "components/css/button/button.css",
       "components/css/select/select.css",
@@ -109,8 +108,6 @@ val KOMPONENTER =
         "defineFsConnectionStatus",
       "components/ramme/error-summary/fs-error-summary.js" to "defineFsErrorSummary",
       "components/ramme/suggestion/fs-suggestion.js" to "defineFsSuggestion",
-      "components/frittstaende/session-timeout/fs-session-timeout.js" to
-        "defineFsSessionTimeout",
     )
     .map { (fil, funksjon) -> "$CDN/dist/$fil" to funksjon }
 

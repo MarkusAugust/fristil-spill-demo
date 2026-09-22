@@ -48,6 +48,8 @@ data class MegUt(
   val harSvart: Boolean,
   /** Om du var med da saken kom på bordet. */
   val medPaSaken: Boolean = true,
+  /** Runder på rad uten svar. Nok av dem, og du tas av vakta. */
+  val runderUtenSvar: Int = 0,
   val svar: Svar? = null,
   val vurdering: Vurdering? = null,
 )
@@ -61,6 +63,9 @@ data class Tilstand(
   val runderTotalt: Int,
   val fristMs: Long,
   val faseLengdeMs: Long,
+  val rundeLengdeMs: Long = 120_000,
+  val grenseUtenSvar: Int = 3,
+  val poeng: PoengUt = PoengUt(),
   val naMs: Long,
   val sak: SakUt,
   val hjemler: List<Hjemmel>,
@@ -97,10 +102,17 @@ data class Svar(
 @Serializable data class SvarInn(val spillerId: String, val svar: Svar)
 
 /**
- * Full pott på én sak.
+ * Hva hvert felt er verdt.
  *
- * Tallet eies av spilltjeneren, som deler ut poengene. Her står det bare for
- * å kunne skrive «20 av 25» i kvitteringen, og prøven i `MarkupTest` holder
- * de to i takt.
+ * Tallene eies av spilltjeneren og sendes med tilstanden. Skrev appen dem
+ * selv, kunne de to gli fra hverandre, og skjermen ville lovet en annen
+ * poengsum enn tavla ga.
  */
-const val POENG_FULL_POTT = 25
+@Serializable
+data class PoengUt(
+  val vedtak: Int = 10,
+  val hjemmel: Int = 5,
+  val kommune: Int = 5,
+  val felle: Int = 5,
+  val fullPott: Int = 25,
+)

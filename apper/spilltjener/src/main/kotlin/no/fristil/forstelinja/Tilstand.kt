@@ -58,12 +58,30 @@ data class MegUt(
   val harSvart: Boolean,
   /** Om du var med da saken kom på bordet. Er du nettopp kommet, er du ikke det. */
   val medPaSaken: Boolean,
+  /** Runder på rad uten svar. Nok av dem, og du tas av vakta. */
+  val runderUtenSvar: Int,
   val svar: Svar?,
   val vurdering: Vurdering? = null,
 )
 
 @Serializable
 data class ToppEntry(val navn: String, val poeng: Int, val stack: Stack, val nar: Long)
+
+/**
+ * Hva hvert felt er verdt.
+ *
+ * Sendes framfor å stå som tall i hver app. Sto de begge steder, kunne de
+ * gli fra hverandre uten at noe sa fra, og skjermen ville lovet en annen
+ * poengsum enn tavla ga.
+ */
+@Serializable
+data class PoengUt(
+  val vedtak: Int,
+  val hjemmel: Int,
+  val kommune: Int,
+  val felle: Int,
+  val fullPott: Int,
+)
 
 @Serializable
 data class Tilstand(
@@ -74,6 +92,11 @@ data class Tilstand(
   val fristMs: Long,
   /** Hvor lang hele fasen er. Klienten fargelegger nedtellingen etter den. */
   val faseLengdeMs: Long,
+  /** Hvor lang en runde er, uansett hvilken fase vi står i akkurat nå. */
+  val rundeLengdeMs: Long,
+  /** Hvor mange runder på rad uten svar som tar deg av vakta. */
+  val grenseUtenSvar: Int,
+  val poeng: PoengUt,
   /** Serverens klokke nå, slik at klienten kan regne ut forskjellen mot sin egen. */
   val naMs: Long,
   val sak: SakUt,

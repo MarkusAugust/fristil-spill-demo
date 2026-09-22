@@ -228,7 +228,10 @@ class SpillTest {
     assertEquals(Fase.OPPGJOR, spill.fase)
 
     val fasit = spill.sak.fasit
-    assertFalse(spill.svar(spiller.id, Svar(fasit.vedtak, fasit.hjemmel, fasit.felle)))
+    assertFalse(spill.svar(
+      spiller.id,
+      Svar(vedtak = fasit.vedtak, hjemmel = fasit.hjemmel, felle = fasit.felle),
+    ))
     assertEquals(0, spill.tilstand(spiller.id).meg?.poeng)
   }
 
@@ -371,7 +374,7 @@ class SpillTest {
     val sterk = spill.bliMed("Sterk", Stack.DATASTAR)
 
     val fasit = spill.sak.fasit
-    spill.svar(sterk.id, Svar(fasit.vedtak, fasit.hjemmel, fasit.felle))
+    spill.svar(sterk.id, Svar(vedtak = fasit.vedtak, hjemmel = fasit.hjemmel, felle = fasit.felle))
     klokke.gaa(RUNDE_MS)
     spill.tikk()
 

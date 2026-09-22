@@ -35,8 +35,11 @@ const val SLUTT_MS = 40_000L
  * stående som et navn på tavla til prosessen starter på nytt. Runder og ikke
  * sekunder: en spiller som leser en sak i to minutter er ikke borte, og en
  * klokke ville ryddet henne bort midt i lesingen.
+ *
+ * Spilleren får beskjed på skjermen før det skjer, og tallet er høyere enn
+ * halve omgangen, så en som bommer på én sak ikke mister plassen sin.
  */
-const val RUNDER_UTEN_SVAR_FOR_BORTE = 2
+const val RUNDER_UTEN_SVAR_FOR_BORTE = 3
 
 /**
  * Hvor lenge hver fase varer.
@@ -129,7 +132,7 @@ data class Spiller(
    */
   var medPaSaken: Boolean = false,
   /** Runder på rad uten svar. Nok av dem, og hun regnes som gått hjem. */
-  var rundervUtenSvar: Int = 0,
+  var runderUtenSvar: Int = 0,
   var poeng: Int = 0,
   var svar: Svar? = null,
   var sistePoeng: Int = 0,
@@ -251,9 +254,11 @@ class Spill(
     val endret =
       laas.withLock {
         if (fase != Fase.RUNDE) return@withLock false
-        // Den som alt har sittet over en runde har trolig lukket fana, og
-        // skal ikke holde de andre igjen til fristen går ut.
-        val med = spillere.values.filter { it.rundervUtenSvar == 0 }
+        // Den som har sittet over to runder på rad har trolig lukket fana,
+        // og skal ikke holde de andre igjen til fristen går ut. Én bom
+        // holder ikke: da ville en som leser sakte blitt regnet bort, og
+        // dermed bommet neste gang òg.
+        val med = spillere.values.filter { it.runderUtenSvar < RUNDER_UTEN_SVAR_FOR_BORTE - 1 }
         if (med.isEmpty()) return@withLock false
         if (med.any { it.svar == null }) return@withLock false
         telleOpp()
@@ -301,8 +306,8 @@ class Spill(
     val plasseringFor = tavleliste().withIndex().associate { (i, s) -> s.id to i + 1 }
 
     for (spiller in spillere.values) {
-      if (spiller.svar == null && spiller.medPaSaken) spiller.rundervUtenSvar += 1
-      else spiller.rundervUtenSvar = 0
+      if (spiller.svar == null && spiller.medPaSaken) spiller.runderUtenSvar += 1
+      else spiller.runderUtenSvar = 0
 
       val poeng = vurder(spiller.svar, sak).poeng
       spiller.sistePoeng = poeng
@@ -322,7 +327,7 @@ class Spill(
 
   /** Spillere som har sittet over nok runder til at de nok har gått hjem. */
   private fun ryddBortBorte() {
-    spillere.values.removeAll { it.rundervUtenSvar >= RUNDER_UTEN_SVAR_FOR_BORTE }
+    spillere.values.removeAll { it.runderUtenSvar >= RUNDER_UTEN_SVAR_FOR_BORTE }
   }
 
   private fun lagreToppliste() {
@@ -349,6 +354,7 @@ class Spill(
       spiller.forrigePlass = 0
       spiller.svar = null
       spiller.medPaSaken = true
+      spiller.runderUtenSvar = 0
     }
   }
 
@@ -372,6 +378,16 @@ class Spill(
         rundeNr = rundeNr,
         runderTotalt = RUNDER_PER_SPILL,
         fristMs = faseSlutt,
+        rundeLengdeMs = tider.runde,
+        grenseUtenSvar = RUNDER_UTEN_SVAR_FOR_BORTE,
+        poeng =
+          PoengUt(
+            vedtak = POENG_VEDTAK,
+            hjemmel = POENG_HJEMMEL,
+            kommune = POENG_KOMMUNE,
+            felle = POENG_FELLE,
+            fullPott = POENG_FULL_POTT,
+          ),
         faseLengdeMs =
           when (fase) {
             Fase.RUNDE -> tider.runde
@@ -413,6 +429,7 @@ class Spill(
               forrigePlass = it.forrigePlass,
               harSvart = it.svar != null,
               medPaSaken = it.medPaSaken,
+              runderUtenSvar = it.runderUtenSvar,
               svar = it.svar,
               vurdering = it.svar?.let { svar -> vurder(svar, sak) },
             )

@@ -196,7 +196,11 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
             forr.meg?.harSvart != na.meg?.harSvart
 
         if (nyRunde) {
-          if (erNySak(forr, na)) tomSkjemaet()
+          // `forr == null` betyr at strømmen nettopp ble åpnet, og det
+          // skjer også når Datastar kobler til igjen etter et nettblink.
+          // Å tømme skjemaet da ville tatt et halvutfylt vedtak fra
+          // spilleren midt i runden.
+          if (forr != null && erNySak(forr, na)) tomSkjemaet()
 
           // Hele brettet. Her er det serveren som eier innholdet uansett.
           sendRamme(patch(topp(na), brett(na, na.meg?.navn, kommuner)))

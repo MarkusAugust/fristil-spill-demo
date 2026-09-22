@@ -47,7 +47,12 @@ class MarkupTest {
     // `data-preserve-attr` betyr «ikke rør», og det gjelder begge veier.
     // Fredet vi `aria-invalid` eller `data-state`, kunne serveren aldri
     // meldt feltet som ugyldig: morfingen ville nektet å sette dem.
-    for (liste in Regex("""data-preserve-attr="([^"]*)"""").findAll(html).map { it.groupValues[1] }) {
+    val lister = Regex("""data-preserve-attr="([^"]*)"""").findAll(html).map { it.groupValues[1] }.toList()
+
+    // Uten denne ville prøven meldt grønt om hver eneste liste forsvant.
+    assertTrue(lister.size >= 8, "fant bare ${lister.size} bevaringslister")
+
+    for (liste in lister) {
       assertFalse(liste.contains("aria-invalid"), "«$liste» freder serverens eget svar")
       assertFalse(liste.contains("data-state"), "«$liste» freder serverens eget svar")
     }
@@ -132,7 +137,7 @@ class MarkupTest {
 
     // De eier sitt eget innhold, og serveren har ingenting å sende for dem.
     // Åpningstaggen kan gå over flere linjer, så hele den leses.
-    for (tagg in listOf("fs-session-timeout", "fs-connection-status")) {
+    for (tagg in listOf("fs-connection-status")) {
       val start = html.indexOf("<$tagg")
       assertTrue(start >= 0, "fant ikke <$tagg>")
       val apningstagg = html.substring(start, html.indexOf('>', start))
@@ -149,6 +154,21 @@ class MarkupTest {
 
   @Test
   fun `fasiten står ikke i markupen mens runden pågår`() {
+    // Spilltjeneren sender ikke fasiten i en runde, men prøven skal si noe
+    // om markupen: får den en fasit likevel, skal ingenting av den lekke ut
+    // mens fasen er «runde».
+    val medFasit =
+      tilstand.copy(
+        fasit = Fasit("avslatt", "§ 12-3", "fodselsdato"),
+        fasitKommune = "Bergen",
+        forklaring = "Fødselsdatoen finnes ikke.",
+      )
+    val lekkasje = brett(medFasit, "Kari", listOf("Bergen"))
+
+    assertFalse(lekkasje.contains("Fødselsdatoen finnes ikke."), "forklaringen lekker")
+    assertFalse(lekkasje.contains("Riktig svar:"), "fasiten lekker")
+    assertFalse(lekkasje.contains("<fs-dialog id=\"resultat\" open>"), "dialogen åpner seg i runden")
+
     val html = brett(tilstand, "Kari", listOf("Bergen"))
 
     assertFalse(html.contains("Fasit"), "fasiten skal ikke være å finne i kildekoden")
@@ -187,7 +207,11 @@ class MarkupTest {
     val html = side(tilstand, "Kari", listOf("Bergen")) + brett(tilstand, "Kari", listOf("Bergen"))
 
     val brukt =
-      Regex("""class="(fs-[a-z-]+)""").findAll(html).map { it.groupValues[1] }.toSet() +
+      Regex("""class="([^"]*)"""")
+        .findAll(html)
+        .flatMap { it.groupValues[1].split(" ") }
+        .filter { it.startsWith("fs-") }
+        .toSet() +
         Regex("""<(fs-[a-z-]+)""").findAll(html).map { it.groupValues[1] }.toSet()
 
     val lastet = STILARK.joinToString(" ")
@@ -204,9 +228,12 @@ class MarkupTest {
         "fs-radio-row",
       )
 
+    // `fs-tabs__list` hører i `tabs.css`. Delen etter `__` er en del av
+    // komponenten, ikke en komponent for seg.
     val uten =
       brukt.filterNot { klasse ->
-        klasse in samlet || lastet.contains(klasse.removePrefix("fs-") + ".css")
+        klasse in samlet ||
+          lastet.contains(klasse.removePrefix("fs-").substringBefore("__") + ".css")
       }
 
     assertEquals(emptyList(), uten, "disse klassene har ingen stilark")
@@ -217,8 +244,18 @@ class MarkupTest {
     // Nedtellingen sto med samme id både i toppen og i panelet når omgangen
     // var over. `getElementById` finner bare den første, så panelet ble
     // stående med «… sekunder» mens toppen talte ned.
+    // Oppgjøret tegner sakskortet en gang til ved siden av resultatdialogen,
+    // og er det eneste stedet en dobbel id kunne oppstått. Uten en fasit
+    // returnerer `oppgjor()` tom streng, og prøven ville lest et tomt kort.
+    val medFasit =
+      tilstand.copy(
+        fasit = Fasit("avslatt", "§ 12-3", "fodselsdato"),
+        fasitKommune = "Bergen",
+        forklaring = "Fordi.",
+      )
+
     for (fase in listOf("runde", "oppgjor", "slutt")) {
-      val html = side(tilstand.copy(fase = fase), "Kari", listOf("Bergen"))
+      val html = side(medFasit.copy(fase = fase), "Kari", listOf("Bergen"))
       val ider = Regex("""id="([^"]+)""").findAll(html).map { it.groupValues[1] }.toList()
       val doble = ider.groupBy { it }.filterValues { it.size > 1 }.keys
 
@@ -358,7 +395,7 @@ class MarkupTest {
     val html = brett(oppgjorMed(Vurdering(false, false, false, false, 0), null), "Kari")
 
     assertTrue(html.contains("Avvik registrert"), "overskriften skal si at det er et avvik")
-    assertTrue(html.contains("varslet til fylkesmannen"), "avviket skal ha en følge")
+    assertTrue(html.contains("varslet til statsforvalteren"), "avviket skal ha en følge")
     assertTrue(html.contains("""data-utfall="avvik""""), "dialogen skal fargelegges som avvik")
   }
 
@@ -405,5 +442,21 @@ class MarkupTest {
       val tagg = fil.substringAfterLast("/").removeSuffix(".js")
       assertTrue(html.contains("<$tagg"), "$tagg registreres, men står ikke i markupen")
     }
+  }
+
+  @Test
+  fun `ingen dollartegn slipper gjennom fra strengmalene`() {
+    // `$$` er en mal som er redigert feil, og det så ut som «$25 poeng» på
+    // skjermen. Strengmaler har ingen kompilator som sier fra.
+    val html = side(tilstand, "Kari", listOf("Bergen")) + brett(tilstand, "Kari", listOf("Bergen"))
+
+    // Ingenting på skjermen i dette spillet inneholder et dollartegn, så
+    // alle som slipper gjennom er en mal som ikke ble erstattet.
+    val rundt = html.indexOf("$")
+    assertEquals(
+      -1,
+      rundt,
+      "dollartegn i markupen: «${html.substring(maxOf(0, rundt - 40), minOf(html.length, rundt + 40))}»",
+    )
   }
 }
