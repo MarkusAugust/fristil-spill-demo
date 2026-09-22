@@ -27,11 +27,26 @@ class SakerTest {
     )
 
   @Test
-  fun `den ekte fila er gyldig`() {
+  fun `den ekte fila har nok saker til at en omgang ikke gjentar seg`() {
     val samling = lesSaker("../../felles/saker.json")
 
-    assertTrue(samling.saker.size >= RUNDER_PER_SPILL)
-    assertTrue(samling.hjemler.isNotEmpty())
+    // `Sakssamling.init` krever alt at det er minst like mange saker som
+    // runder, så en prøve på nøyaktig det kunne ikke feilet her. Det denne
+    // sier er noe annet: med bare fire saker ville hver omgang hatt de
+    // samme fire, i stokket rekkefølge, og demoen blitt kjedelig å stå i.
+    assertTrue(
+      samling.saker.size >= RUNDER_PER_SPILL * 2,
+      "bare ${samling.saker.size} saker mot $RUNDER_PER_SPILL runder",
+    )
+
+    // Og at det finnes flere hjemler enn svar. «§ 8-2 Dyrehold i
+    // borettslag» er ingen saks fasit, men den er et fristende feilsvar i
+    // hønesaken, og det er nettopp det en hjemmel som ikke er svaret skal
+    // være. Uten dem ville lista vært en fasit i seg selv.
+    assertTrue(
+      samling.hjemler.size > samling.saker.map { it.fasit.hjemmel }.toSet().size,
+      "hver hjemmel er et riktig svar, så lista røper fasiten",
+    )
   }
 
   @Test
