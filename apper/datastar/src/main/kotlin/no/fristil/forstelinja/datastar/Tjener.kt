@@ -120,7 +120,12 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
       if (feil.isEmpty() && spillerId != null) {
         spilltjener.svar(
           spillerId,
-          Svar(vedtak = vedtak, hjemmel = hjemmel, felle = signaler["felle"]?.ifBlank { null }),
+          Svar(
+            vedtak = vedtak,
+            hjemmel = hjemmel,
+            kommune = kommune,
+            felle = signaler["felle"]?.ifBlank { null },
+          ),
         )
       }
 

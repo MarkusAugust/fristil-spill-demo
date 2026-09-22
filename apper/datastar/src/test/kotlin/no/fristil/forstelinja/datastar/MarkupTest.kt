@@ -24,6 +24,7 @@ class MarkupTest {
       rundeNr = 1,
       runderTotalt = 4,
       fristMs = 1_000,
+      faseLengdeMs = 120_000,
       naMs = 0,
       sak =
         SakUt(
@@ -249,13 +250,22 @@ class MarkupTest {
     val svart =
       tilstand.copy(
         meg =
-          MegUt("Kari", 15, 15, 1, 1, true, Vurdering(true, false, true, 15)),
+          MegUt(
+            "Kari",
+            15,
+            15,
+            1,
+            1,
+            true,
+            Svar("avslatt", "§ 12-3", "Bergen", "fodselsdato"),
+            Vurdering(true, false, true, true, 20),
+          ),
       )
 
     val html = brett(svart, "Kari", listOf("Bergen"))
 
     assertTrue(html.contains("Vedtaket er fattet"), "kvitteringen skal vises")
-    assertTrue(html.contains("15 av 20 poeng"), "poengene skal stå der")
+    assertTrue(html.contains("20 av 25 poeng"), "poengene skal stå der")
     assertTrue(html.contains("""data-riktig="true""""), "det som traff")
     assertTrue(html.contains("""data-riktig="false""""), "det som ikke traff")
 
@@ -277,5 +287,83 @@ class MarkupTest {
       html.contains("""<label class="fs-label" for="v-innvilget">Innvilget</label>"""),
       "ledeteksten skal peke på knappen, ikke pakke den inn",
     )
+  }
+
+  /** Tilstanden i oppgjøret, med fasit og et svar å vurdere. */
+  private fun oppgjorMed(vurdering: Vurdering, svar: Svar?) =
+    tilstand.copy(
+      fase = "oppgjor",
+      fasit = Fasit("avslatt", "§ 12-3", "fodselsdato"),
+      fasitKommune = "Bergen",
+      forklaring = "Fødselsdatoen finnes ikke.",
+      meg = MegUt("Kari", 20, 20, 1, 1, svar != null, svar, vurdering),
+    )
+
+  @Test
+  fun `resultatdialogen sier hva du svarte og hva som var riktig`() {
+    // Det holder ikke å si «feil». Da vet spilleren fortsatt ikke hva hun
+    // skulle ha svart, og neste runde blir like tilfeldig.
+    val html =
+      brett(
+        oppgjorMed(
+          Vurdering(true, false, true, true, 20),
+          Svar("avslatt", "§ 4-1", "Bergen", "fodselsdato"),
+        ),
+        "Kari",
+      )
+
+    assertTrue(html.contains("<fs-dialog id=\"resultat\" open>"), "dialogen skal stå åpen i oppgjøret")
+    assertTrue(html.contains("Delvis truffet"), "overskriften skal si hvordan det gikk")
+    assertTrue(html.contains("20</strong> av 25 poeng"), "poengene skal stå der")
+
+    // Hjemmelen var feil, og da må det riktige svaret stå.
+    assertTrue(html.contains("§ 4-1"), "ditt eget svar skal stå der")
+    assertTrue(html.contains("Riktig svar: § 12-3"), "det riktige svaret skal stå der")
+
+    // Alle fire feltene vurderes, kommunen inkludert.
+    for (felt in listOf("Utfall", "Hjemmel", "Kommune", "Feil i søknaden")) {
+      assertTrue(html.contains(">$felt</dt>"), "«$felt» mangler i dialogen")
+    }
+  }
+
+  @Test
+  fun `den som ikke rakk fristen får et avvik, ikke en poengsum`() {
+    val html = brett(oppgjorMed(Vurdering(false, false, false, false, 0), null), "Kari")
+
+    assertTrue(html.contains("Avvik registrert"), "overskriften skal si at det er et avvik")
+    assertTrue(html.contains("varslet til fylkesmannen"), "avviket skal ha en følge")
+    assertTrue(html.contains("""data-utfall="avvik""""), "dialogen skal fargelegges som avvik")
+  }
+
+  @Test
+  fun `dialogen står lukket utenom oppgjøret`() {
+    val iRunden = brett(tilstand, "Kari", listOf("Bergen"))
+
+    assertFalse(iRunden.contains("<fs-dialog id=\"resultat\" open>"), "dialogen skal ikke åpne seg i en runde")
+    assertFalse(iRunden.contains("Riktig svar:"), "fasiten skal ikke stå i markupen i det hele tatt")
+
+    // Spilltjeneren sender fasiten i alle faser etter runden, også når
+    // omgangen er slutt. Da er oppgjøret for lengst lest, og dialogen skal
+    // ikke legge seg over sluttlista.
+    val vedSlutt =
+      oppgjorMed(Vurdering(true, true, true, true, 25), Svar("avslatt", "§ 12-3", "Bergen", "fodselsdato"))
+        .copy(fase = "slutt")
+
+    assertFalse(
+      brett(vedSlutt, "Kari").contains("<fs-dialog id=\"resultat\" open>"),
+      "dialogen skal ikke åpne seg på sluttskjermen",
+    )
+  }
+
+  @Test
+  fun `dialogen freder open på dialogen, ikke på verten`() {
+    // `showModal()` setter `open` på `<dialog>`, og serveren skriver det
+    // aldri. Uten fredningen river morfingen det bort. Verten skal derimot
+    // ikke fredes, ellers kan serveren aldri åpne dialogen på nytt.
+    val html =
+      brett(oppgjorMed(Vurdering(true, true, true, true, 25), Svar("avslatt", "§ 12-3", "Bergen", "fodselsdato")), "Kari")
+
+    assertTrue(html.contains("""data-utfall="full" data-preserve-attr="open""""))
+    assertFalse(html.contains("""<fs-dialog id="resultat" open data-preserve-attr"""))
   }
 }

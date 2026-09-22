@@ -43,10 +43,29 @@ class Toppliste(sti: String = System.getenv("TOPPLISTE_FIL") ?: "toppliste.db") 
       }
   }
 
+  /**
+   * De beste resultatene, ett per navn.
+   *
+   * Uten grupperingen fylte den samme spilleren hele lista med sine egne
+   * omganger, og en toppliste der det står «Markus» fem ganger sier ingenting
+   * om hvem som er best.
+   */
   fun topp(antall: Int): List<ToppEntry> =
     forbindelse
       .prepareStatement(
-        "SELECT navn, poeng, stack, nar FROM resultat ORDER BY poeng DESC, nar ASC LIMIT ?"
+        """
+        SELECT navn, poeng, stack, nar
+        FROM resultat
+        WHERE id IN (
+          SELECT id FROM resultat r2
+          WHERE r2.navn = resultat.navn
+          ORDER BY poeng DESC, nar ASC
+          LIMIT 1
+        )
+        ORDER BY poeng DESC, nar ASC
+        LIMIT ?
+        """
+          .trimIndent()
       )
       .use { setning ->
         setning.setInt(1, antall)

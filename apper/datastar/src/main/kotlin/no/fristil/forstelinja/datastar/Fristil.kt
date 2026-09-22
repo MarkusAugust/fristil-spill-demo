@@ -52,6 +52,7 @@ val STILARK =
       "components/ramme/field/field.css",
       "components/ramme/tabs/tabs.css",
       "components/ramme/popover/popover.css",
+      "components/ramme/dialog/dialog.css",
       "components/ramme/error-summary/error-summary.css",
       "components/ramme/suggestion/suggestion.css",
       "components/frittstaende/session-timeout/session-timeout.css",
@@ -80,6 +81,7 @@ val KOMPONENTER =
       "components/ramme/field/fs-field.js" to "defineFsField",
       "components/ramme/tabs/fs-tabs.js" to "defineFsTabs",
       "components/ramme/popover/fs-popover.js" to "defineFsPopover",
+      "components/ramme/dialog/fs-dialog.js" to "defineFsDialog",
       "components/frittstaende/toast/fs-toast.js" to "defineFsToast",
       "components/frittstaende/connection-status/fs-connection-status.js" to
         "defineFsConnectionStatus",

@@ -110,14 +110,17 @@ val BRETT_CSS =
   }
 
   .topplinje .nedtelling {
-    font-size: var(--font-size-xxl);
+    /* Fargen settes av skriptet, som blander de to under etter hvor mye av
+       fristen som er igjen. Den står her også, slik at klokka har en farge
+       før første tikk. */
+    --fs-spill-frist-start: var(--palette-graphite-0);
+    --fs-spill-frist-slutt: var(--palette-burgundy-30);
+    color: var(--fs-spill-frist-start);
+    font-size: var(--font-size-mega);
     font-weight: 600;
+    line-height: 1;
     /* Tallene skal ikke hoppe sidelengs mens sekundene går. */
     font-variant-numeric: tabular-nums;
-  }
-
-  .topplinje .nedtelling--knapt {
-    color: var(--palette-ochre-30);
   }
 
   .topplinje__stack {
@@ -303,6 +306,78 @@ val BRETT_CSS =
     font-size: var(--font-size-l);
   }
 
+  /* Resultatdialogen
+     ------------------------------------------------------------------ */
+
+  .resultat {
+    --fs-dialog-width: min(34rem, 100%, calc(100vw - var(--size-8)));
+    /* Utfallet står som en strek i toppen, ikke som en farget flate: teksten
+       skal ha samme kontrast uansett hvordan det gikk. */
+    border-block-start: var(--size-1) solid var(--semantic-divider-30);
+  }
+
+  .resultat[data-utfall="full"] { border-block-start-color: var(--semantic-success-foreground); }
+  .resultat[data-utfall="delvis"] { border-block-start-color: var(--semantic-interactive-main); }
+  .resultat[data-utfall="ingen"] { border-block-start-color: var(--semantic-warning-foreground); }
+  .resultat[data-utfall="avvik"] { border-block-start-color: var(--semantic-danger-main); }
+
+  .resultat .fs-dialog__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--size-4);
+  }
+
+  .resultat__poeng {
+    margin: 0;
+    font-size: var(--font-size-xl);
+  }
+
+  .resultat__liste {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .resultat__rad {
+    display: grid;
+    grid-template-columns: minmax(0, 8rem) minmax(0, 1fr) auto;
+    gap: var(--size-1) var(--size-3);
+    align-items: baseline;
+    padding-block: var(--size-2);
+    border-block-end: 1px solid var(--semantic-divider-30);
+  }
+
+  .resultat__rad:last-child { border-block-end: 0; }
+
+  .resultat__felt {
+    grid-column: 1;
+    color: var(--semantic-muted-foreground);
+  }
+
+  .resultat__ditt {
+    grid-column: 2;
+    margin: 0;
+    font-weight: 600;
+  }
+
+  .resultat__dom {
+    grid-column: 3;
+    margin: 0;
+    font-weight: 600;
+    color: var(--semantic-danger-main);
+  }
+
+  .resultat__rad[data-riktig="true"] .resultat__dom {
+    color: var(--semantic-success-foreground);
+  }
+
+  .resultat__riktig {
+    grid-column: 2 / -1;
+    margin: 0;
+    font-size: var(--font-size-s);
+    color: var(--semantic-muted-foreground);
+  }
+
   /* Tavla
      ------------------------------------------------------------------ */
 
@@ -360,6 +435,14 @@ val BRETT_CSS =
 
   @media (max-width: 560px) {
     .kort { padding: var(--size-4); }
+
+    .resultat__rad {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .resultat__felt { grid-column: 1 / -1; }
+    .resultat__ditt { grid-column: 1; }
+    .resultat__dom { grid-column: 2; }
   }
   """
     .trimIndent()

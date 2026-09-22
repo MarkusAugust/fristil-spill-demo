@@ -53,7 +53,9 @@ class SpillTest {
         },
     )
 
-  private fun nyttSpill() = Spill(samling, toppliste, klokke)
+  private val kommuner = listOf("Oslo", "Bergen")
+
+  private fun nyttSpill() = Spill(samling, toppliste, klokke, kommuner = kommuner)
 
   @BeforeTest
   fun foer() {
@@ -68,17 +70,44 @@ class SpillTest {
   }
 
   @Test
-  fun `full pott krever vedtak, hjemmel og fella`() = runTest {
+  fun `full pott krever vedtak, hjemmel, kommune og fella`() = runTest {
     val spill = nyttSpill()
     val spiller = spill.bliMed("Kari", Stack.TANSTACK)
     val fasit = spill.sak.fasit
 
-    spill.svar(spiller.id, Svar(fasit.vedtak, fasit.hjemmel, fasit.felle))
+    spill.svar(
+      spiller.id,
+      Svar(fasit.vedtak, fasit.hjemmel, spill.sak.soker.kommune, fasit.felle),
+    )
     klokke.gaa(RUNDE_MS)
     spill.tikk()
 
     val meg = spill.tilstand(spiller.id).meg
-    assertEquals(POENG_VEDTAK + POENG_HJEMMEL + POENG_FELLE, meg?.poeng)
+    assertEquals(POENG_FULL_POTT, meg?.poeng)
+    assertEquals(25, POENG_FULL_POTT, "full pott er 25 poeng")
+  }
+
+  @Test
+  fun `en kommune som ikke finnes skal svares med tomt felt`() = runTest {
+    // Én av sakene viser til en kommune som ble slått sammen med en annen.
+    // Da finnes den ikke i registeret, og det riktige er å la feltet stå
+    // tomt. Forslagsfeltet sier fra med «Ingen treff» mens du skriver.
+    val samlingMedUkjentKommune =
+      samling.copy(
+        saker =
+          samling.saker.mapIndexed { nr, sak ->
+            if (nr == 0) sak.copy(soker = sak.soker.copy(kommune = "Mosvik")) else sak
+          }
+      )
+    val spill = Spill(samlingMedUkjentKommune, toppliste, klokke, kommuner = kommuner)
+    val spiller = spill.bliMed("Kari", Stack.TANSTACK)
+
+    val ukjent = spill.sak.soker.kommune !in kommuner
+
+    spill.svar(spiller.id, Svar(kommune = null))
+    val vurdering = spill.tilstand(spiller.id).meg?.vurdering
+    assertNotNull(vurdering)
+    assertEquals(ukjent, vurdering.kommuneRiktig, "tomt felt er riktig bare når kommunen mangler")
   }
 
   @Test
@@ -86,9 +115,9 @@ class SpillTest {
     val spill = nyttSpill()
     val spiller = spill.bliMed("Ola", Stack.DATASTAR)
 
-    // Bare fella er riktig, vedtaket og hjemmelen med vilje feil.
+    // Bare fella er riktig, resten med vilje feil.
     val feilVedtak = if (spill.sak.fasit.vedtak == Vedtak.INNVILGET) Vedtak.AVSLATT else Vedtak.INNVILGET
-    spill.svar(spiller.id, Svar(feilVedtak, "finnes ikke", spill.sak.fasit.felle))
+    spill.svar(spiller.id, Svar(feilVedtak, "finnes ikke", "Bergen", spill.sak.fasit.felle))
     klokke.gaa(RUNDE_MS)
     spill.tikk()
 
@@ -117,8 +146,13 @@ class SpillTest {
 
     // Spilleren får vite med én gang om svaret traff. Uten låsen kunne hvem
     // som helst prøvd seg fram til full pott.
-    assertTrue(spill.svar(spiller.id, Svar(feilVedtak, "finnes ikke", feilFelle)))
-    assertFalse(spill.svar(spiller.id, Svar(fasit.vedtak, fasit.hjemmel, fasit.felle)))
+    assertTrue(spill.svar(spiller.id, Svar(feilVedtak, "finnes ikke", "Bergen", feilFelle)))
+    assertFalse(
+      spill.svar(
+        spiller.id,
+        Svar(fasit.vedtak, fasit.hjemmel, spill.sak.soker.kommune, fasit.felle),
+      )
+    )
 
     klokke.gaa(RUNDE_MS)
     spill.tikk()
@@ -134,15 +168,19 @@ class SpillTest {
 
     assertNull(spill.tilstand(spiller.id).meg?.vurdering, "ingen vurdering før man har svart")
 
-    // Riktig vedtak, feil hjemmel, riktig felle.
-    spill.svar(spiller.id, Svar(fasit.vedtak, "finnes ikke", fasit.felle))
+    // Riktig vedtak, feil hjemmel, riktig kommune, riktig felle.
+    spill.svar(
+      spiller.id,
+      Svar(fasit.vedtak, "finnes ikke", spill.sak.soker.kommune, fasit.felle),
+    )
 
     val vurdering = spill.tilstand(spiller.id).meg?.vurdering
     assertNotNull(vurdering)
     assertTrue(vurdering.vedtakRiktig)
     assertFalse(vurdering.hjemmelRiktig)
+    assertTrue(vurdering.kommuneRiktig)
     assertTrue(vurdering.felleRiktig)
-    assertEquals(POENG_VEDTAK + POENG_FELLE, vurdering.poeng)
+    assertEquals(POENG_VEDTAK + POENG_KOMMUNE + POENG_FELLE, vurdering.poeng)
 
     // Og den skal si det samme som tavla sier etterpå.
     klokke.gaa(RUNDE_MS)
@@ -156,7 +194,7 @@ class SpillTest {
     val spiller = spill.bliMed("Ingrid", Stack.ASTRO)
 
     // Fasiten skal fortsatt være skjult, også for den som har svart.
-    spill.svar(spiller.id, Svar(Vedtak.INNVILGET, "§ 4-1", null))
+    spill.svar(spiller.id, Svar(Vedtak.INNVILGET, "§ 4-1", "Oslo", null))
 
     val tilstand = spill.tilstand(spiller.id)
     assertNotNull(tilstand.meg?.vurdering)
@@ -218,7 +256,10 @@ class SpillTest {
       assertEquals(Fase.RUNDE, spill.fase)
       assertEquals(runde + 1, spill.rundeNr)
       val fasit = spill.sak.fasit
-      spill.svar(spiller.id, Svar(fasit.vedtak, fasit.hjemmel, fasit.felle))
+      spill.svar(
+        spiller.id,
+        Svar(fasit.vedtak, fasit.hjemmel, spill.sak.soker.kommune, fasit.felle),
+      )
 
       klokke.gaa(RUNDE_MS)
       spill.tikk()
@@ -229,7 +270,7 @@ class SpillTest {
     }
 
     assertEquals(Fase.SLUTT, spill.fase)
-    assertEquals(RUNDER_PER_SPILL * 20, spill.tilstand(spiller.id).meg?.poeng)
+    assertEquals(RUNDER_PER_SPILL * POENG_FULL_POTT, spill.tilstand(spiller.id).meg?.poeng)
 
     klokke.gaa(SLUTT_MS)
     spill.tikk()
@@ -251,7 +292,10 @@ class SpillTest {
 
     repeat(RUNDER_PER_SPILL) {
       val fasit = spill.sak.fasit
-      spill.svar(spiller.id, Svar(fasit.vedtak, fasit.hjemmel, fasit.felle))
+      spill.svar(
+        spiller.id,
+        Svar(fasit.vedtak, fasit.hjemmel, spill.sak.soker.kommune, fasit.felle),
+      )
       klokke.gaa(RUNDE_MS)
       spill.tikk()
       klokke.gaa(OPPGJOR_MS)
@@ -261,8 +305,24 @@ class SpillTest {
     val topp = toppliste.topp(10)
     assertEquals(1, topp.size)
     assertEquals("Kari", topp[0].navn)
-    assertEquals(RUNDER_PER_SPILL * 20, topp[0].poeng)
+    assertEquals(RUNDER_PER_SPILL * POENG_FULL_POTT, topp[0].poeng)
     assertEquals(Stack.TANSTACK, topp[0].stack)
+  }
+
+  @Test
+  fun `topplista viser det beste per navn, ikke hver omgang`() = runTest {
+    // Uten grupperingen fylte den samme spilleren hele lista med sine egne
+    // omganger, og «Markus» sto fem ganger på en liste som skal si hvem som
+    // er best.
+    toppliste.lagre("Markus", 20, Stack.DATASTAR)
+    toppliste.lagre("Markus", 35, Stack.DATASTAR)
+    toppliste.lagre("Markus", 15, Stack.DATASTAR)
+    toppliste.lagre("Ingrid", 30, Stack.ASTRO)
+
+    val topp = toppliste.topp(10)
+
+    assertEquals(listOf("Markus", "Ingrid"), topp.map { it.navn })
+    assertEquals(listOf(35, 30), topp.map { it.poeng })
   }
 
   @Test

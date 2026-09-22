@@ -83,7 +83,19 @@ fun side(tilstand: Tilstand, spillerNavn: String?, kommuner: List<String> = empt
             "klokke" in el.dataset
               ? Math.floor(igjen / 60) + ":" + String(igjen % 60).padStart(2, "0")
               : igjen
-          el.classList.toggle("nedtelling--knapt", igjen <= 20)
+
+          // Fargen går gradvis mot rødt. Den holder seg hvit til halve fristen
+          // er gått, og blir så mer og mer rød. Et fast omslagspunkt ville
+          // gitt et sjokk i stedet for et press.
+          const lengde = Number(el.dataset.lengde)
+          if (lengde > 0) {
+            const igjenDel = Math.min(1, Math.max(0, (igjen * 1000) / lengde))
+            const roedt = Math.round(Math.max(0, 1 - igjenDel * 2) * 100)
+            el.style.color =
+              "color-mix(in oklab, var(--fs-spill-frist-slutt) " +
+              roedt +
+              "%, var(--fs-spill-frist-start))"
+          }
         }
       }, 250)
     </script>
@@ -131,7 +143,8 @@ fun topp(tilstand: Tilstand): String {
 
         <p class="topplinje__klokke">
           <span class="topplinje__merkelapp">$merkelapp</span>
-          <span class="nedtelling" data-klokke data-frist="${tilstand.fristMs}">–</span>
+          <span class="nedtelling" data-klokke data-frist="${tilstand.fristMs}"
+                data-lengde="${tilstand.faseLengdeMs}">–</span>
         </p>
 
         <span class="topplinje__stack">Kotlin · Datastar</span>
@@ -172,6 +185,7 @@ fun brett(
   <div id="brett" class="brett__innhold">
     <div id="sak" class="brett__hoved">${saksomrade(tilstand, spillerNavn, kommuner, feil)}</div>
     <aside id="tavle" class="fs-card kort tavle">${tavle(tilstand)}</aside>
+    ${resultatdialog(tilstand)}
   </div>
   """
     .trimIndent()
@@ -315,7 +329,7 @@ private fun vedtakskort(tilstand: Tilstand, kommuner: List<String>, feil: List<F
   return """
     <section class="fs-card kort vedtakskort">
       <h2 class="fs-heading" data-size="s">Ditt vedtak</h2>
-      <p class="vedtakskort__ingress">Fire spørsmål. Du kan svare én gang.</p>
+      <p class="vedtakskort__ingress">Fire spørsmål, 25 poeng. Du kan svare én gang.</p>
 
       $feiloppsummering
 
@@ -386,7 +400,7 @@ private fun vedtakskort(tilstand: Tilstand, kommuner: List<String>, feil: List<F
                data-preserve-attr="${Bevar.FORSLAG_TOM}">Ingen treff. Finnes kommunen fortsatt?</p>
             <span class="fs-sr-only" id="kommune-status" aria-live="polite" data-ignore-morph></span>
           </div>
-          <p class="fs-help-text" id="kommune-hjelp">Begynn å skrive, så kommer forslagene.</p>
+          <p class="fs-help-text" id="kommune-hjelp">Begynn å skrive, så kommer forslagene. Finner du den ikke, la feltet stå tomt.</p>
         </fs-suggestion>
 
         <fs-field>
@@ -430,13 +444,13 @@ private fun kvittering(tilstand: Tilstand): String {
 
   val farge =
     when {
-      poeng >= 20 -> "success"
+      poeng >= POENG_FULL_POTT -> "success"
       poeng > 0 -> "info"
       else -> "warning"
     }
   val overskrift =
     when {
-      poeng >= 20 -> "Full pott"
+      poeng >= POENG_FULL_POTT -> "Full pott"
       poeng > 0 -> "Delvis truffet"
       else -> "Ingen uttelling"
     }
@@ -447,21 +461,150 @@ private fun kvittering(tilstand: Tilstand): String {
 
       <div class="fs-alert" data-color="$farge">
         <p class="fs-alert__title">$overskrift</p>
-        <p>Du fikk <strong>$poeng av 20 poeng</strong> på denne saken.</p>
+        <p>Du fikk <strong>$poeng av $POENG_FULL_POTT poeng</strong> på denne saken.</p>
       </div>
 
       ${if (vurdering == null) "" else """
       <ul class="fs-list kvittering" data-variant="plain">
         ${linje("Utfall", vurdering.vedtakRiktig, 10)}
         ${linje("Hjemmel", vurdering.hjemmelRiktig, 5)}
+        ${linje("Kommune", vurdering.kommuneRiktig, 5)}
         ${linje("Feil i søknaden", vurdering.felleRiktig, 5)}
       </ul>"""}
 
-      <p class="vedtakskort__ingress">Fasiten og begrunnelsen kommer når runden er over.</p>
+      <p class="vedtakskort__ingress">Fasiten og begrunnelsen kommer når runden er over, og alle har levert.</p>
     </section>
   """
     .trimIndent()
 }
+
+/**
+ * Resultatet av runden, som en modal dialog.
+ *
+ * Hele skjemaet vurderes, og dialogen sier både hva du svarte og hva som var
+ * riktig, felt for felt. Det holder ikke å si «feil»: da vet du fortsatt ikke
+ * hva du skulle ha svart, og neste runde blir like tilfeldig.
+ *
+ * `open` står på verten og er serverens beskjed. `data-preserve-attr="open"`
+ * står på selve `<dialog>`, fordi det er nettleseren som setter det når
+ * `showModal()` kalles.
+ */
+fun resultatdialog(tilstand: Tilstand): String {
+  val fasit = tilstand.fasit
+  val meg = tilstand.meg
+  val apen = tilstand.fase == "oppgjor" && fasit != null && meg != null
+
+  if (fasit == null || meg == null) {
+    return """<fs-dialog id="resultat"></fs-dialog>"""
+  }
+
+  val svar = meg.svar
+  val vurdering = meg.vurdering
+  val besvart = svar != null && vurdering != null
+
+  val utfall =
+    when {
+      !besvart -> "avvik"
+      vurdering!!.poeng >= POENG_FULL_POTT -> "full"
+      vurdering.poeng > 0 -> "delvis"
+      else -> "ingen"
+    }
+  val overskrift =
+    when (utfall) {
+      "avvik" -> "Avvik registrert"
+      "full" -> "Full pott"
+      "delvis" -> "Delvis truffet"
+      else -> "Ingen uttelling"
+    }
+
+  val rader =
+    if (!besvart) ""
+    else
+      listOf(
+          resultatrad(
+            "Utfall",
+            vedtaksord(svar?.vedtak),
+            vedtaksord(fasit.vedtak),
+            vurdering!!.vedtakRiktig,
+          ),
+          resultatrad(
+            "Hjemmel",
+            svar?.hjemmel?.ifBlank { null } ?: "Ikke besvart",
+            fasit.hjemmel,
+            vurdering.hjemmelRiktig,
+          ),
+          resultatrad(
+            "Kommune",
+            svar?.kommune?.ifBlank { null } ?: "Ingen",
+            tilstand.fasitKommune ?: "Ingen, kommunen finnes ikke lenger",
+            vurdering.kommuneRiktig,
+          ),
+          resultatrad(
+            "Feil i søknaden",
+            svar?.felle?.let { feltnavn(it).replaceFirstChar { t -> t.uppercase() } } ?: "Ingen",
+            fasit.felle?.let { feltnavn(it).replaceFirstChar { t -> t.uppercase() } }
+              ?: "Ingen, saken var i orden",
+            vurdering.felleRiktig,
+          ),
+        )
+        .joinToString("\n")
+
+  val innledning =
+    if (!besvart)
+      """
+      <div class="fs-alert" data-color="danger">
+        <p class="fs-alert__title">Saken ble ikke behandlet innen fristen</p>
+        <p>Avviket er varslet til fylkesmannen. Null poeng for runden.</p>
+      </div>"""
+    else
+      """
+      <p class="resultat__poeng">
+        <strong>${vurdering!!.poeng}</strong> av $POENG_FULL_POTT poeng
+      </p>"""
+
+  return """
+    <fs-dialog id="resultat"${if (apen) " open" else ""}>
+      <dialog class="fs-dialog resultat" aria-labelledby="resultat-tittel"
+              data-utfall="$utfall" data-preserve-attr="open">
+        <h2 class="fs-dialog__title" id="resultat-tittel">${overskrift.trygg()}</h2>
+
+        <div class="fs-dialog__body">
+          $innledning
+
+          ${if (rader.isBlank()) "" else """<dl class="resultat__liste">$rader</dl>"""}
+
+          <div class="fs-alert" data-color="info">
+            <p class="fs-alert__title">Sak ${tilstand.sak.id.trygg()}</p>
+            <p>${(tilstand.forklaring ?: "").trygg()}</p>
+          </div>
+        </div>
+
+        <form method="dialog" class="fs-dialog__footer">
+          <button class="fs-button" value="lukk">Lukk</button>
+        </form>
+      </dialog>
+    </fs-dialog>
+  """
+    .trimIndent()
+}
+
+private fun vedtaksord(vedtak: String?) =
+  when (vedtak) {
+    "innvilget" -> "Innvilget"
+    "avslatt" -> "Avslått"
+    else -> "Ikke besvart"
+  }
+
+private fun resultatrad(navn: String, ditt: String, riktig: String, erRiktig: Boolean) =
+  """
+  <div class="resultat__rad" data-riktig="$erRiktig">
+    <dt class="resultat__felt">${navn.trygg()}</dt>
+    <dd class="resultat__ditt">${ditt.trygg()}</dd>
+    <dd class="resultat__dom">${if (erRiktig) "Riktig" else "Feil"}</dd>
+    ${if (erRiktig) "" else """<dd class="resultat__riktig">Riktig svar: ${riktig.trygg()}</dd>"""}
+  </div>
+  """
+    .trimIndent()
 
 /** Fasit, poeng og plassering. Saken står igjen over, så svaret har noe å vise til. */
 fun oppgjor(tilstand: Tilstand): String {
@@ -541,7 +684,8 @@ fun slutt(tilstand: Tilstand): String {
       ${if (meg == null) "" else """
       <p class="poeng"><strong>${meg.poeng} poeng</strong> · ${meg.plass}. plass</p>"""}
       <p class="fs-paragraph">Ny omgang starter om
-        <span class="nedtelling" data-frist="${tilstand.fristMs}">…</span> sekunder.</p>
+        <span class="nedtelling" data-frist="${tilstand.fristMs}"
+          data-lengde="${tilstand.faseLengdeMs}">…</span> sekunder.</p>
 
       <h3 class="fs-heading" data-size="xs">Evig toppliste</h3>
       <table class="fs-table">

@@ -28,6 +28,7 @@ data class SakUt(
 data class Vurdering(
   val vedtakRiktig: Boolean,
   val hjemmelRiktig: Boolean,
+  val kommuneRiktig: Boolean,
   val felleRiktig: Boolean,
   val poeng: Int,
 )
@@ -45,6 +46,7 @@ data class MegUt(
   val plass: Int,
   val forrigePlass: Int,
   val harSvart: Boolean,
+  val svar: Svar? = null,
   val vurdering: Vurdering? = null,
 )
 
@@ -56,10 +58,13 @@ data class Tilstand(
   val rundeNr: Int,
   val runderTotalt: Int,
   val fristMs: Long,
+  val faseLengdeMs: Long,
   val naMs: Long,
   val sak: SakUt,
   val hjemler: List<Hjemmel>,
   val fasit: Fasit? = null,
+  /** Riktig svar i kommunefeltet, eller `null` når kommunen ikke finnes. */
+  val fasitKommune: String? = null,
   val forklaring: String? = null,
   val tavle: List<TavleRad>,
   val meg: MegUt? = null,
@@ -79,6 +84,21 @@ data class Tilstand(
 
 @Serializable data class BliMedUt(val spillerId: String, val navn: String)
 
-@Serializable data class Svar(val vedtak: String? = null, val hjemmel: String? = null, val felle: String? = null)
+@Serializable
+data class Svar(
+  val vedtak: String? = null,
+  val hjemmel: String? = null,
+  val kommune: String? = null,
+  val felle: String? = null,
+)
 
 @Serializable data class SvarInn(val spillerId: String, val svar: Svar)
+
+/**
+ * Full pott på én sak.
+ *
+ * Tallet eies av spilltjeneren, som deler ut poengene. Her står det bare for
+ * å kunne skrive «20 av 25» i kvitteringen, og prøven i `MarkupTest` holder
+ * de to i takt.
+ */
+const val POENG_FULL_POTT = 25

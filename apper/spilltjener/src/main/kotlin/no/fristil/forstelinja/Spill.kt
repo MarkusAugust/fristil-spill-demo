@@ -24,8 +24,8 @@ import kotlinx.serialization.Serializable
 
 const val RUNDER_PER_SPILL = 4
 const val RUNDE_MS = 120_000L
-const val OPPGJOR_MS = 15_000L
-const val SLUTT_MS = 30_000L
+const val OPPGJOR_MS = 25_000L
+const val SLUTT_MS = 40_000L
 
 /**
  * Hvor lenge hver fase varer.
@@ -33,8 +33,10 @@ const val SLUTT_MS = 30_000L
  * Kan settes med miljøvariabler. To minutter per runde er valgt fordi saken
  * skal leses: to faner, en tabell, tre felt og en hjelpetekst om hjemlene.
  * Med et halvt minutt rakk man å gjette, ikke å saksbehandle, og det er
- * saksbehandlingen som er poenget. Fire runder gir da en omgang på rundt ni
- * minutter. Skal spillet vises fram i full fart, settes `RUNDE_MS` ned.
+ * saksbehandlingen som er poenget. Oppgjøret er langt nok til å lese fasiten
+ * og begrunnelsen, ikke bare til å se poengsummen. Fire runder gir en omgang
+ * på rundt ti minutter. Skal spillet vises fram i full fart, settes
+ * `RUNDE_MS` ned.
  */
 data class Tider(
   val runde: Long = RUNDE_MS,
@@ -54,7 +56,9 @@ data class Tider(
 /** Full pott per runde: vedtaket, hjemmelen og fella. */
 const val POENG_VEDTAK = 10
 const val POENG_HJEMMEL = 5
+const val POENG_KOMMUNE = 5
 const val POENG_FELLE = 5
+const val POENG_FULL_POTT = POENG_VEDTAK + POENG_HJEMMEL + POENG_KOMMUNE + POENG_FELLE
 
 /*
  * Verdiene på tråden skrives med små bokstaver.
@@ -89,6 +93,14 @@ enum class Stack {
 data class Svar(
   val vedtak: Vedtak? = null,
   val hjemmel: String? = null,
+  /**
+   * Kommunen spilleren bekreftet, eller `null` for «den finnes ikke».
+   *
+   * Én av sakene viser til en kommune som ble slått sammen med en annen. Da
+   * er det riktige svaret å la feltet stå tomt, og forslagsfeltet sier fra
+   * med «Ingen treff» mens du skriver.
+   */
+  val kommune: String? = null,
   /** Feltet spilleren mener er feil, eller `null` for «saken er i orden». */
   val felle: String? = null,
 )
@@ -113,6 +125,13 @@ class Spill(
   private val toppliste: Toppliste,
   private val klokke: Klokke = Klokke { System.currentTimeMillis() },
   private val tider: Tider = Tider(),
+  /**
+   * Kommuneregisteret, som fasiten for kommunefeltet regnes ut av.
+   *
+   * Står søkerens kommune her, er det den som er riktig svar. Står den ikke,
+   * finnes ikke kommunen lenger, og da er det riktige å la feltet stå tomt.
+   */
+  private val kommuner: List<String> = emptyList(),
 ) {
   private val laas = Mutex()
 
@@ -220,29 +239,37 @@ class Spill(
    * gang, og til opptellingen når runden er over. To utregninger kunne gått
    * fra hverandre, og da ville kvitteringen sagt noe annet enn tavla.
    */
-  private fun vurder(svar: Svar?, fasit: Fasit): Vurdering {
-    if (svar == null) return Vurdering(false, false, false, 0)
+  private fun vurder(svar: Svar?, sak: Sak): Vurdering {
+    val fasit = sak.fasit
+    if (svar == null) return Vurdering(false, false, false, false, 0)
     val vedtak = svar.vedtak == fasit.vedtak
     val hjemmel = svar.hjemmel == fasit.hjemmel
+    // Tomt felt er et svar: det betyr «kommunen finnes ikke lenger».
+    val kommune = svar.kommune?.ifBlank { null } == riktigKommune(sak)
     // Fella teller begge veier: å se den, og å se at det ikke er noen.
     val felle = svar.felle == fasit.felle
     return Vurdering(
       vedtakRiktig = vedtak,
       hjemmelRiktig = hjemmel,
+      kommuneRiktig = kommune,
       felleRiktig = felle,
       poeng =
         (if (vedtak) POENG_VEDTAK else 0) +
           (if (hjemmel) POENG_HJEMMEL else 0) +
+          (if (kommune) POENG_KOMMUNE else 0) +
           (if (felle) POENG_FELLE else 0),
     )
   }
 
+  /** Kommunen som er riktig svar, eller `null` når den ikke finnes lenger. */
+  private fun riktigKommune(sak: Sak): String? =
+    sak.soker.kommune.takeIf { it in kommuner }
+
   private fun telleOpp() {
     val plasseringFor = tavleliste().withIndex().associate { (i, s) -> s.id to i + 1 }
-    val fasit = sak.fasit
 
     for (spiller in spillere.values) {
-      val poeng = vurder(spiller.svar, fasit).poeng
+      val poeng = vurder(spiller.svar, sak).poeng
       spiller.sistePoeng = poeng
       spiller.poeng += poeng
       spiller.forrigePlass = plasseringFor[spiller.id] ?: 0
@@ -298,6 +325,12 @@ class Spill(
         rundeNr = rundeNr,
         runderTotalt = RUNDER_PER_SPILL,
         fristMs = faseSlutt,
+        faseLengdeMs =
+          when (fase) {
+            Fase.RUNDE -> tider.runde
+            Fase.OPPGJOR -> tider.oppgjor
+            Fase.SLUTT -> tider.slutt
+          },
         naMs = klokke.na(),
         sak =
           SakUt(
@@ -309,6 +342,9 @@ class Spill(
           ),
         hjemler = samling.hjemler,
         fasit = if (visFasit) sak.fasit else null,
+        // Kommunefeltet har ingen fasit i fila: den regnes ut av registeret,
+        // og «ingen» er et gyldig svar.
+        fasitKommune = if (visFasit) riktigKommune(sak) else null,
         forklaring = if (visFasit) sak.forklaring else null,
         tavle =
           tavle.mapIndexed { i, s ->
@@ -330,7 +366,7 @@ class Spill(
               forrigePlass = it.forrigePlass,
               harSvart = it.svar != null,
               svar = it.svar,
-              vurdering = it.svar?.let { svar -> vurder(svar, sak.fasit) },
+              vurdering = it.svar?.let { svar -> vurder(svar, sak) },
             )
           },
         evigToppliste = toppliste.topp(10),

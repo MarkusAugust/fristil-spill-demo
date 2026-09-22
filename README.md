@@ -47,17 +47,24 @@ Fire runder à to minutter, med femten sekunders oppgjør mellom. Rundt ni minut
 
 **Ingen lobby.** Rundene går uavbrutt. Den som åpner adressen er med fra neste runde, og venter aldri lenger enn én runde. En lobby ville betydd at den første som kom satt og ventet på noen som aldri kom.
 
-Hver runde er én sak, og full pott er 20 poeng:
+Hver runde er én sak, og full pott er 25 poeng. Hele skjemaet vurderes:
 
 | | Poeng |
 | --- | --- |
-| Riktig vedtak | 10 |
+| Riktig utfall | 10 |
 | Riktig hjemmel | 5 |
+| Riktig kommune | 5 |
 | Riktig om fella | 5 |
 
 Fella er et felt som er feil: en fødselsdato som ikke finnes, en kommune som ble slått sammen i 2012, en e-post uten krøllalfa. Å se at saken er i orden teller like mye som å se fella. Søknadsteksten står i den ene fana og opplysningene om søkeren i den andre, så begge må leses.
 
+Kommunefeltet er verdt et eget ord: én av sakene viser til en kommune som ble slått sammen med en annen i 2012. Den finnes ikke i registeret, og da er det riktige svaret å la feltet stå tomt. Forslagsfeltet sier fra med «Ingen treff» mens du skriver.
+
 **Du kan svare én gang.** Vedtaket låses i det du trykker, og da får du med én gang vite hva som traff og hva det ga. Fasiten og begrunnelsen kommer først når runden er over og alle har levert. Uten låsen ville den umiddelbare tilbakemeldingen vært en fasit man kunne prøvd seg fram til.
+
+Når runden er over, kommer resultatet som en **modal dialog**: hva du svarte, hva som var riktig, felt for felt, og hvorfor. Rakk du ikke fristen, sier den i stedet at saken ikke ble behandlet i tide, og at avviket er varslet til fylkesmannen.
+
+Den dialogen er grunnen til at `<fs-dialog>` finnes i Fristil. Å åpne en `<dialog>` er et kall, og en server som bare sender HTML kan ikke kalle noe; `<dialog open>` er bare en boks på siden. Demoen fant altså et hull i designsystemet, og hullet ble tettet der.
 
 Poeng for riktig, ikke for raskest. En ren reflekskonkurranse ville latt nettverksmodellen avgjøre, og da hadde demoen bevist noe annet enn den skulle.
 

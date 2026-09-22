@@ -15,8 +15,9 @@ import kotlinx.coroutines.runBlocking
  */
 fun main(): Unit = runBlocking {
   val samling = lesSaker()
+  val kommuner = lesKommuner()
   val toppliste = Toppliste()
-  val spill = Spill(samling, toppliste, tider = Tider.fraMiljo())
+  val spill = Spill(samling, toppliste, tider = Tider.fraMiljo(), kommuner = kommuner)
 
   launch {
     while (true) {

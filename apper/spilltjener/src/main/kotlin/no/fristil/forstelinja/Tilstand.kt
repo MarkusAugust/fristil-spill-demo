@@ -34,6 +34,7 @@ data class SakUt(
 data class Vurdering(
   val vedtakRiktig: Boolean,
   val hjemmelRiktig: Boolean,
+  val kommuneRiktig: Boolean,
   val felleRiktig: Boolean,
   val poeng: Int,
 )
@@ -69,11 +70,15 @@ data class Tilstand(
   val runderTotalt: Int,
   /** Absolutt tidspunkt. Klienten teller ned selv, så et forsinket bud ikke flytter fristen. */
   val fristMs: Long,
+  /** Hvor lang hele fasen er. Klienten fargelegger nedtellingen etter den. */
+  val faseLengdeMs: Long,
   /** Serverens klokke nå, slik at klienten kan regne ut forskjellen mot sin egen. */
   val naMs: Long,
   val sak: SakUt,
   val hjemler: List<Hjemmel>,
   val fasit: Fasit?,
+  /** Riktig svar i kommunefeltet, eller `null` når kommunen ikke finnes. */
+  val fasitKommune: String?,
   val forklaring: String?,
   val tavle: List<TavleRad>,
   val meg: MegUt?,
