@@ -29,8 +29,8 @@ application { mainClass.set("no.fristil.forstelinja.datastar.MainKt") }
 tasks.test {
   useJUnitPlatform()
 
-  // Ingen `inputs.files(fileTree("../../felles"))` her: prøvene i denne
-  // modulen leser ikke de delte filene. Appen leser `kommuner.json` ved
-  // oppstart, men det er ikke en inngang til testoppgaven. Spilltjenerens
-  // prøver leser dem, og der står erklæringen.
+  // `felles/` er delte data, og Gradle kjenner dem ikke som en inngang.
+  // Uten dette kan du endre `brett.css` eller en kommune, kjøre testene, og
+  // få grønt på gammelt grunnlag fordi oppgaven regnes som oppdatert.
+  inputs.files(fileTree("../../felles")).withPropertyName("fellesdata")
 }

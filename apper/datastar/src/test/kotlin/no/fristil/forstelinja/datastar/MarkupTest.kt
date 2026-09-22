@@ -680,4 +680,13 @@ class MarkupTest {
       assertTrue(html.contains("""href="${utgave.adresse}""""), "mangler lenke til ${utgave.navn}")
     }
   }
+
+  @Test
+  fun `stilarket ligger i felles, og har det markupen trenger`() {
+    // Fila deles av alle tre appene. Ligger den som en streng i én av dem,
+    // er «samme skjerm i tre rammeverk» en påstand ingen kan holde.
+    assertTrue(BRETT_CSS.contains(".topplinje"), "stilarket ser ikke ut som vårt")
+    assertTrue(BRETT_CSS.contains(".brett__innhold"))
+    assertTrue(BRETT_CSS.length > 5_000, "for lite til å være hele stilarket")
+  }
 }
