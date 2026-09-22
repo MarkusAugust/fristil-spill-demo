@@ -1,0 +1,135 @@
+# Førstelinja
+
+Et spill som viser at det samme designsystemet, [Fristil](https://github.com/MarkusAugust/fristil), gir identisk brukergrensesnitt i tre helt ulike teknologier.
+
+Alle spillerne er saksbehandlere i samme etat og behandler de samme sakene samtidig. Tavla viser hvilken app hver spiller sitter i:
+
+```
+TAVLE · runde 2 av 4
+──────────────────────────────────
+  1.  Kari      34 p    ● TanStack
+  2.  Ola       28 p    ● Kotlin
+  3.  Ingrid    21 p    ● Astro
+```
+
+Kari og Ola spiller sammen, i sanntid, fra to helt ulike stacker, og skjermene deres ser like ut. Det er hele påstanden til Fristil, demonstrert av folk som ikke tenker på den.
+
+## Delene
+
+```
+                    ┌──────────────────────────┐
+                    │  SPILLTJENEREN (Kotlin)  │
+                    │   intern, bare JSON      │
+                    └────┬────────┬────────┬───┘
+        ┌────────────────┘        │        └────────────────┐
+┌───────▼────────┐      ┌─────────▼────────┐      ┌─────────▼────────┐
+│ TanStack Start │      │ Datastar (Kotlin)│      │      Astro       │
+└───────┬────────┘      └─────────┬────────┘      └─────────┬────────┘
+        │ JSON                    │ HTML-biter              │ ny side
+┌───────▼────────┐      ┌─────────▼────────┐      ┌─────────▼────────┐
+│    nettleser   │      │    nettleser     │      │    nettleser     │
+└────────────────┘      └──────────────────┘      └──────────────────┘
+```
+
+Spilltjeneren eier reglene og tilstanden, og sender **bare JSON**. De tre appene eier hver sin presentasjon. Alle tre snakker med spilltjeneren fra sin egen server, aldri fra nettleseren: det er slik rammeverkene selv er ment å brukes, det holder spilltjeneren intern, og det gjør at den eneste forskjellen mellom appene er den vi vil vise fram.
+
+| App | Ned til nettleseren | Hvor tegningen skjer |
+| --- | --- | --- |
+| TanStack Start | JSON | i nettleseren |
+| Datastar | ferdige HTML-biter | på serveren |
+| Astro | en ny side, og JSON til én liten øy | på serveren |
+
+Spilltjeneren er med vilje ikke den samme prosessen som Datastar-appen. Ellers ville de to andre vært klienter av Datastar-appen, og sammenligningen blitt skjev.
+
+## Omgangen
+
+Fire runder à 30 sekunder, med ti sekunders oppgjør mellom. Rundt tre minutter, og så begynner en ny.
+
+**Ingen lobby.** Rundene går uavbrutt. Den som åpner adressen er med i neste runde innen et halvt minutt. En lobby ville betydd at den første som kom satt og ventet på noen som aldri kom.
+
+Hver runde er én sak, og full pott er 20 poeng:
+
+| | Poeng |
+| --- | --- |
+| Riktig vedtak | 10 |
+| Riktig hjemmel | 5 |
+| Riktig om fella | 5 |
+
+Fella er et felt som er feil: en fødselsdato som ikke finnes, en kommune som ble slått sammen i 2012, en e-post uten krøllalfa. Å se at saken er i orden teller like mye som å se fella.
+
+Poeng for riktig, ikke for raskest. En ren reflekskonkurranse ville latt nettverksmodellen avgjøre, og da hadde demoen bevist noe annet enn den skulle.
+
+Når runden er over bytter saksområdet innhold der det står: fasit, din plassering, tavla, nedtelling. Oppgjøret kommer bevisst ikke i en dialog, for en dialog hvert 40. sekund er slitsom. Dialogen sparer vi til slutten av omgangen.
+
+## Tilstand, og hvorfor det ikke er noen database
+
+| Tilstand | Lever i | Hvor |
+| --- | --- | --- |
+| Sakene | for alltid, men er innhold | `felles/saker.json` |
+| Spillere, runde, svar | minutter | minne |
+| Evig toppliste | for alltid | SQLite |
+
+En omgang varer tre minutter, altså kortere enn en utrulling. Alt annet enn topplista er kortere enn levetiden til prosessen. En database å drifte ville vært én ting til som kan feile under en demonstrasjon, og den lærer ingen noe om Fristil.
+
+Starter prosessen på nytt, er omgangen borte og en ny begynner. Spillerne får beskjed gjennom `<fs-connection-status>` framfor en ødelagt skjerm.
+
+Fristen sendes som et **absolutt tidspunkt**, ikke «30 sekunder igjen». Hver klient teller ned selv, så et forsinket bud flytter ikke fristen, og de tre appene kan ikke komme i utakt.
+
+## Sakene
+
+`felles/saker.json` er delt mellom alle fire delene, og er JSON og ikke TypeScript nettopp derfor: Kotlin og JavaScript leser den samme fila, og ingen av dem eier den. Små bokstaver i verdiene av samme grunn.
+
+Arbeidet er ekte saksbehandling. Vitsen er saken:
+
+> **2024/1187** · Søknad om å holde 14 høner i borettslag. Vedlagt uttalelse fra styret, som er negativ, og fra hanen, som ikke er det.
+
+`SakerTest` avviser en fasit som viser til en hjemmel som ikke finnes, to saker med samme id, en felle som ikke er et felt, og en forklaring som er for kort til å være en forklaring.
+
+## Kjøre lokalt
+
+```bash
+cd apper/spilltjener
+./gradlew test          # reglene, med falsk klokke
+./gradlew installDist
+./build/install/spilltjener/bin/spilltjener
+```
+
+| Variabel | Standard | Til hva |
+| --- | --- | --- |
+| `PORT` | `8080` | |
+| `HOST` | `::` | Railways private nett er IPv6 |
+| `SAKER_FIL` | `../../felles/saker.json` | |
+| `TOPPLISTE_FIL` | `toppliste.db` | på Railway: et volum |
+| `RUNDE_MS` | `30000` | lengre runder når noen skal snakke over spillet |
+| `OPPGJOR_MS` | `10000` | |
+| `SLUTT_MS` | `20000` | |
+
+## Railway
+
+Fem tjenester i ett prosjekt:
+
+| Tjeneste | Offentlig | Volum |
+| --- | --- | --- |
+| `spilltjener` | nei | ja, til SQLite |
+| `tanstack` | ja | nei |
+| `datastar` | ja | nei |
+| `astro` | ja | nei |
+| `skall` | ja | nei |
+
+Appene når spilltjeneren på `spilltjener.railway.internal`, så den trenger aldri et offentlig domene.
+
+To ting å passe på, notert før vi kom dit:
+
+- **`felles/` og «root directory».** Setter man en root directory per tjeneste, henter Railway bare filer derfra, og da finnes ikke `felles/saker.json`. Tjenester som trenger den må settes opp som et delt monorepo, med byggkommandoer som kjører fra rota, eller få `SAKER_FIL` pekt et annet sted.
+- **Uten volum forsvinner topplista** ved hver utrulling. Ett volum per tjeneste, og en tjeneste med volum får litt nedetid ved utrulling. For spilltjeneren er det uproblematisk, siden en omstart uansett starter en ny omgang.
+
+Og én ting som **ikke er etterprøvd ennå**: jeg mener Railways private nett er IPv6-bare, slik at tjenesten må lytte på `::` og ikke `0.0.0.0` for å være synlig internt. Standarden her er `::`, men det må bekreftes mot Railways egen dokumentasjon når vi setter opp.
+
+## Status
+
+- [x] Spilltjeneren: regler, poeng, runder, SSE, SQLite
+- [ ] Datastar-appen (Kotlin)
+- [ ] TanStack Start-appen
+- [ ] Astro-appen
+- [ ] Skallet med bryteren
+- [ ] Railway

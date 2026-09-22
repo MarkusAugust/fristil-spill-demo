@@ -1,0 +1,16 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Node
+node_modules/
+dist/
+.astro/
+
+# Den evige topplista. På Railway ligger den på et volum.
+*.db
+*.db-journal
+
+# macOS
+.DS_Store

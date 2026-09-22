@@ -1,0 +1,76 @@
+{
+  "_om": "Sakene i Førstelinja. Delt mellom alle appene, derfor JSON og ikke TypeScript: Kotlin og JavaScript leser den samme fila, og ingen av dem eier den.",
+  "hjemler": [
+    { "kode": "§ 4-1", "tekst": "Alminnelig søknadsbehandling" },
+    { "kode": "§ 8-2", "tekst": "Dyrehold i borettslag" },
+    { "kode": "§ 12-3", "tekst": "Mangelfulle personopplysninger" },
+    { "kode": "§ 19-7", "tekst": "Klagefrist oversittet" },
+    { "kode": "§ 21-2", "tekst": "Navn som kan være til ulempe" }
+  ],
+  "saker": [
+    {
+      "id": "2024/1187",
+      "tittel": "Søknad om å holde 14 høner i borettslag",
+      "sammendrag": "Vedlagt uttalelse fra styret, som er negativ, og fra hanen, som ikke er det.",
+      "soker": { "navn": "Bjørg Hønsvald", "fodselsdato": "31.02.1974", "kommune": "Bergen", "epost": "bjorg@example.no" },
+      "fasit": { "vedtak": "avslatt", "hjemmel": "§ 12-3", "felle": "fodselsdato" },
+      "forklaring": "Fødselsdatoen finnes ikke. 31. februar er en klassiker, og saken kan ikke behandles før den er rettet."
+    },
+    {
+      "id": "2024/0904",
+      "tittel": "Søknad om navneendring til «Kong Harald»",
+      "sammendrag": "Søker er en bordercollie på tre år. Eier opplyser at hunden allerede svarer på navnet.",
+      "soker": { "navn": "Kong Harald", "fodselsdato": "12.05.2021", "kommune": "Oslo", "epost": "eier@example.no" },
+      "fasit": { "vedtak": "avslatt", "hjemmel": "§ 21-2", "felle": null },
+      "forklaring": "Navnet kan være til ulempe for bæreren, og for kongen. Datoen er det ingenting i veien med."
+    },
+    {
+      "id": "2024/2231",
+      "tittel": "Klage på vedtak om fartsgrense",
+      "sammendrag": "Levert fire år for sent, men skrevet på rim.",
+      "soker": { "navn": "Trygve Dikt", "fodselsdato": "03.11.1968", "kommune": "Sandefjord", "epost": "trygve@example.no" },
+      "fasit": { "vedtak": "avslatt", "hjemmel": "§ 19-7", "felle": null },
+      "forklaring": "Klagefristen er tre uker. Rim forlenger den ikke."
+    },
+    {
+      "id": "2024/3310",
+      "tittel": "Søknad om støtte til kulturarrangement",
+      "sammendrag": "«Norges største quiz om skjemaer». Forventet oppmøte: 400. Faktisk oppmøte i fjor: 6.",
+      "soker": { "navn": "Quizlaget", "fodselsdato": "14.09.1990", "kommune": "Ålesund", "epost": "post@example.no" },
+      "fasit": { "vedtak": "innvilget", "hjemmel": "§ 4-1", "felle": null },
+      "forklaring": "Oppmøtet er ikke et vilkår. Søknaden er i orden, og noen må jo gå."
+    },
+    {
+      "id": "2024/0451",
+      "tittel": "Søknad om oppsetting av gapestokk i hagen",
+      "sammendrag": "Omsøkt bruk: «kun til dekorasjon». Nabovarsel er sendt til alle, også til dem det gjelder.",
+      "soker": { "navn": "Osvald Streng", "fodselsdato": "22.07.1955", "kommune": "Sandnessjøen", "epost": "osvald.example.no" },
+      "fasit": { "vedtak": "avslatt", "hjemmel": "§ 12-3", "felle": "epost" },
+      "forklaring": "E-postadressen mangler krøllalfa, så søkeren kan ikke varsles om vedtaket."
+    },
+    {
+      "id": "2024/1902",
+      "tittel": "Søknad om å drive kennel i Mosvik",
+      "sammendrag": "Søker viser til at kommunen ga tillatelse i 2017.",
+      "soker": { "navn": "Randi Bjeff", "fodselsdato": "08.03.1981", "kommune": "Mosvik", "epost": "randi@example.no" },
+      "fasit": { "vedtak": "avslatt", "hjemmel": "§ 12-3", "felle": "kommune" },
+      "forklaring": "Mosvik ble slått sammen med Inderøy i 2012. Kommunen som ga tillatelsen finnes ikke lenger."
+    },
+    {
+      "id": "2024/2770",
+      "tittel": "Søknad om dispensasjon fra påbud om hjelm",
+      "sammendrag": "Begrunnelse: «hjelmen ødelegger frisyren». Vedlagt bilde av frisyren.",
+      "soker": { "navn": "Solveig Sveis", "fodselsdato": "19.12.1993", "kommune": "Tromsø", "epost": "solveig@example.no" },
+      "fasit": { "vedtak": "avslatt", "hjemmel": "§ 4-1", "felle": null },
+      "forklaring": "Frisyren er et hensyn, men ikke et tungtveiende ett."
+    },
+    {
+      "id": "2024/0088",
+      "tittel": "Søknad om navneendring fra «Ola Nordmann» til «Ola Nordmann»",
+      "sammendrag": "Søker opplyser at det er en viktig forskjell.",
+      "soker": { "navn": "Ola Nordmann", "fodselsdato": "01.01.1980", "kommune": "Lillestrøm", "epost": "ola@example.no" },
+      "fasit": { "vedtak": "innvilget", "hjemmel": "§ 4-1", "felle": null },
+      "forklaring": "Navnet er uendret, og dermed lovlig. Søknaden koster ingenting å innvilge."
+    }
+  ]
+}
