@@ -92,13 +92,20 @@ class MarkupTest {
   }
 
   @Test
-  fun `ledetekst og felt er koblet, slik fs-field ville gjort det`() {
+  fun `serveren navngir bare det noe annet må peke på`() {
     val html = brett(tilstand, "Kari", listOf("Bergen"))
 
-    for (id in listOf("hjemmel", "felle")) {
-      assertTrue(html.contains("""<label class="fs-label" for="$id""""), "ledetekst for $id")
-      assertTrue(html.contains("""id="$id""""), "felt $id")
-    }
+    // Feiloppsummeringen lenker til hjemmelen, så den må ha en id serveren
+    // kjenner.
+    assertTrue(html.contains("""id="hjemmel""""), "hjemmelen må navngis")
+
+    // Fellefeltet peker ingen på. Da skriver serveren bare struktur, og
+    // `<fs-field>` setter id, `for` og `aria-describedby` i nettleseren.
+    // Skrev vi koblingen her, måtte hver server i hvert språk gjort det
+    // samme, og da er ikke designsystemet lenger uavhengig av serveren.
+    val fellefeltet = html.substringAfter("Er noe feil i søknaden?").substringBefore("</fs-field>")
+    assertFalse(fellefeltet.contains("""id="felle""""), "fellefeltet skal ikke navngis")
+    assertFalse(fellefeltet.contains("aria-describedby"), "koblingen settes i nettleseren")
   }
 
   @Test
