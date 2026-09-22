@@ -62,7 +62,11 @@ Kommunefeltet er verdt et eget ord: én av sakene viser til en kommune som ble s
 
 **Du kan svare én gang.** Vedtaket låses i det du trykker, og da får du med én gang vite hva som traff og hva det ga. Fasiten og begrunnelsen kommer først når runden er over og alle har levert. Uten låsen ville den umiddelbare tilbakemeldingen vært en fasit man kunne prøvd seg fram til.
 
-Når runden er over, kommer resultatet som en **modal dialog**: hva du svarte, hva som var riktig, felt for felt, og hvorfor. Rakk du ikke fristen, sier den i stedet at saken ikke ble behandlet i tide, og at avviket er varslet til statsforvalteren.
+Klokka begynner å riste når det er under ti sekunder igjen, og rister mer for
+hvert sekund. Den som har bedt om mindre bevegelse får fargen alene, som sier
+det samme.
+
+Når runden er over, kommer resultatet som en **modal dialog**: hva du svarte, hva som var riktig, felt for felt, og hvorfor. Rakk du ikke fristen, sier den i stedet at saken ikke ble behandlet i tide, og at avviket er varslet til statsforvalteren. Lukker du dialogen mens du venter på neste sak, kommer du til den igjen med «Se resultatet».
 
 Den dialogen er grunnen til at `<fs-dialog>` finnes i Fristil. Å åpne en `<dialog>` er et kall, og en server som bare sender HTML kan ikke kalle noe; `<dialog open>` er bare en boks på siden. Demoen fant altså et hull i designsystemet, og hullet ble tettet der.
 

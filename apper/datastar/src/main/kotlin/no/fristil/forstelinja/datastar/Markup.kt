@@ -210,6 +210,14 @@ fun side(tilstand: Tilstand, spillerNavn: String?, kommuner: List<String> = empt
               roedt +
               "%, var(--spill-frist-start))"
           }
+
+          // Under ti sekunder begynner klokka å riste, og rister mer for
+          // hvert sekund. Styrken er et tall skriptet setter; utslaget og
+          // farten står i CSS-en, sammen med sperren for den som har bedt om
+          // mindre bevegelse.
+          const rist = igjen > 0 && igjen <= 10 ? (10 - igjen) / 9 : 0
+          el.style.setProperty("--spill-rist", rist.toFixed(2))
+          el.toggleAttribute("data-rister", rist > 0)
         }
       }, 250)
     </script>
@@ -262,7 +270,7 @@ fun topp(tilstand: Tilstand): String {
       <p class="topplinje__klokke">
         <span class="topplinje__merkelapp">$merkelapp</span>
         <span class="nedtelling" data-klokke data-frist="${tilstand.fristMs}"
-              data-lengde="${tilstand.faseLengdeMs}" data-preserve-attr="style">–</span>
+              data-lengde="${tilstand.faseLengdeMs}" data-preserve-attr="style data-rister">–</span>
       </p>
 
       <span class="topplinje__stack">Kotlin · Datastar</span>
@@ -887,7 +895,17 @@ fun oppgjor(tilstand: Tilstand): String {
     ${sakskort(tilstand.sak)}
 
     <section class="fs-card kort fasitkort">
-      <h2 class="fs-heading" data-size="s">Fasit</h2>
+      <div class="fasitkort__topp">
+        <h2 class="fs-heading" data-size="s">Fasit</h2>
+
+        <!-- Lukker du dialogen mens du venter på neste sak, skal du komme
+             til den igjen. Datastar setter `open` på verten, og komponenten
+             gjør kallet; ingen av delene trenger et skript ved siden av. -->
+        <button class="fs-button" data-variant="secondary" type="button"
+                data-on:click="document.getElementById('resultat')?.setAttribute('open', '')">
+          Se resultatet
+        </button>
+      </div>
 
       <dl class="fasit">
         <div class="fasit__rad">

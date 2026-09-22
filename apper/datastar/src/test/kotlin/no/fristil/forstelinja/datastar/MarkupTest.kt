@@ -555,4 +555,34 @@ class MarkupTest {
       assertTrue(liste.contains("""data-picker="styled""""), "en liste tegnes ikke i siden")
     }
   }
+
+  @Test
+  fun `fasiten kan åpnes igjen etter at dialogen er lukket`() {
+    // Lukker du dialogen mens du venter på neste sak, skal du komme til den
+    // igjen. Datastar setter `open` på verten, og komponenten gjør kallet.
+    val html =
+      brett(
+        oppgjorMed(Vurdering(true, true, true, true, 25), Svar("avslatt", "§ 12-3", "Bergen", "fodselsdato")),
+        "Kari",
+      )
+
+    assertTrue(html.contains("Se resultatet"), "knappen mangler")
+    assertTrue(
+      html.contains("""data-on:click="document.getElementById('resultat')?.setAttribute('open', '')""""),
+      "knappen åpner ikke dialogen",
+    )
+  }
+
+  @Test
+  fun `klokka kan riste uten at morfingen tar det bort`() {
+    // Skriptet setter `data-rister` og `--spill-rist` på klokka. Serveren
+    // skriver ingen av dem, så uten bevaringslista river morfingen dem bort
+    // ved neste patch, og ristingen stopper midt i.
+    val html = topp(tilstand)
+
+    assertTrue(
+      html.contains("""data-preserve-attr="style data-rister""""),
+      "klokka freder ikke det skriptet setter",
+    )
+  }
 }

@@ -134,6 +134,32 @@ val BRETT_CSS =
     --spill-frist-slutt: var(--semantic-danger-main);
   }
 
+  /*
+   * Ristingen under de siste ti sekundene.
+   *
+   * Utslaget er `--spill-rist`, et tall mellom 0 og 1 som skriptet setter
+   * for hvert sekund. Selve bevegelsen står her, så den kan slås av for den
+   * som har bedt om mindre av den.
+   */
+  @keyframes spill-rist {
+    0%, 100% { translate: 0 0; }
+    20% { translate: calc(var(--spill-rist, 0) * -3px) 0; }
+    40% { translate: calc(var(--spill-rist, 0) * 3px) 0; }
+    60% { translate: calc(var(--spill-rist, 0) * -2px) 0; }
+    80% { translate: calc(var(--spill-rist, 0) * 2px) 0; }
+  }
+
+  .nedtelling[data-rister] {
+    display: inline-block;
+    animation: spill-rist 220ms linear infinite;
+  }
+
+  /* En klokke som rister er et press, ikke en opplysning. Den som har bedt
+     om mindre bevegelse får fargen alene, som sier det samme. */
+  @media (prefers-reduced-motion: reduce) {
+    .nedtelling[data-rister] { animation: none; }
+  }
+
   .topplinje .nedtelling {
     color: var(--spill-frist-start);
     font-size: var(--font-size-mega);
@@ -327,6 +353,16 @@ val BRETT_CSS =
 
   /* Fasiten
      ------------------------------------------------------------------ */
+
+  .fasitkort__topp {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--size-3);
+  }
+
+  .fasitkort__topp .fs-heading { margin: 0; }
 
   .fasit {
     display: flex;
