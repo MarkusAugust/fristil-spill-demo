@@ -144,11 +144,19 @@ class Spill(
     return spiller
   }
 
+  /**
+   * Tar imot ett vedtak per spiller per runde.
+   *
+   * Et svar kan ikke endres. Det er ikke pynt: spilleren får vite med én
+   * gang om svaret traff, og uten låsen kunne hvem som helst prøvd seg fram
+   * til full pott.
+   */
   suspend fun svar(spillerId: String, svar: Svar): Boolean {
     val godtatt =
       laas.withLock {
         val spiller = spillere[spillerId] ?: return@withLock false
         if (fase != Fase.RUNDE) return@withLock false
+        if (spiller.svar != null) return@withLock false
         spiller.svar = svar
         true
       }
@@ -205,19 +213,36 @@ class Spill(
     if (endret) endringer.emit(Unit)
   }
 
+  /**
+   * Hvordan ett svar slo ut mot fasiten.
+   *
+   * Én utregning, brukt to steder: til kvitteringen spilleren får med én
+   * gang, og til opptellingen når runden er over. To utregninger kunne gått
+   * fra hverandre, og da ville kvitteringen sagt noe annet enn tavla.
+   */
+  private fun vurder(svar: Svar?, fasit: Fasit): Vurdering {
+    if (svar == null) return Vurdering(false, false, false, 0)
+    val vedtak = svar.vedtak == fasit.vedtak
+    val hjemmel = svar.hjemmel == fasit.hjemmel
+    // Fella teller begge veier: å se den, og å se at det ikke er noen.
+    val felle = svar.felle == fasit.felle
+    return Vurdering(
+      vedtakRiktig = vedtak,
+      hjemmelRiktig = hjemmel,
+      felleRiktig = felle,
+      poeng =
+        (if (vedtak) POENG_VEDTAK else 0) +
+          (if (hjemmel) POENG_HJEMMEL else 0) +
+          (if (felle) POENG_FELLE else 0),
+    )
+  }
+
   private fun telleOpp() {
     val plasseringFor = tavleliste().withIndex().associate { (i, s) -> s.id to i + 1 }
     val fasit = sak.fasit
 
     for (spiller in spillere.values) {
-      val svar = spiller.svar
-      var poeng = 0
-      if (svar != null) {
-        if (svar.vedtak == fasit.vedtak) poeng += POENG_VEDTAK
-        if (svar.hjemmel == fasit.hjemmel) poeng += POENG_HJEMMEL
-        // Fella teller begge veier: å se den, og å se at det ikke er noen.
-        if (svar.felle == fasit.felle) poeng += POENG_FELLE
-      }
+      val poeng = vurder(spiller.svar, fasit).poeng
       spiller.sistePoeng = poeng
       spiller.poeng += poeng
       spiller.forrigePlass = plasseringFor[spiller.id] ?: 0
@@ -279,6 +304,7 @@ class Spill(
             id = sak.id,
             tittel = sak.tittel,
             sammendrag = sak.sammendrag,
+            tekst = sak.tekst,
             soker = sak.soker,
           ),
         hjemler = samling.hjemler,
@@ -304,6 +330,7 @@ class Spill(
               forrigePlass = it.forrigePlass,
               harSvart = it.svar != null,
               svar = it.svar,
+              vurdering = it.svar?.let { svar -> vurder(svar, sak.fasit) },
             )
           },
         evigToppliste = toppliste.topp(10),

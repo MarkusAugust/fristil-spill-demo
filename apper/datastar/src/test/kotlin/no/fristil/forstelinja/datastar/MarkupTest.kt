@@ -30,6 +30,7 @@ class MarkupTest {
           id = "2024/1187",
           tittel = "Høner",
           sammendrag = "…",
+          tekst = "Jeg søker om noe, og jeg mener det.",
           soker = Soker("Bjørg", "31.02.1974", "Bergen", "b@example.no"),
         ),
       hjemler = listOf(Hjemmel("§ 4-1", "Alminnelig")),
@@ -175,7 +176,16 @@ class MarkupTest {
     val lastet = STILARK.joinToString(" ")
 
     // `field.css` samler ledetekst, felt, hjelpetekst og feilmelding.
-    val samlet = setOf("fs-label", "fs-input", "fs-help-text", "fs-error-text", "fs-legend")
+    val samlet =
+      setOf(
+        "fs-label",
+        "fs-input",
+        "fs-help-text",
+        "fs-error-text",
+        "fs-legend",
+        // Raden rundt en radioknapp står i radio.css, sammen med knappen.
+        "fs-radio-row",
+      )
 
     val uten =
       brukt.filterNot { klasse ->
@@ -216,6 +226,56 @@ class MarkupTest {
     assertFalse(
       erNySak(tilstand, tilstand.copy(fase = "oppgjor")),
       "oppgjøret gjelder den samme saken, og svaret skal bli stående",
+    )
+  }
+
+  @Test
+  fun `saken står som et dokument, med tekst og avsender`() {
+    // «Hva er saken?» skal være til å se med én gang: nummer, tittel,
+    // ingress og selve søknaden. Fella ligger i opplysningene om søkeren,
+    // så begge fanene må leses.
+    val html = brett(tilstand, "Kari", listOf("Bergen"))
+
+    assertTrue(html.contains("Sak 2024/1187"), "saksnummeret skal stå der")
+    assertTrue(html.contains(tilstand.sak.tittel), "tittelen skal stå der")
+    assertTrue(html.contains(tilstand.sak.sammendrag), "ingressen skal stå der")
+    assertTrue(html.contains(tilstand.sak.tekst), "selve søknaden skal stå der")
+    assertTrue(html.contains(">Søknaden<"), "fanen med teksten")
+    assertTrue(html.contains(">Søkeren<"), "fanen med opplysningene")
+  }
+
+  @Test
+  fun `kvitteringen viser hva som traff, men ikke fasiten`() {
+    val svart =
+      tilstand.copy(
+        meg =
+          MegUt("Kari", 15, 15, 1, 1, true, Vurdering(true, false, true, 15)),
+      )
+
+    val html = brett(svart, "Kari", listOf("Bergen"))
+
+    assertTrue(html.contains("Vedtaket er fattet"), "kvitteringen skal vises")
+    assertTrue(html.contains("15 av 20 poeng"), "poengene skal stå der")
+    assertTrue(html.contains("""data-riktig="true""""), "det som traff")
+    assertTrue(html.contains("""data-riktig="false""""), "det som ikke traff")
+
+    // Fasiten hører til oppgjøret. Ville den stått her, kunne den som
+    // svarte fortalt de andre hva svaret var mens runden fortsatt gikk.
+    assertFalse(html.contains("Fasit<"), "fasiten skal ikke stå i kvitteringen")
+    assertFalse(html.contains("Fatt vedtak"), "skjemaet skal være borte")
+  }
+
+  @Test
+  fun `radioknappene bruker raden Fristil dokumenterer`() {
+    // `.fs-label` er et vanlig blokkelement. Ligger knappen inni ledeteksten
+    // står de to inntil hverandre uten luft, og det er `.fs-radio-row` som
+    // holder dem ved siden av hverandre.
+    val html = brett(tilstand, "Kari", listOf("Bergen"))
+
+    assertTrue(html.contains("""<div class="fs-radio-row">"""), "raden skal være der")
+    assertTrue(
+      html.contains("""<label class="fs-label" for="v-innvilget">Innvilget</label>"""),
+      "ledeteksten skal peke på knappen, ikke pakke den inn",
     )
   }
 }

@@ -40,6 +40,7 @@ class SpillTest {
             id = "sak-$nr",
             tittel = "Sak $nr",
             sammendrag = "…",
+            tekst = "Selve søknaden.",
             soker = Soker("Navn", "01.01.1980", "Oslo", "navn@example.no"),
             fasit =
               Fasit(
@@ -103,6 +104,64 @@ class SpillTest {
     spill.tikk()
 
     assertEquals(0, spill.tilstand(spiller.id).meg?.poeng)
+  }
+
+  @Test
+  fun `et vedtak kan ikke gjøres om`() = runTest {
+    val spill = nyttSpill()
+    val spiller = spill.bliMed("Kari", Stack.TANSTACK)
+    val fasit = spill.sak.fasit
+    val feilVedtak = if (fasit.vedtak == Vedtak.INNVILGET) Vedtak.AVSLATT else Vedtak.INNVILGET
+    // Fella teller begge veier, så «ingen felle» er riktig svar i noen saker.
+    val feilFelle = if (fasit.felle == null) "epost" else null
+
+    // Spilleren får vite med én gang om svaret traff. Uten låsen kunne hvem
+    // som helst prøvd seg fram til full pott.
+    assertTrue(spill.svar(spiller.id, Svar(feilVedtak, "finnes ikke", feilFelle)))
+    assertFalse(spill.svar(spiller.id, Svar(fasit.vedtak, fasit.hjemmel, fasit.felle)))
+
+    klokke.gaa(RUNDE_MS)
+    spill.tikk()
+
+    assertEquals(0, spill.tilstand(spiller.id).meg?.poeng, "det første svaret er det som gjelder")
+  }
+
+  @Test
+  fun `vurderingen kommer med én gang, og sier hva som traff`() = runTest {
+    val spill = nyttSpill()
+    val spiller = spill.bliMed("Ola", Stack.DATASTAR)
+    val fasit = spill.sak.fasit
+
+    assertNull(spill.tilstand(spiller.id).meg?.vurdering, "ingen vurdering før man har svart")
+
+    // Riktig vedtak, feil hjemmel, riktig felle.
+    spill.svar(spiller.id, Svar(fasit.vedtak, "finnes ikke", fasit.felle))
+
+    val vurdering = spill.tilstand(spiller.id).meg?.vurdering
+    assertNotNull(vurdering)
+    assertTrue(vurdering.vedtakRiktig)
+    assertFalse(vurdering.hjemmelRiktig)
+    assertTrue(vurdering.felleRiktig)
+    assertEquals(POENG_VEDTAK + POENG_FELLE, vurdering.poeng)
+
+    // Og den skal si det samme som tavla sier etterpå.
+    klokke.gaa(RUNDE_MS)
+    spill.tikk()
+    assertEquals(vurdering.poeng, spill.tilstand(spiller.id).meg?.sistePoeng)
+  }
+
+  @Test
+  fun `vurderingen gjelder mitt svar, ikke saken`() = runTest {
+    val spill = nyttSpill()
+    val spiller = spill.bliMed("Ingrid", Stack.ASTRO)
+
+    // Fasiten skal fortsatt være skjult, også for den som har svart.
+    spill.svar(spiller.id, Svar(Vedtak.INNVILGET, "§ 4-1", null))
+
+    val tilstand = spill.tilstand(spiller.id)
+    assertNotNull(tilstand.meg?.vurdering)
+    assertNull(tilstand.fasit)
+    assertNull(tilstand.forklaring)
   }
 
   @Test

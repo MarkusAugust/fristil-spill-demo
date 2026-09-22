@@ -62,7 +62,9 @@ fun side(tilstand: Tilstand, spillerNavn: String?, kommuner: List<String> = empt
 
     ${topp(tilstand)}
     <main class="brett">
-      ${brett(tilstand, spillerNavn, kommuner)}
+      <div class="stamme">
+        ${brett(tilstand, spillerNavn, kommuner)}
+      </div>
     </main>
 
     <script>
@@ -75,7 +77,13 @@ fun side(tilstand: Tilstand, spillerNavn: String?, kommuner: List<String> = empt
       setInterval(() => {
         for (const el of document.querySelectorAll(".nedtelling")) {
           const igjen = Math.max(0, Math.round((Number(el.dataset.frist) - Date.now()) / 1000))
-          el.textContent = igjen
+          // Klokka i toppen står som minutter og sekunder. Inne i en setning
+          // («starter om 12 sekunder») er tallet alene det som leses.
+          el.textContent =
+            "klokke" in el.dataset
+              ? Math.floor(igjen / 60) + ":" + String(igjen % 60).padStart(2, "0")
+              : igjen
+          el.classList.toggle("nedtelling--knapt", igjen <= 20)
         }
       }, 250)
     </script>
@@ -85,7 +93,10 @@ fun side(tilstand: Tilstand, spillerNavn: String?, kommuner: List<String> = empt
     .trimIndent()
 }
 
-/** Toppen: runde, nedtelling og hvem du er. Patches sammen med brettet. */
+/**
+ * Topplinja: hvem som eier tjenesten, hvor i omgangen vi er, og hvor lenge
+ * det er igjen. Patches sammen med brettet.
+ */
 fun topp(tilstand: Tilstand): String {
   val fase =
     when (tilstand.fase) {
@@ -93,15 +104,38 @@ fun topp(tilstand: Tilstand): String {
       "oppgjor" -> "Oppgjør"
       else -> "Omgangen er slutt"
     }
+  val merkelapp =
+    when (tilstand.fase) {
+      "runde" -> "Frist"
+      "oppgjor" -> "Neste sak"
+      else -> "Ny omgang"
+    }
 
   return """
-    <header id="topp" class="topp">
-      <h1 class="fs-heading" data-size="l">Førstelinja</h1>
-      <p class="fs-paragraph topp__fase">$fase</p>
-      <p class="fs-paragraph topp__tid">
-        <span class="nedtelling" data-frist="${tilstand.fristMs}">…</span> sekunder
-      </p>
-      <span class="fs-badge" data-color="info">Kotlin · Datastar</span>
+    <header id="topp" class="topplinje">
+      <div class="topplinje__innhold stamme">
+        <div class="topplinje__merke">
+          <svg class="topplinje__emblem" viewBox="0 0 24 24" aria-hidden="true" fill="none"
+               stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2.75h6.5l5 5v13.5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3.75a1 1 0 0 1 1-1Z"/>
+            <path d="M12.5 2.75v5.5h5"/>
+            <path d="M8.5 13.5h7M8.5 17h4.5"/>
+          </svg>
+          <span class="topplinje__ord">
+            <span class="topplinje__navn">Førstelinja</span>
+            <span class="topplinje__etat">Etaten for alminnelige søknader</span>
+          </span>
+        </div>
+
+        <p class="topplinje__fase">$fase</p>
+
+        <p class="topplinje__klokke">
+          <span class="topplinje__merkelapp">$merkelapp</span>
+          <span class="nedtelling" data-klokke data-frist="${tilstand.fristMs}">–</span>
+        </p>
+
+        <span class="topplinje__stack">Kotlin · Datastar</span>
+      </div>
     </header>
   """
     .trimIndent()
@@ -136,7 +170,7 @@ fun brett(
 ): String =
   """
   <div id="brett" class="brett__innhold">
-    <div id="sak">${saksomrade(tilstand, spillerNavn, kommuner, feil)}</div>
+    <div id="sak" class="brett__hoved">${saksomrade(tilstand, spillerNavn, kommuner, feil)}</div>
     <aside id="tavle" class="fs-card kort tavle">${tavle(tilstand)}</aside>
   </div>
   """
@@ -150,9 +184,12 @@ fun brett(
  */
 fun blimed(): String =
   """
-  <section class="fs-card kort">
-    <h2 class="fs-heading" data-size="s">Møt på vakt</h2>
-    <p class="fs-paragraph">Du er saksbehandler i førstelinja. Sakene kommer uansett.</p>
+  <section class="fs-card kort blimed">
+    <h2 class="fs-heading" data-size="m">Møt på vakt</h2>
+    <p class="fs-paragraph blimed__ingress">
+      Du er saksbehandler i førstelinja. Fire saker, to minutter på hver.
+      Finn riktig utfall, riktig hjemmel, og feilen søkeren håpet du ikke så.
+    </p>
 
     <!-- Et helt vanlig skjema, ikke en Datastar-innsending.
          Å møte på vakt er en navigering: kapselen må være satt før
@@ -169,7 +206,7 @@ fun blimed(): String =
         <p class="fs-help-text">Vises på tavla for alle.</p>
       </fs-field>
 
-      <button class="fs-button" type="submit">Begynn vakta</button>
+      <button class="fs-button skjema__send" type="submit">Begynn vakta</button>
     </form>
   </section>
   """
@@ -178,11 +215,72 @@ fun blimed(): String =
 /** Selve saksbehandlingen. */
 fun runde(tilstand: Tilstand, kommuner: List<String>, feil: List<Feil> = emptyList()): String {
   val sak = tilstand.sak
+  val harSvart = tilstand.meg?.harSvart == true
+
+  return """
+    ${sakskort(sak)}
+    ${if (harSvart) kvittering(tilstand) else vedtakskort(tilstand, kommuner, feil)}
+  """
+    .trimIndent()
+}
+
+/**
+ * Saken slik den ligger på bordet: nummer, tittel, ingress og selve
+ * søknaden, med opplysningene om søkeren i en egen fane.
+ *
+ * Fella ligger i opplysningene, ikke i teksten, så begge fanene må leses.
+ * Det er hele oppgaven.
+ */
+private fun sakskort(sak: SakUt): String =
+  """
+  <section class="fs-card kort sakskort">
+    <p class="sakskort__stempel">
+      <span class="fs-tag">Sak ${sak.id.trygg()}</span>
+      <span class="sakskort__status">Til behandling</span>
+    </p>
+
+    <h2 class="fs-heading sakskort__tittel" data-size="m">${sak.tittel.trygg()}</h2>
+    <p class="fs-paragraph sakskort__ingress">${sak.sammendrag.trygg()}</p>
+
+    <!-- Fanene: serveren skriver roller, kobling og hvilken som er valgt.
+         Komponenten flytter valget når brukeren blar, og derfor står
+         `aria-selected` og `tabindex` i bevaringslista. -->
+    <fs-tabs class="sakskort__faner">
+      <div class="fs-tabs__list" role="tablist" aria-label="Saken">
+        <button id="f-0" role="tab" type="button" aria-selected="true" aria-controls="p-0"
+                tabindex="0" data-preserve-attr="${Bevar.FANE}">Søknaden</button>
+        <button id="f-1" role="tab" type="button" aria-selected="false" aria-controls="p-1"
+                tabindex="-1" data-preserve-attr="${Bevar.FANE}">Søkeren</button>
+      </div>
+
+      <div id="p-0" class="fs-tabs__panel" role="tabpanel" aria-labelledby="f-0" tabindex="0"
+           data-preserve-attr="${Bevar.FANEPANEL}">
+        <p class="fs-paragraph sakskort__tekst">${sak.tekst.trygg()}</p>
+        <p class="sakskort__signatur">Med vennlig hilsen<br>${sak.soker.navn.trygg()}</p>
+      </div>
+
+      <div id="p-1" class="fs-tabs__panel" role="tabpanel" aria-labelledby="f-1" tabindex="0"
+           hidden data-preserve-attr="${Bevar.FANEPANEL}">
+        <table class="fs-table">
+          <tbody>
+            <tr><th scope="row">Navn</th><td>${sak.soker.navn.trygg()}</td></tr>
+            <tr><th scope="row">Fødselsdato</th><td>${sak.soker.fodselsdato.trygg()}</td></tr>
+            <tr><th scope="row">Kommune</th><td>${sak.soker.kommune.trygg()}</td></tr>
+            <tr><th scope="row">E-post</th><td>${sak.soker.epost.trygg()}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </fs-tabs>
+  </section>
+  """
+    .trimIndent()
+
+/** Skjemaet saksbehandleren fyller ut. */
+private fun vedtakskort(tilstand: Tilstand, kommuner: List<String>, feil: List<Feil>): String {
   val hjemler =
     tilstand.hjemler.joinToString("\n") {
       """<option value="${it.kode.trygg()}">${it.kode.trygg()} ${it.tekst.trygg()}</option>"""
     }
-  val harSvart = tilstand.meg?.harSvart == true
   val ugyldigHjemmel =
     if (feil.any { it.felt == "hjemmel" }) "aria-invalid=\"true\" data-state=\"invalid\"" else ""
   val ugyldigKommune =
@@ -207,7 +305,7 @@ fun runde(tilstand: Tilstand, kommuner: List<String>, feil: List<Feil> = emptyLi
       <!-- Serveren skriver hele boksen, også overskriften og lista.
            Komponenten flytter bare fokus hit og tar klikkene på lenkene. -->
       <fs-error-summary class="fs-error-summary" role="alert" tabindex="-1" id="feilboks">
-        <h2 class="fs-error-summary__title">Du må rette ${feil.size} feil</h2>
+        <h3 class="fs-error-summary__title">Du må rette ${feil.size} feil</h3>
         <ul class="fs-list">
           ${feil.joinToString("\n") { """<li><a href="#${it.felt}">${it.melding.trygg()}</a></li>""" }}
         </ul>
@@ -215,124 +313,157 @@ fun runde(tilstand: Tilstand, kommuner: List<String>, feil: List<Feil> = emptyLi
     }
 
   return """
-    <section class="fs-card kort">
+    <section class="fs-card kort vedtakskort">
+      <h2 class="fs-heading" data-size="s">Ditt vedtak</h2>
+      <p class="vedtakskort__ingress">Fire spørsmål. Du kan svare én gang.</p>
+
       $feiloppsummering
-      <span class="fs-tag">${sak.id.trygg()}</span>
-      <h2 class="fs-heading" data-size="m">${sak.tittel.trygg()}</h2>
-      <p class="fs-paragraph">${sak.sammendrag.trygg()}</p>
 
-      <!-- Fanene: serveren skriver roller, kobling og hvilken som er valgt.
-           Komponenten flytter valget når brukeren blar, og derfor står
-           `aria-selected` og `tabindex` i bevaringslista. -->
-      <fs-tabs>
-        <div class="fs-tabs__list" role="tablist" aria-label="Saken">
-          <button id="f-0" role="tab" type="button" aria-selected="true" aria-controls="p-0"
-                  tabindex="0" data-preserve-attr="${Bevar.FANE}">Søkeren</button>
-          <button id="f-1" role="tab" type="button" aria-selected="false" aria-controls="p-1"
-                  tabindex="-1" data-preserve-attr="${Bevar.FANE}">Vedtak</button>
-        </div>
+      <form class="skjema" data-on:submit="@post('/svar')">
+        <!-- `.fs-radio-row` er raden som holder knappen og teksten ved
+             siden av hverandre. Uten den ligger de to inntil hverandre uten
+             luft, for `.fs-label` er et vanlig blokkelement. -->
+        <fieldset class="fs-fieldset">
+          <legend class="fs-legend">Utfall</legend>
+          <div class="fs-radio-row">
+            <input class="fs-radio" type="radio" id="v-innvilget" name="vedtak" value="innvilget"
+                   data-bind:vedtak>
+            <label class="fs-label" for="v-innvilget">Innvilget</label>
+          </div>
+          <div class="fs-radio-row">
+            <input class="fs-radio" type="radio" id="v-avslatt" name="vedtak" value="avslatt"
+                   data-bind:vedtak>
+            <label class="fs-label" for="v-avslatt">Avslått</label>
+          </div>
+        </fieldset>
 
-        <div id="p-0" class="fs-tabs__panel" role="tabpanel" aria-labelledby="f-0" tabindex="0"
-             data-preserve-attr="${Bevar.FANEPANEL}">
-          <table class="fs-table">
-            <tbody>
-              <tr><th scope="row">Navn</th><td>${sak.soker.navn.trygg()}</td></tr>
-              <tr><th scope="row">Fødselsdato</th><td>${sak.soker.fodselsdato.trygg()}</td></tr>
-              <tr><th scope="row">Kommune</th><td>${sak.soker.kommune.trygg()}</td></tr>
-              <tr><th scope="row">E-post</th><td>${sak.soker.epost.trygg()}</td></tr>
-            </tbody>
-          </table>
-        </div>
+        <!-- Id-en står her fordi feiloppsummeringen lenker til feltet.
+             Skal noe annet peke på et element, må serveren navngi det.
+             Ellers lar vi komponenten finne på id-en. -->
+        <fs-field>
+          <label class="fs-label" for="hjemmel">Hjemmel</label>
+          <select class="fs-select" id="hjemmel" name="hjemmel" data-bind:hjemmel
+                  $ugyldigHjemmel>
+            <option value="">Velg hjemmel</option>
+            $hjemler
+          </select>
+        </fs-field>
 
-        <div id="p-1" class="fs-tabs__panel" role="tabpanel" aria-labelledby="f-1" tabindex="0"
-             hidden data-preserve-attr="${Bevar.FANEPANEL}">
-          <form data-on:submit="@post('/svar')">
-            <fieldset class="fs-fieldset">
-              <legend class="fs-legend">Vedtak</legend>
-              <label class="fs-label" for="v-innvilget">
-                <input class="fs-radio" type="radio" id="v-innvilget" name="vedtak" value="innvilget"
-                       data-bind:vedtak> Innvilget
-              </label>
-              <label class="fs-label" for="v-avslatt">
-                <input class="fs-radio" type="radio" id="v-avslatt" name="vedtak" value="avslatt"
-                       data-bind:vedtak> Avslått
-              </label>
-            </fieldset>
+        <!-- Hjelpen til hjemlene. Serveren skriver koblingen mellom
+             knappen og panelet; komponenten plasserer det og lukker det.
+             Det brukeren gjør, står i data-preserve-attr, for serveren
+             vet ikke om vinduet er åpent. -->
+        <fs-popover class="hjelpelenke" placement="bottom-start"
+                    data-preserve-attr="${Bevar.SPRETTOPP_VERT}">
+          <button type="button" class="fs-button" data-variant="ghost"
+                  aria-expanded="false" aria-controls="hjemmelhjelp"
+                  data-preserve-attr="${Bevar.SPRETTOPP_KNAPP}">Hva betyr hjemlene?</button>
+          <div class="fs-popover" id="hjemmelhjelp" popover="manual"
+               data-preserve-attr="${Bevar.SPRETTOPP_PANEL}">
+            <ul class="fs-list">
+              $hjemmelforklaringer
+            </ul>
+          </div>
+        </fs-popover>
 
-            <!-- Id-en står her fordi feiloppsummeringen lenker til feltet.
-                 Skal noe annet peke på et element, må serveren navngi det.
-                 Ellers lar vi komponenten finne på id-en. -->
-            <fs-field>
-              <label class="fs-label" for="hjemmel">Hjemmel</label>
-              <select class="fs-select" id="hjemmel" name="hjemmel" data-bind:hjemmel
-                      $ugyldigHjemmel>
-                <option value="">Velg hjemmel</option>
-                $hjemler
-              </select>
-            </fs-field>
+        <!-- Kommunefeltet. Serveren sender hele lista, komponenten
+             filtrerer mens du skriver og tar piltastene. Finner du ikke
+             kommunen, er det fordi den ikke finnes lenger. -->
+        <fs-suggestion>
+          <label class="fs-label" for="kommune">Bekreft kommunen søkeren hører til</label>
+          <div class="fs-suggestion__field">
+            <input class="fs-input" id="kommune" name="kommune" type="text" role="combobox"
+                   autocomplete="off" aria-autocomplete="list" aria-expanded="false"
+                   aria-controls="kommune-list" aria-describedby="kommune-hjelp kommune-status"
+                   data-bind:kommune
+                   $ugyldigKommune
+                   data-preserve-attr="${Bevar.FORSLAG_KONTROLL}">
+            <ul class="fs-suggestion__list" id="kommune-list" role="listbox" hidden
+                data-preserve-attr="${Bevar.FORSLAG_LISTE}">
+              $kommunevalg
+            </ul>
+            <p class="fs-suggestion__empty" hidden
+               data-preserve-attr="${Bevar.FORSLAG_TOM}">Ingen treff. Finnes kommunen fortsatt?</p>
+            <span class="fs-sr-only" id="kommune-status" aria-live="polite" data-ignore-morph></span>
+          </div>
+          <p class="fs-help-text" id="kommune-hjelp">Begynn å skrive, så kommer forslagene.</p>
+        </fs-suggestion>
 
-            <!-- Hjelpen til hjemlene. Serveren skriver koblingen mellom
-                 knappen og panelet; komponenten plasserer det og lukker det.
-                 Det brukeren gjør, står i data-preserve-attr, for serveren
-                 vet ikke om vinduet er åpent. -->
-            <fs-popover placement="bottom-start" data-preserve-attr="${Bevar.SPRETTOPP_VERT}">
-              <button type="button" class="fs-button" data-variant="ghost"
-                      aria-expanded="false" aria-controls="hjemmelhjelp"
-                      data-preserve-attr="${Bevar.SPRETTOPP_KNAPP}">Hva betyr hjemlene?</button>
-              <div class="fs-popover" id="hjemmelhjelp" popover="manual"
-                   data-preserve-attr="${Bevar.SPRETTOPP_PANEL}">
-                <ul class="fs-list">
-                  $hjemmelforklaringer
-                </ul>
-              </div>
-            </fs-popover>
+        <fs-field>
+          <label class="fs-label">Er noe feil i søknaden?</label>
+          <select class="fs-select" name="felle" data-bind:felle>
+            <option value="">Nei, saken er i orden</option>
+            <option value="fodselsdato">Fødselsdatoen</option>
+            <option value="kommune">Kommunen</option>
+            <option value="epost">E-postadressen</option>
+          </select>
+          <p class="fs-help-text">Å se at alt er i orden teller like mye.</p>
+        </fs-field>
 
-            <!-- Kommunefeltet. Serveren sender hele lista, komponenten
-                 filtrerer mens du skriver og tar piltastene. Finner du ikke
-                 kommunen, er det fordi den ikke finnes lenger. -->
-            <fs-suggestion>
-              <label class="fs-label" for="kommune">Bekreft kommunen søkeren hører til</label>
-              <div class="fs-suggestion__field">
-                <input class="fs-input" id="kommune" name="kommune" type="text" role="combobox"
-                       autocomplete="off" aria-autocomplete="list" aria-expanded="false"
-                       aria-controls="kommune-list" aria-describedby="kommune-hjelp kommune-status"
-                       data-bind:kommune
-                       $ugyldigKommune
-                       data-preserve-attr="${Bevar.FORSLAG_KONTROLL}">
-                <ul class="fs-suggestion__list" id="kommune-list" role="listbox" hidden
-                    data-preserve-attr="${Bevar.FORSLAG_LISTE}">
-                  $kommunevalg
-                </ul>
-                <p class="fs-suggestion__empty" hidden
-                   data-preserve-attr="${Bevar.FORSLAG_TOM}">Ingen treff. Finnes kommunen fortsatt?</p>
-                <span class="fs-sr-only" id="kommune-status" aria-live="polite" data-ignore-morph></span>
-              </div>
-              <p class="fs-help-text" id="kommune-hjelp">Begynn å skrive, så kommer forslagene.</p>
-            </fs-suggestion>
-
-            <fs-field>
-              <label class="fs-label">Er noe feil i søknaden?</label>
-              <select class="fs-select" name="felle" data-bind:felle>
-                <option value="">Nei, saken er i orden</option>
-                <option value="fodselsdato">Fødselsdatoen</option>
-                <option value="kommune">Kommunen</option>
-                <option value="epost">E-postadressen</option>
-              </select>
-              <p class="fs-help-text">Å se at alt er i orden teller like mye.</p>
-            </fs-field>
-
-            <button class="fs-button" type="submit" ${if (harSvart) "disabled" else ""}>
-              ${if (harSvart) "Vedtaket er fattet" else "Fatt vedtak"}
-            </button>
-          </form>
-        </div>
-      </fs-tabs>
+        <button class="fs-button skjema__send" type="submit">Fatt vedtak</button>
+      </form>
     </section>
   """
     .trimIndent()
 }
 
-/** Fasit, poeng og plassering. */
+/**
+ * Svaret er levert, og spilleren får vite hvordan det gikk med én gang.
+ *
+ * Fasiten står ikke her. Den kommer når runden er over og alle har levert.
+ * Det som står her er bare om ditt eget svar traff, og det er trygt fordi
+ * et svar ikke kan gjøres om.
+ */
+private fun kvittering(tilstand: Tilstand): String {
+  val vurdering = tilstand.meg?.vurdering
+  val poeng = vurdering?.poeng ?: 0
+
+  fun linje(navn: String, riktig: Boolean, verdt: Int) =
+    """
+    <li class="kvittering__linje" data-riktig="$riktig">
+      <span class="kvittering__felt">$navn</span>
+      <span class="kvittering__dom">${if (riktig) "Riktig" else "Feil"}</span>
+      <span class="kvittering__verdt">${if (riktig) "+$verdt" else "0"}</span>
+    </li>
+    """
+      .trimIndent()
+
+  val farge =
+    when {
+      poeng >= 20 -> "success"
+      poeng > 0 -> "info"
+      else -> "warning"
+    }
+  val overskrift =
+    when {
+      poeng >= 20 -> "Full pott"
+      poeng > 0 -> "Delvis truffet"
+      else -> "Ingen uttelling"
+    }
+
+  return """
+    <section class="fs-card kort vedtakskort">
+      <h2 class="fs-heading" data-size="s">Vedtaket er fattet</h2>
+
+      <div class="fs-alert" data-color="$farge">
+        <p class="fs-alert__title">$overskrift</p>
+        <p>Du fikk <strong>$poeng av 20 poeng</strong> på denne saken.</p>
+      </div>
+
+      ${if (vurdering == null) "" else """
+      <ul class="fs-list kvittering" data-variant="plain">
+        ${linje("Utfall", vurdering.vedtakRiktig, 10)}
+        ${linje("Hjemmel", vurdering.hjemmelRiktig, 5)}
+        ${linje("Feil i søknaden", vurdering.felleRiktig, 5)}
+      </ul>"""}
+
+      <p class="vedtakskort__ingress">Fasiten og begrunnelsen kommer når runden er over.</p>
+    </section>
+  """
+    .trimIndent()
+}
+
+/** Fasit, poeng og plassering. Saken står igjen over, så svaret har noe å vise til. */
 fun oppgjor(tilstand: Tilstand): String {
   val fasit = tilstand.fasit ?: return ""
   val meg = tilstand.meg
@@ -345,22 +476,35 @@ fun oppgjor(tilstand: Tilstand): String {
     }
 
   return """
-    <section class="fs-card kort">
+    ${sakskort(tilstand.sak)}
+
+    <section class="fs-card kort fasitkort">
       <h2 class="fs-heading" data-size="s">Fasit</h2>
 
+      <dl class="fasit">
+        <div class="fasit__rad">
+          <dt>Utfall</dt>
+          <dd>${if (fasit.vedtak == "innvilget") "Innvilget" else "Avslått"}</dd>
+        </div>
+        <div class="fasit__rad">
+          <dt>Hjemmel</dt>
+          <dd>${fasit.hjemmel.trygg()}</dd>
+        </div>
+        <div class="fasit__rad">
+          <dt>Feil i søknaden</dt>
+          <dd>${if (fasit.felle == null) "Ingen, saken var i orden" else "${feltnavn(fasit.felle).replaceFirstChar { it.uppercase() }}"}</dd>
+        </div>
+      </dl>
+
       <div class="fs-alert" data-color="info">
-        <p class="fs-paragraph">
-          Riktig: <strong>${if (fasit.vedtak == "innvilget") "innvilget" else "avslått"}</strong>,
-          ${fasit.hjemmel.trygg()}.
-          ${if (fasit.felle == null) "Saken var i orden." else "Fella lå i ${feltnavn(fasit.felle)}."}
-        </p>
-        <p class="fs-paragraph">${(tilstand.forklaring ?: "").trygg()}</p>
+        <p>${(tilstand.forklaring ?: "").trygg()}</p>
       </div>
 
       ${if (meg == null) "" else """
-      <p class="fs-paragraph poeng">
-        <strong>+${meg.sistePoeng} poeng</strong> · ${meg.poeng} totalt. $flytting
-      </p>"""}
+      <p class="poeng">
+        <strong>+${meg.sistePoeng}</strong> denne runden · ${meg.poeng} til sammen
+      </p>
+      <p class="vedtakskort__ingress">$flytting</p>"""}
     </section>
   """
     .trimIndent()
@@ -377,19 +521,32 @@ private fun feltnavn(felle: String) =
 /** Sluttstilling og den evige topplista. */
 fun slutt(tilstand: Tilstand): String {
   val evig =
-    tilstand.evigToppliste.joinToString("\n") {
-      """<tr><td>${it.navn.trygg()}</td><td>${it.poeng}</td><td>${it.stack.trygg()}</td></tr>"""
+    tilstand.evigToppliste.withIndex().joinToString("\n") { (nr, it) ->
+      """
+      <tr>
+        <td>${nr + 1}</td>
+        <td>${it.navn.trygg()}</td>
+        <td>${it.poeng}</td>
+        <td><span class="fs-badge" data-color="${farge(it.stack)}">${it.stack.trygg()}</span></td>
+      </tr>
+      """
+        .trimIndent()
     }
 
+  val meg = tilstand.meg
+
   return """
-    <section class="fs-card kort">
-      <h2 class="fs-heading" data-size="s">Vakta er over</h2>
-      <p class="fs-paragraph">Ny omgang starter om <span class="nedtelling" data-frist="${tilstand.fristMs}">…</span> sekunder.</p>
+    <section class="fs-card kort sluttkort">
+      <h2 class="fs-heading" data-size="m">Vakta er over</h2>
+      ${if (meg == null) "" else """
+      <p class="poeng"><strong>${meg.poeng} poeng</strong> · ${meg.plass}. plass</p>"""}
+      <p class="fs-paragraph">Ny omgang starter om
+        <span class="nedtelling" data-frist="${tilstand.fristMs}">…</span> sekunder.</p>
 
       <h3 class="fs-heading" data-size="xs">Evig toppliste</h3>
       <table class="fs-table">
-        <thead><tr><th>Navn</th><th>Poeng</th><th>Stack</th></tr></thead>
-        <tbody>${evig.ifBlank { "<tr><td colspan=\"3\">Ingen ennå.</td></tr>" }}</tbody>
+        <thead><tr><th>#</th><th>Navn</th><th>Poeng</th><th>App</th></tr></thead>
+        <tbody>${evig.ifBlank { "<tr><td colspan=\"4\">Ingen ennå.</td></tr>" }}</tbody>
       </table>
     </section>
   """
@@ -404,7 +561,7 @@ fun tavle(tilstand: Tilstand): String {
       <tr${if (it.erMeg) " class=\"meg\"" else ""}>
         <td>${it.plass}</td>
         <td>${it.navn.trygg()}</td>
-        <td>${it.poeng}</td>
+        <td class="tavle__poeng">${it.poeng}</td>
         <td><span class="fs-badge" data-color="${farge(it.stack)}">${it.stack.trygg()}</span></td>
       </tr>
       """
@@ -412,11 +569,12 @@ fun tavle(tilstand: Tilstand): String {
     }
 
   return """
-      <h2 class="fs-heading" data-size="s">Tavle</h2>
-      <table class="fs-table">
+      <h2 class="fs-heading" data-size="s">På vakt nå</h2>
+      <table class="fs-table tavle__tabell">
         <thead><tr><th>#</th><th>Navn</th><th>Poeng</th><th>App</th></tr></thead>
         <tbody>${rader.ifBlank { "<tr><td colspan=\"4\">Ingen på vakt.</td></tr>" }}</tbody>
       </table>
+      <p class="tavle__fot">Alle tre appene spiller på det samme brettet.</p>
   """
     .trimIndent()
 }

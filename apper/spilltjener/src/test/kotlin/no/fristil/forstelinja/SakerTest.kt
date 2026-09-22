@@ -20,6 +20,7 @@ class SakerTest {
       id = id,
       tittel = "T",
       sammendrag = "S",
+      tekst = "Selve søknaden.",
       soker = Soker("N", "01.01.1980", "Oslo", "n@example.no"),
       fasit = Fasit(Vedtak.INNVILGET, hjemmel, felle),
       forklaring = "F",
@@ -89,5 +90,16 @@ class SakerTest {
 
     val uten = samling.saker.filter { it.forklaring.length < 20 }
     assertEquals(emptyList(), uten.map { it.id }, "forklaringen er der vitsen lander")
+  }
+
+  @Test
+  fun `hver ekte sak har en søknadstekst`() {
+    // Teksten er det spilleren faktisk leser. En sak uten den ville stått
+    // som en overskrift og et tomt kort.
+    val samling = lesSaker("../../felles/saker.json")
+
+    for (sak in samling.saker) {
+      assertTrue(sak.tekst.length > 60, "${sak.id} har ingen søknadstekst å lese")
+    }
   }
 }

@@ -64,7 +64,7 @@ fun Application.spillModul(spill: Spill) {
       if (godtatt) spill.avsluttHvisAlleHarSvart()
       call.respond(
         if (godtatt) Kvittering(true)
-        else Kvittering(false, "Runden tar ikke imot svar nå, eller spilleren er ukjent")
+        else Kvittering(false, "Runden tar ikke imot svar nå, spilleren er ukjent, eller vedtaket er alt fattet")
       )
     }
 

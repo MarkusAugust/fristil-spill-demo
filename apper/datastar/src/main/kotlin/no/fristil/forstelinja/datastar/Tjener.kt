@@ -201,8 +201,13 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
         }
       }
 
-      send()
-      spilltjener.puls.collect { send() }
+      try {
+        send()
+        spilltjener.puls.collect { send() }
+      } catch (_: java.io.IOException) {
+        // Nettleseren lukket fanen midt i en skriving. Det er ikke en feil,
+        // og en stakksporing for hver som går hjem gjør loggen ubrukelig.
+      }
     }
   }
 }

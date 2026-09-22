@@ -18,7 +18,24 @@ data class SakUt(
   val id: String,
   val tittel: String,
   val sammendrag: String,
+  val tekst: String,
   val soker: Soker,
+)
+
+/**
+ * Hvordan ditt eget svar slo ut, sendt med én gang du har svart.
+ *
+ * Dette er ikke fasiten. Den kommer først når runden er over og alle har
+ * levert. Her står bare om hver del av ditt svar traff, og hva det ga. Det
+ * er trygt å sende med det samme, fordi et svar ikke kan endres: det er
+ * låst i det du har trykket.
+ */
+@Serializable
+data class Vurdering(
+  val vedtakRiktig: Boolean,
+  val hjemmelRiktig: Boolean,
+  val felleRiktig: Boolean,
+  val poeng: Int,
 )
 
 @Serializable
@@ -39,6 +56,7 @@ data class MegUt(
   val forrigePlass: Int,
   val harSvart: Boolean,
   val svar: Svar?,
+  val vurdering: Vurdering? = null,
 )
 
 @Serializable

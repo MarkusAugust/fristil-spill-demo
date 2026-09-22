@@ -55,7 +55,9 @@ Hver runde er én sak, og full pott er 20 poeng:
 | Riktig hjemmel | 5 |
 | Riktig om fella | 5 |
 
-Fella er et felt som er feil: en fødselsdato som ikke finnes, en kommune som ble slått sammen i 2012, en e-post uten krøllalfa. Å se at saken er i orden teller like mye som å se fella.
+Fella er et felt som er feil: en fødselsdato som ikke finnes, en kommune som ble slått sammen i 2012, en e-post uten krøllalfa. Å se at saken er i orden teller like mye som å se fella. Søknadsteksten står i den ene fana og opplysningene om søkeren i den andre, så begge må leses.
+
+**Du kan svare én gang.** Vedtaket låses i det du trykker, og da får du med én gang vite hva som traff og hva det ga. Fasiten og begrunnelsen kommer først når runden er over og alle har levert. Uten låsen ville den umiddelbare tilbakemeldingen vært en fasit man kunne prøvd seg fram til.
 
 Poeng for riktig, ikke for raskest. En ren reflekskonkurranse ville latt nettverksmodellen avgjøre, og da hadde demoen bevist noe annet enn den skulle.
 

@@ -14,7 +14,23 @@ import kotlinx.serialization.Serializable
 
 @Serializable data class Hjemmel(val kode: String, val tekst: String)
 
-@Serializable data class SakUt(val id: String, val tittel: String, val sammendrag: String, val soker: Soker)
+@Serializable
+data class SakUt(
+  val id: String,
+  val tittel: String,
+  val sammendrag: String,
+  val tekst: String,
+  val soker: Soker,
+)
+
+/** Hvordan mitt eget svar slo ut. Kommer med én gang, fasiten kommer senere. */
+@Serializable
+data class Vurdering(
+  val vedtakRiktig: Boolean,
+  val hjemmelRiktig: Boolean,
+  val felleRiktig: Boolean,
+  val poeng: Int,
+)
 
 @Serializable data class Fasit(val vedtak: String, val hjemmel: String, val felle: String? = null)
 
@@ -29,6 +45,7 @@ data class MegUt(
   val plass: Int,
   val forrigePlass: Int,
   val harSvart: Boolean,
+  val vurdering: Vurdering? = null,
 )
 
 @Serializable data class ToppEntry(val navn: String, val poeng: Int, val stack: String, val nar: Long)

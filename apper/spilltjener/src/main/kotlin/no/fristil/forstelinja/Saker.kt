@@ -37,7 +37,10 @@ data class Fasit(
 data class Sak(
   val id: String,
   val tittel: String,
+  /** Én setning som ingress, over selve søknaden. */
   val sammendrag: String,
+  /** Søknaden med søkerens egne ord. Det er denne teksten spilleren leser. */
+  val tekst: String,
   val soker: Soker,
   val fasit: Fasit,
   val forklaring: String,
