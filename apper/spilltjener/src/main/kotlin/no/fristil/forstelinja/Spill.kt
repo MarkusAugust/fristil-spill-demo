@@ -128,7 +128,7 @@ data class Spiller(
    *
    * Den som melder seg på midt i en runde får gjerne svare, og får poeng for
    * det. Det hun ikke skal få, er «avvik registrert, varslet til
-   * fylkesmannen» for en sak hun aldri så.
+   * statsforvalteren» for en sak hun aldri så.
    */
   var medPaSaken: Boolean = false,
   /** Runder på rad uten svar. Nok av dem, og hun regnes som gått hjem. */
@@ -314,8 +314,6 @@ class Spill(
       spiller.poeng += poeng
       spiller.forrigePlass = plasseringFor[spiller.id] ?: 0
     }
-
-    ryddBortBorte()
   }
 
   private fun nullstillSvar() {
@@ -344,6 +342,13 @@ class Spill(
    * alle måtte skrive navnet sitt på nytt hvert tredje minutt.
    */
   private fun nyOmgang() {
+    // Ryddingen skjer her, ved skiftet, og ikke midt i en omgang. Ble noen
+    // fjernet mellom to saker, hoppet skjermen hennes tilbake til «Møt på
+    // vakt» uten et ord. Ved et omgangsskifte er det et naturlig sted å
+    // begynne på nytt, og advarselen i oppgjøret har kommet to ganger før
+    // det.
+    ryddBortBorte()
+
     rekkefolge = trekkSaker()
     rundeNr = 1
     fase = Fase.RUNDE
@@ -358,10 +363,6 @@ class Spill(
     }
   }
 
-  suspend fun glem(spillerId: String) {
-    val fantes = laas.withLock { spillere.remove(spillerId) != null }
-    if (fantes) endringer.emit(Unit)
-  }
 
   private fun tavleliste(): List<Spiller> =
     spillere.values.sortedWith(compareByDescending<Spiller> { it.poeng }.thenBy { it.navn })

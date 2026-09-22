@@ -7,6 +7,7 @@ import io.ktor.server.util.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.sse.*
+import io.ktor.util.cio.ChannelWriteException
 import io.ktor.sse.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.serialization.json.Json
@@ -84,19 +85,33 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
 
     get("/") {
       val spillerId = call.request.cookies[KAPSEL]
-      val tilstand = spilltjener.tilstand(spillerId)
+      val tilstand =
+        try {
+          spilltjener.tilstand(spillerId)
+        } catch (e: Exception) {
+          // Spilltjeneren er nede, eller er ikke kommet opp ennå. En rå
+          // stakksporing fra Ktor sier ingenting til den som står og venter.
+          call.respondText(venteside(), ContentType.Text.Html, HttpStatusCode.ServiceUnavailable)
+          return@get
+        }
       val navn = tilstand.meg?.navn
-      call.respondText(side(tilstand, navn), ContentType.Text.Html)
+      call.respondText(side(tilstand, navn, kommuner), ContentType.Text.Html)
     }
 
     post("/bli-med") {
       val navn = call.receiveParameters()["navn"].orEmpty()
-      val spiller = spilltjener.bliMed(navn)
+      val spiller =
+        try {
+          spilltjener.bliMed(navn)
+        } catch (e: Exception) {
+          call.respondText(venteside(), ContentType.Text.Html, HttpStatusCode.ServiceUnavailable)
+          return@post
+        }
 
       // Kapsel og ikke minne i nettleseren: Astro-appen laster hele sider på
       // nytt, og alle tre skal oppføre seg likt.
       call.response.cookies.append(
-        Cookie(KAPSEL, spiller.spillerId, path = "/", maxAge = 60 * 60, httpOnly = true)
+        Cookie(KAPSEL, spiller.spillerId, path = "/", maxAge = 8 * 60 * 60, httpOnly = true)
       )
 
       // Og så en omdirigering, ikke en patch. Hendelsesstrømmen leser
@@ -217,9 +232,16 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
       try {
         send()
         spilltjener.puls.collect { send() }
-      } catch (_: java.io.IOException) {
+      } catch (_: ChannelWriteException) {
         // Nettleseren lukket fanen midt i en skriving. Det er ikke en feil,
         // og en stakksporing for hver som går hjem gjør loggen ubrukelig.
+        //
+        // Bare denne fanges. En feil oppstrøms, altså at spilltjeneren er
+        // borte, må få strømmen til å ryke: Datastar kobler til igjen bare
+        // når lesingen kaster, og avslutter vi pent, står nettleseren igjen
+        // med en helt normal skjerm som aldri oppdaterer seg mer. Da hjelper
+        // ingenting annet enn F5, og i et rom med ti skjermer dør alle
+        // samtidig uten at noen ser det.
       }
     }
   }

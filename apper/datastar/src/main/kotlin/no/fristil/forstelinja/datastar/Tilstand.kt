@@ -63,9 +63,9 @@ data class Tilstand(
   val runderTotalt: Int,
   val fristMs: Long,
   val faseLengdeMs: Long,
-  val rundeLengdeMs: Long = 120_000,
-  val grenseUtenSvar: Int = 3,
-  val poeng: PoengUt = PoengUt(),
+  val rundeLengdeMs: Long,
+  val grenseUtenSvar: Int,
+  val poeng: PoengUt,
   val naMs: Long,
   val sak: SakUt,
   val hjemler: List<Hjemmel>,
@@ -110,9 +110,9 @@ data class Svar(
  */
 @Serializable
 data class PoengUt(
-  val vedtak: Int = 10,
-  val hjemmel: Int = 5,
-  val kommune: Int = 5,
-  val felle: Int = 5,
-  val fullPott: Int = 25,
+  val vedtak: Int,
+  val hjemmel: Int,
+  val kommune: Int,
+  val felle: Int,
+  val fullPott: Int,
 )

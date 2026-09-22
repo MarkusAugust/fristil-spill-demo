@@ -62,13 +62,12 @@ Kommunefeltet er verdt et eget ord: én av sakene viser til en kommune som ble s
 
 **Du kan svare én gang.** Vedtaket låses i det du trykker, og da får du med én gang vite hva som traff og hva det ga. Fasiten og begrunnelsen kommer først når runden er over og alle har levert. Uten låsen ville den umiddelbare tilbakemeldingen vært en fasit man kunne prøvd seg fram til.
 
-Når runden er over, kommer resultatet som en **modal dialog**: hva du svarte, hva som var riktig, felt for felt, og hvorfor. Rakk du ikke fristen, sier den i stedet at saken ikke ble behandlet i tide, og at avviket er varslet til fylkesmannen.
+Når runden er over, kommer resultatet som en **modal dialog**: hva du svarte, hva som var riktig, felt for felt, og hvorfor. Rakk du ikke fristen, sier den i stedet at saken ikke ble behandlet i tide, og at avviket er varslet til statsforvalteren.
 
 Den dialogen er grunnen til at `<fs-dialog>` finnes i Fristil. Å åpne en `<dialog>` er et kall, og en server som bare sender HTML kan ikke kalle noe; `<dialog open>` er bare en boks på siden. Demoen fant altså et hull i designsystemet, og hullet ble tettet der.
 
 Poeng for riktig, ikke for raskest. En ren reflekskonkurranse ville latt nettverksmodellen avgjøre, og da hadde demoen bevist noe annet enn den skulle.
 
-Når runden er over bytter saksområdet innhold der det står: fasit, din plassering, tavla, nedtelling. Oppgjøret kommer bevisst ikke i en dialog, for en dialog hvert 40. sekund er slitsom. Dialogen sparer vi til slutten av omgangen.
 
 ## Tilstand, og hvorfor det ikke er noen database
 

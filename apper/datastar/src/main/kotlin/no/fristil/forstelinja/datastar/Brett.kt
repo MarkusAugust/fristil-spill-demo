@@ -44,6 +44,12 @@ val BRETT_CSS =
     background: var(--palette-denim-100);
   }
 
+  /* Sambandslinja legger seg øverst i vinduet når den først dukker opp.
+     Uten dette dekker den navnet i topplinja. */
+  body:has(.fs-connection-status__bar) .topplinje {
+    padding-block-start: var(--size-10);
+  }
+
   .topplinje__innhold {
     display: flex;
     flex-wrap: wrap;

@@ -48,15 +48,27 @@ trap rydd EXIT INT TERM
 # felte skallet mens tjeneren ble stående og holdt porten. Med `exec` blir
 # oppstartsskriptet til Gradle selve prosessen, og det kjører Java med `exec`
 # igjen, så $! er den prosessen som faktisk lytter.
+# Vent på det som setter tilstanden, ikke på klokka. Begge tjenestene har
+# `/helse`, og en `sleep` som er for kort på en kald maskin ville skrevet
+# «Førstelinja kjører» før den gjorde det.
+vent_pa() {
+  for _ in $(seq 1 60); do
+    curl -fsS -m 1 "$1" >/dev/null 2>&1 && return 0
+    sleep 1
+  done
+  echo "Fikk ikke svar fra $1"
+  return 1
+}
+
 (cd apper/spilltjener && exec env PORT=8080 HOST=127.0.0.1 \
   ./build/install/spilltjener/bin/spilltjener) &
 PIDER+=($!)
-sleep 6
+vent_pa http://127.0.0.1:8080/helse
 
 (cd apper/datastar && exec env PORT=8081 HOST=127.0.0.1 SPILLTJENER=http://127.0.0.1:8080 \
   ./build/install/datastar-app/bin/datastar-app) &
 PIDER+=($!)
-sleep 4
+vent_pa http://127.0.0.1:8081/helse
 
 echo
 echo "  Førstelinja kjører:  http://localhost:8081"

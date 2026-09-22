@@ -29,6 +29,8 @@ application { mainClass.set("no.fristil.forstelinja.datastar.MainKt") }
 tasks.test {
   useJUnitPlatform()
 
-  // Ingen `inputs.files(fileTree("../../felles"))` her: denne modulen leser
-  // ikke de delte filene. Spilltjeneren gjør det, og har erklæringen.
+  // Ingen `inputs.files(fileTree("../../felles"))` her: prøvene i denne
+  // modulen leser ikke de delte filene. Appen leser `kommuner.json` ved
+  // oppstart, men det er ikke en inngang til testoppgaven. Spilltjenerens
+  // prøver leser dem, og der står erklæringen.
 }

@@ -9,13 +9,38 @@ package no.fristil.forstelinja.datastar
  * bevaringslistene synlige.
  *
  * Her kalles ingen `fs.field()`. Kotlin kan ikke kalle en TypeScript-
- * funksjon, så serveren skriver klassene og koblingen selv, og `<fs-field>`
- * gjør resten i nettleseren. Derfor står `data-preserve-attr` på hvert
- * element komponenten rører.
+ * funksjon, så serveren skriver klassene selv og lar `<fs-field>` gjøre
+ * koblingen i nettleseren. Derfor står `data-preserve-attr` på det
+ * komponenten lager, og bare på det.
  */
 
 private fun String.trygg(): String =
   replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;")
+
+/**
+ * Siden du får når spilltjeneren ikke svarer.
+ *
+ * Den henter seg selv på nytt, så den som står og venter under en utrulling
+ * slipper å trykke. Ingen Fristil-komponenter her: poenget er at den virker
+ * også når ingenting annet gjør det.
+ */
+fun venteside(): String =
+  """
+  <!doctype html>
+  <html lang="nb">
+  <head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="3">
+  <title>Førstelinja</title>
+  </head>
+  <body style="font-family: system-ui, sans-serif; margin: 4rem auto; max-width: 32rem; padding: 0 1rem">
+    <h1>Førstelinja</h1>
+    <p>Sambandet til etaten er nede. Siden prøver igjen om tre sekunder.</p>
+  </body>
+  </html>
+  """
+    .trimIndent()
 
 /** Hele siden, første gang. */
 fun side(tilstand: Tilstand, spillerNavn: String?, kommuner: List<String> = emptyList()): String {
@@ -56,7 +81,7 @@ fun side(tilstand: Tilstand, spillerNavn: String?, kommuner: List<String> = empt
          skjermen oppdaterer seg bare når du selv gjør noe. `data-on:load`
          er ikke et attributt i Datastar 1.0.4, og ble ignorert i stillhet,
          uten en eneste feil i konsollen. -->
-    <body data-init="@get('/hendelser')">
+    <body data-init="@get('/hendelser')" data-server-na="${tilstand.naMs}">
     <!-- Sambandslinja eier sitt eget innhold, og serveren har ingenting å
          sende for den. `data-ignore-morph` hindrer at en patch river bort en
          melding midt i visningen. -->
@@ -113,28 +138,47 @@ fun side(tilstand: Tilstand, spillerNavn: String?, kommuner: List<String> = empt
       // `datastar-fetch`, og det er den forbindelsen spillet lever av. Uten
       // dette ville komponenten bare sett `navigator.onLine`, som ikke
       // merker at spilltjeneren er nede.
-      const samband = document.querySelector("fs-connection-status")
+      //
+      // Elementet slås opp ved hver hendelse, ikke én gang: komponentene
+      // registreres i en modul, og moduler kjører etter denne blokka. Ved
+      // oppstart er `<fs-connection-status>` derfor et vanlig element uten
+      // metodene ennå.
       document.addEventListener("datastar-fetch", (e) => {
+        const samband = document.querySelector("fs-connection-status")
         const type = e.detail?.type
+        if (typeof samband?.reportFailure !== "function") return
+
         if (type === "retrying" || type === "retries-failed" || type === "error") {
-          samband?.reportFailure()
-        } else if (type === "finished") {
-          samband?.reportSuccess()
+          samband.reportFailure()
+        } else if (type === "started") {
+          // Og ikke `finished`: en SSE-strøm som står åpen blir aldri
+          // ferdig, så `finished` ville bare kommet når noe var galt.
+          samband.reportSuccess()
         }
       })
 
       // Klassen, ikke en id: nedtellingen står både i toppen og i panelet
       // når omgangen er over. Med samme id på begge fant getElementById
       // bare den første, og panelet ble stående med « … sekunder».
+      // Fristen er et absolutt tidspunkt fra serveren, og maskinen her kan gå
+      // feil. Avviket regnes ut én gang, mot serverens egen klokke slik den
+      // sto da siden ble tegnet, og legges til i hver avlesning.
+      const serverNa = Number(document.body.dataset.serverNa ?? 0)
+      const avvik = serverNa > 0 ? serverNa - Date.now() : 0
+
       setInterval(() => {
         for (const el of document.querySelectorAll(".nedtelling")) {
-          const igjen = Math.max(0, Math.round((Number(el.dataset.frist) - Date.now()) / 1000))
+          const igjen = Math.max(0, Math.round((Number(el.dataset.frist) - (Date.now() + avvik)) / 1000))
           // Klokka i toppen står som minutter og sekunder. Inne i en setning
-          // («starter om 12 sekunder») er tallet alene det som leses.
+          // («starter om 12 sekunder») er tallet alene det som leses, og da
+          // må enheten bøyes: «1 sekunder» er ikke norsk.
           el.textContent =
             "klokke" in el.dataset
               ? Math.floor(igjen / 60) + ":" + String(igjen % 60).padStart(2, "0")
               : igjen
+
+          const enhet = el.parentElement?.querySelector(".nedtelling-enhet")
+          if (enhet) enhet.textContent = igjen === 1 ? "sekund" : "sekunder"
 
           // Fargen går gradvis mot rødt. Den holder seg hvit til halve fristen
           // er gått, og blir så mer og mer rød. Et fast omslagspunkt ville
@@ -392,6 +436,22 @@ private fun sakskort(sak: SakUt): String =
   """
     .trimIndent()
 
+/**
+ * Feilmeldingen som står ved feltet.
+ *
+ * Feiloppsummeringen sier hva som er galt i en liste på toppen, men den som
+ * har fulgt en lenke ned til feltet skal se hvorfor rammen er rød. `id`-en
+ * kobles inn i `aria-describedby` av `<fs-field>` når serveren ikke skriver
+ * den selv; her skriver den den.
+ */
+private fun beskrivesAv(feil: List<Feil>, felt: String, id: String) =
+  if (feil.any { it.felt == felt }) """aria-describedby="$id"""" else ""
+
+private fun feilmelding(feil: List<Feil>, felt: String, id: String): String {
+  val melding = feil.firstOrNull { it.felt == felt } ?: return ""
+  return """<p class="fs-error-text" id="$id">${melding.melding.trygg()}</p>"""
+}
+
 /** Skjemaet saksbehandleren fyller ut. */
 private fun vedtakskort(tilstand: Tilstand, kommuner: List<String>, feil: List<Feil>): String {
   val hjemler =
@@ -466,10 +526,11 @@ private fun vedtakskort(tilstand: Tilstand, kommuner: List<String>, feil: List<F
         <fs-field>
           <label class="fs-label" for="hjemmel">Hjemmel</label>
           <select class="fs-select" id="hjemmel" name="hjemmel" data-bind:hjemmel
-                  $ugyldigHjemmel>
+                  ${beskrivesAv(feil, "hjemmel", "hjemmel-feil")} $ugyldigHjemmel>
             <option value="">Velg hjemmel</option>
             $hjemler
           </select>
+          ${feilmelding(feil, "hjemmel", "hjemmel-feil")}
         </fs-field>
 
         <!-- Hjelpen til hjemlene. Serveren skriver koblingen mellom
@@ -497,7 +558,8 @@ private fun vedtakskort(tilstand: Tilstand, kommuner: List<String>, feil: List<F
           <div class="fs-suggestion__field">
             <input class="fs-input" id="kommune" name="kommune" type="text" role="combobox"
                    autocomplete="off" aria-autocomplete="list" aria-expanded="false"
-                   aria-controls="kommune-list" aria-describedby="kommune-hjelp kommune-status"
+                   aria-controls="kommune-list"
+                   aria-describedby="kommune-hjelp kommune-status${if (feil.any { it.felt == "kommune" }) " kommune-feil" else ""}"
                    data-bind:kommune
                    $ugyldigKommune
                    data-preserve-attr="${Bevar.FORSLAG_KONTROLL}">
@@ -511,6 +573,7 @@ private fun vedtakskort(tilstand: Tilstand, kommuner: List<String>, feil: List<F
                   data-ignore-morph></span>
           </div>
           <p class="fs-help-text" id="kommune-hjelp">Begynn å skrive, så kommer forslagene. Finner du den ikke, la feltet stå tomt.</p>
+          ${feilmelding(feil, "kommune", "kommune-feil")}
         </fs-suggestion>
 
         <!-- Feiloppsummeringen lenker hit, så serveren navngir feltet, og
@@ -519,7 +582,8 @@ private fun vedtakskort(tilstand: Tilstand, kommuner: List<String>, feil: List<F
         <fs-field>
           <label class="fs-label" for="felle">Er noe feil i søknaden?</label>
           <select class="fs-select" id="felle" name="felle" data-bind:felle
-                  aria-describedby="felle-hjelp" $ugyldigFelle>
+                  aria-describedby="felle-hjelp${if (feil.any { it.felt == "felle" }) " felle-feil" else ""}"
+                  $ugyldigFelle>
             <option value="">Velg</option>
             <option value="nei">Nei, saken er i orden</option>
             <option value="fodselsdato">Fødselsdatoen</option>
@@ -527,6 +591,7 @@ private fun vedtakskort(tilstand: Tilstand, kommuner: List<String>, feil: List<F
             <option value="epost">E-postadressen</option>
           </select>
           <p class="fs-help-text" id="felle-hjelp">Å se at alt er i orden teller like mye.</p>
+          ${feilmelding(feil, "felle", "felle-feil")}
         </fs-field>
 
         <button class="fs-button skjema__send" type="submit">Fatt vedtak</button>
@@ -818,7 +883,7 @@ fun slutt(tilstand: Tilstand): String {
         <td>${nr + 1}</td>
         <td>${it.navn.trygg()}</td>
         <td>${it.poeng}</td>
-        <td><span class="fs-badge" data-color="${farge(it.stack)}">${it.stack.trygg()}</span></td>
+        <td><span class="fs-badge" data-color="${farge(it.stack)}">${appnavn(it.stack)}</span></td>
       </tr>
       """
         .trimIndent()
@@ -833,13 +898,16 @@ fun slutt(tilstand: Tilstand): String {
       <p class="poeng"><strong>${meg.poeng} poeng</strong> · ${meg.plass}. plass</p>"""}
       <p class="fs-paragraph">Ny omgang starter om
         <span class="nedtelling" data-frist="${tilstand.fristMs}"
-          data-lengde="${tilstand.faseLengdeMs}">…</span> sekunder.</p>
+          data-lengde="${tilstand.faseLengdeMs}" data-preserve-attr="style">…</span>
+        <span class="nedtelling-enhet">sekunder</span>.</p>
 
       <h3 class="fs-heading" data-size="xs">Evig toppliste</h3>
-      <table class="fs-table">
-        <thead><tr><th>#</th><th>Navn</th><th>Poeng</th><th>App</th></tr></thead>
-        <tbody>${evig.ifBlank { "<tr><td colspan=\"4\">Ingen ennå.</td></tr>" }}</tbody>
-      </table>
+      <div class="fs-table-scroll" tabindex="0">
+        <table class="fs-table">
+          <thead><tr><th>#</th><th>Navn</th><th>Poeng</th><th>App</th></tr></thead>
+          <tbody>${evig.ifBlank { "<tr><td colspan=\"4\">Ingen ennå.</td></tr>" }}</tbody>
+        </table>
+      </div>
     </section>
   """
     .trimIndent()
@@ -854,7 +922,7 @@ fun tavle(tilstand: Tilstand): String {
         <td>${it.plass}</td>
         <td>${it.navn.trygg()}</td>
         <td class="tavle__poeng">${it.poeng}</td>
-        <td><span class="fs-badge" data-color="${farge(it.stack)}">${it.stack.trygg()}</span></td>
+        <td><span class="fs-badge" data-color="${farge(it.stack)}">${appnavn(it.stack)}</span></td>
       </tr>
       """
         .trimIndent()
@@ -862,10 +930,12 @@ fun tavle(tilstand: Tilstand): String {
 
   return """
       <h2 class="fs-heading" data-size="s">På vakt nå</h2>
-      <table class="fs-table tavle__tabell">
+      <div class="fs-table-scroll" tabindex="0">
+        <table class="fs-table tavle__tabell">
         <thead><tr><th>#</th><th>Navn</th><th>Poeng</th><th>App</th></tr></thead>
         <tbody>${rader.ifBlank { "<tr><td colspan=\"4\">Ingen på vakt.</td></tr>" }}</tbody>
-      </table>
+        </table>
+      </div>
       <p class="tavle__fot">Alle tre appene spiller på det samme brettet.</p>
   """
     .trimIndent()
@@ -878,6 +948,15 @@ fun tavle(tilstand: Tilstand): String {
  * `data-color="info"` ville falt tilbake på standarden uten at noe sa fra,
  * og da er det ærligere å be om standarden.
  */
+/** Navnet appen har utad. Enumverdien er en maskinverdi. */
+private fun appnavn(stack: String) =
+  when (stack) {
+    "tanstack" -> "TanStack"
+    "datastar" -> "Datastar"
+    "astro" -> "Astro"
+    else -> "Ukjent"
+  }
+
 private fun farge(stack: String) =
   when (stack) {
     "datastar" -> "success"

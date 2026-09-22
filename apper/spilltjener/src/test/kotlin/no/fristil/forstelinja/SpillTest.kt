@@ -251,6 +251,37 @@ class SpillTest {
   }
 
   @Test
+  fun `den som har sittet over flere runder holder ikke de andre igjen`() = runTest {
+    val spill = nyttSpill()
+    val her = spill.bliMed("Her", Stack.DATASTAR)
+    val borte = spill.bliMed("Borte", Stack.ASTRO)
+
+    // «Borte» lukker fana. Etter to runder uten svar skal hun ikke lenger
+    // telle med i «alle har svart», ellers måtte de andre vente ut fristen
+    // hver eneste runde. Første runde teller ikke: begge meldte seg på midt
+    // i den, og var ikke med på saken.
+    repeat(3) {
+      val fasit = spill.sak.fasit
+      spill.svar(
+        her.id,
+        Svar(fasit.vedtak, fasit.hjemmel, spill.sak.soker.kommune, fasit.felle),
+      )
+      klokke.gaa(RUNDE_MS)
+      spill.tikk()
+      klokke.gaa(OPPGJOR_MS)
+      spill.tikk()
+    }
+
+    assertEquals(Fase.RUNDE, spill.fase)
+    val fasit = spill.sak.fasit
+    spill.svar(her.id, Svar(fasit.vedtak, fasit.hjemmel, spill.sak.soker.kommune, fasit.felle))
+    spill.avsluttHvisAlleHarSvart()
+
+    assertEquals(Fase.OPPGJOR, spill.fase, "runden ventet på en som er gått hjem")
+    assertNotNull(spill.tilstand(borte.id).meg, "hun står ennå på tavla til omgangen er over")
+  }
+
+  @Test
   fun `fire runder, så slutt, så ny omgang`() = runTest {
     val spill = nyttSpill()
     val spiller = spill.bliMed("Kari", Stack.TANSTACK)
@@ -346,14 +377,18 @@ class SpillTest {
   }
 
   @Test
-  fun `den som sitter over to runder ryddes bort fra tavla`() = runTest {
+  fun `den som sitter over nok runder ryddes bort ved omgangsskiftet`() = runTest {
     val spill = nyttSpill()
     val blir = spill.bliMed("Blir", Stack.DATASTAR)
     val gar = spill.bliMed("Går", Stack.ASTRO)
 
     // En lukket fane sier ikke fra til noen. Uten ryddingen blir hvert besøk
     // stående som et navn på tavla til prosessen starter på nytt.
-    repeat(RUNDER_UTEN_SVAR_FOR_BORTE + 1) {
+    //
+    // Ryddingen skjer ved omgangsskiftet, ikke midt i en omgang: ble noen
+    // fjernet mellom to saker, hoppet skjermen hennes tilbake til «Møt på
+    // vakt» uten et ord.
+    repeat(RUNDER_PER_SPILL) {
       val fasit = spill.sak.fasit
       spill.svar(blir.id, Svar(fasit.vedtak, fasit.hjemmel, spill.sak.soker.kommune, fasit.felle))
       klokke.gaa(RUNDE_MS)
@@ -361,6 +396,16 @@ class SpillTest {
       klokke.gaa(OPPGJOR_MS)
       spill.tikk()
     }
+
+    assertEquals(Fase.SLUTT, spill.fase)
+    assertEquals(
+      listOf("Blir", "Går"),
+      spill.tilstand(blir.id).tavle.map { it.navn }.sorted(),
+      "begge står ennå, for omgangen er ikke over",
+    )
+
+    klokke.gaa(SLUTT_MS)
+    spill.tikk()
 
     val navn = spill.tilstand(blir.id).tavle.map { it.navn }
     assertEquals(listOf("Blir"), navn)

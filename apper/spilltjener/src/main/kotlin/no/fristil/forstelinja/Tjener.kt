@@ -68,11 +68,6 @@ fun Application.spillModul(spill: Spill) {
       )
     }
 
-    post("/api/forlat") {
-      val inn = call.receive<SvarInn>()
-      spill.glem(inn.spillerId)
-      call.respond(Kvittering(true))
-    }
 
     get("/api/tilstand") {
       call.respond(spill.tilstand(call.request.queryParameters["spiller"]))

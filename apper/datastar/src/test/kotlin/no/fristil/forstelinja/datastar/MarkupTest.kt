@@ -25,6 +25,9 @@ class MarkupTest {
       runderTotalt = 4,
       fristMs = 1_000,
       faseLengdeMs = 120_000,
+      rundeLengdeMs = 120_000,
+      grenseUtenSvar = 3,
+      poeng = PoengUt(vedtak = 10, hjemmel = 5, kommune = 5, felle = 5, fullPott = 25),
       naMs = 0,
       sak =
         SakUt(
@@ -98,16 +101,25 @@ class MarkupTest {
   fun `fanene bærer sine, siden komponenten flytter valget`() {
     val html = brett(tilstand, "Kari", listOf("Bergen"))
 
-    // «aria-selected tabindex» er unik for fanene.
-    assertEquals(2, Regex("""data-preserve-attr="${Regex.escape(Bevar.FANE)}"""").findAll(html).count())
+    // Komponenten flytter `aria-selected` og `tabindex` når brukeren blar,
+    // og slår `hidden` av og på på panelene.
+    val faner = Regex("""role="tab"[^>]*""").findAll(html).toList()
+    assertEquals(2, faner.size, "fant ikke begge fanene")
+    for (fane in faner) {
+      assertTrue(fane.value.contains(Bevar.FANE), "en fane mangler bevaringslista")
+    }
 
-    // «hidden» er det ikke: forslagslista og «ingen treff» freder den samme
-    // strengen. Her teller vi derfor panelene, og at det finnes minst like
-    // mange fredninger som paneler.
-    assertEquals(2, Regex("""role="tabpanel"""").findAll(html).count())
-    assertTrue(
-      Regex("""data-preserve-attr="${Regex.escape(Bevar.FANEPANEL)}"""").findAll(html).count() >= 2,
-    )
+    // Panelene telles for seg: `Bevar.FANEPANEL` er strengen «hidden», og
+    // forslagsfeltet bruker den samme strengen. En telling over hele
+    // markupen ville derfor vært grønn selv om begge panelene mistet sin.
+    val paneler = Regex("""role="tabpanel"[^>]*""").findAll(html).toList()
+    assertEquals(2, paneler.size, "fant ikke begge panelene")
+    for (panel in paneler) {
+      assertTrue(
+        panel.value.contains("""data-preserve-attr="${Bevar.FANEPANEL}""""),
+        "et fanepanel mangler bevaringslista",
+      )
+    }
   }
 
   @Test
@@ -226,6 +238,8 @@ class MarkupTest {
         "fs-legend",
         // Raden rundt en radioknapp står i radio.css, sammen med knappen.
         "fs-radio-row",
+        // Rullefeltet rundt en bred tabell står i table.css.
+        "fs-table-scroll",
       )
 
     // `fs-tabs__list` hører i `tabs.css`. Delen etter `__` er en del av
@@ -427,8 +441,11 @@ class MarkupTest {
     val html =
       brett(oppgjorMed(Vurdering(true, true, true, true, 25), Svar("avslatt", "§ 12-3", "Bergen", "fodselsdato")), "Kari")
 
-    assertTrue(html.contains("""data-utfall="full" data-preserve-attr="open""""))
-    assertFalse(html.contains("""<fs-dialog id="resultat" open data-preserve-attr"""))
+    val dialogtagg = Regex("""<dialog[^>]*""").find(html)?.value ?: ""
+    val verten = Regex("""<fs-dialog[^>]*""").find(html)?.value ?: ""
+
+    assertTrue(dialogtagg.contains("""data-preserve-attr="open""""), "dialogen må fredes")
+    assertFalse(verten.contains("data-preserve-attr"), "verten skal ikke fredes")
   }
 
   @Test
@@ -442,6 +459,40 @@ class MarkupTest {
       val tagg = fil.substringAfterLast("/").removeSuffix(".js")
       assertTrue(html.contains("<$tagg"), "$tagg registreres, men står ikke i markupen")
     }
+  }
+
+  @Test
+  fun `hvert stilark som lastes er faktisk i bruk`() {
+    // `session-timeout.css` ble lastet lenge etter at komponenten var ute.
+    // Et stilark ingen bruker er dødvekt over nettet og en påstand om at
+    // demoen viser fram mer enn den gjør.
+    //
+    // Alle tre fasene må med: varselboksen står bare i oppgjøret, og
+    // sluttlista bare på sluttskjermen.
+    val oppgjor = oppgjorMed(Vurdering(true, true, true, true, 25), Svar("avslatt", "§ 12-3", "Bergen", "fodselsdato"))
+    val html =
+      side(tilstand, "Kari", listOf("Bergen")) +
+        brett(tilstand, "Kari", listOf("Bergen")) +
+        brett(oppgjor, "Kari") +
+        brett(oppgjor.copy(fase = "slutt"), "Kari")
+
+    val brukt =
+      Regex("""class="([^"]*)"""")
+        .findAll(html)
+        .flatMap { it.groupValues[1].split(" ") }
+        .filter { it.startsWith("fs-") }
+        .map { it.removePrefix("fs-").substringBefore("__") }
+        .toSet() +
+        Regex("""<(fs-[a-z-]+)""").findAll(html).map { it.groupValues[1].removePrefix("fs-") }.toSet()
+
+    // Disse er bunter eller grunnlag, og har ingen egen klasse i markupen.
+    val alltid = setOf("tokens", "field", "label", "input", "help-text", "error-text")
+
+    val ubrukte =
+      STILARK.map { it.substringAfterLast("/").removeSuffix(".css") }
+        .filterNot { it in alltid || brukt.any { k -> k == it || k.startsWith("$it-") } }
+
+    assertEquals(emptyList(), ubrukte, "disse stilarkene brukes ikke")
   }
 
   @Test
