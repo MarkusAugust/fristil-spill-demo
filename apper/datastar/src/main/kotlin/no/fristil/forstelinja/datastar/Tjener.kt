@@ -24,11 +24,40 @@ private const val KAPSEL = "spiller"
 
 private val json = Json { ignoreUnknownKeys = true }
 
-/** Datastars format: ett event, og hver linje HTML på sin egen `data:`-linje. */
-fun patch(vararg biter: String): String {
-  val linjer = biter.joinToString("\n").lines().joinToString("\n") { "data: elements $it" }
-  return "event: datastar-patch-elements\n$linjer\n\n"
+/**
+ * Hvordan HTML-en settes inn. Datastars egne navn.
+ *
+ * `outer` er standarden og morfer hele elementet. `inner` morfer bare
+ * innmaten, og er den vi bruker når vi peker ut et område med `selector`.
+ */
+enum class Modus(val verdi: String) {
+  OUTER("outer"),
+  INNER("inner"),
 }
+
+/**
+ * Ett Datastar-event, med hver linje HTML på sin egen `data:`-linje.
+ *
+ * `selector` er det som gjør patchene smale. Sender vi bare tavla når bare
+ * tavla har endret seg, røres verken skjemaet eller fanene, og da kan
+ * brukerens tilstand heller ikke gå tapt. Det er den vanlige måten å bruke
+ * Datastar på, og den fjerner behovet for `data-preserve-attr` alle steder
+ * der serveren ikke trenger å sende noe.
+ */
+fun patch(
+  html: String,
+  selector: String? = null,
+  modus: Modus = Modus.OUTER,
+): String = buildString {
+  append("event: datastar-patch-elements\n")
+  if (modus != Modus.OUTER) append("data: mode ${modus.verdi}\n")
+  selector?.let { append("data: selector $it\n") }
+  html.lines().forEach { append("data: elements $it\n") }
+  append("\n")
+}
+
+/** Flere biter i ett event, alle med `outer`. */
+fun patch(vararg biter: String): String = patch(biter.joinToString("\n"))
 
 /** Signalene Datastar sender med en `@post`. */
 private suspend fun ApplicationCall.signaler(): Map<String, String> {
@@ -112,17 +141,44 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
     sse("/hendelser") {
       val spillerId = call.request.cookies[KAPSEL]
 
+      // Forrige tilstand, så vi kan sende bare det som faktisk har endret
+      // seg. Endres tavla, sendes tavla. Skifter runden, sendes saken også.
+      var forrige: Tilstand? = null
+
+      suspend fun sendRamme(html: String) {
+        val innmat =
+          html
+            .removePrefix("event: datastar-patch-elements\n")
+            .trimEnd()
+            .lines()
+            .joinToString("\n") { it.removePrefix("data: ") }
+        send(ServerSentEvent(event = "datastar-patch-elements", data = innmat))
+      }
+
       suspend fun send() {
-        val tilstand = spilltjener.tilstand(spillerId)
-        val html = patch(topp(tilstand), brett(tilstand, tilstand.meg?.navn, kommuner))
-        // `patch` lager hele SSE-rammen. Her trengs bare innmaten.
-        val data = html.removePrefix("event: datastar-patch-elements\n").trimEnd()
-        send(
-          ServerSentEvent(
-            event = "datastar-patch-elements",
-            data = data.lines().joinToString("\n") { it.removePrefix("data: ") },
-          )
-        )
+        val na = spilltjener.tilstand(spillerId)
+        val forr = forrige
+        forrige = na
+
+        val nyRunde =
+          forr == null ||
+            forr.fase != na.fase ||
+            forr.rundeNr != na.rundeNr ||
+            forr.sak.id != na.sak.id ||
+            forr.meg?.navn != na.meg?.navn ||
+            forr.meg?.harSvart != na.meg?.harSvart
+
+        if (nyRunde) {
+          // Hele brettet. Her er det serveren som eier innholdet uansett.
+          sendRamme(patch(topp(na), brett(na, na.meg?.navn, kommuner)))
+          return
+        }
+
+        if (forr.tavle != na.tavle) {
+          // Bare tavla. Skjemaet brukeren står i røres ikke i det hele tatt,
+          // og da kan heller ingenting gå tapt.
+          sendRamme(patch(tavle(na), selector = "#tavle", modus = Modus.INNER))
+        }
       }
 
       send()

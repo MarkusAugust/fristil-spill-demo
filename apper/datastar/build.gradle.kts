@@ -16,6 +16,7 @@ dependencies {
   implementation("io.ktor:ktor-client-cio:3.6.0")
   implementation("io.ktor:ktor-client-content-negotiation:3.6.0")
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+  implementation("org.jetbrains.kotlinx:kotlinx-html-jvm:0.12.0")
   implementation("ch.qos.logback:logback-classic:1.5.20")
 
   testImplementation(kotlin("test"))

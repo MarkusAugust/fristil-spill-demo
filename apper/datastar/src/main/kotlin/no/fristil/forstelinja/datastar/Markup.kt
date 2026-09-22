@@ -100,7 +100,27 @@ fun topp(tilstand: Tilstand): String {
     .trimIndent()
 }
 
-/** Området serveren bytter ut ved hver patch. */
+/**
+ * Saken, eller det som står i stedet for den.
+ *
+ * Eget område med egen id, slik at serveren kan sende tavla for seg uten å
+ * røre skjemaet brukeren står i.
+ */
+fun saksomrade(
+  tilstand: Tilstand,
+  spillerNavn: String?,
+  kommuner: List<String>,
+  feil: List<Feil>,
+): String =
+  if (spillerNavn == null) blimed()
+  else
+    when (tilstand.fase) {
+      "runde" -> runde(tilstand, kommuner, feil)
+      "oppgjor" -> oppgjor(tilstand)
+      else -> slutt(tilstand)
+    }
+
+/** Hele brettet. Sendes bare når runden skifter. */
 fun brett(
   tilstand: Tilstand,
   spillerNavn: String?,
@@ -109,12 +129,8 @@ fun brett(
 ): String =
   """
   <div id="brett" class="brett__innhold">
-    ${if (spillerNavn == null) blimed() else when (tilstand.fase) {
-      "runde" -> runde(tilstand, kommuner, feil)
-      "oppgjor" -> oppgjor(tilstand)
-      else -> slutt(tilstand)
-    }}
-    ${tavle(tilstand)}
+    <div id="sak">${saksomrade(tilstand, spillerNavn, kommuner, feil)}</div>
+    <aside id="tavle" class="fs-card kort tavle">${tavle(tilstand)}</aside>
   </div>
   """
     .trimIndent()
@@ -383,13 +399,11 @@ fun tavle(tilstand: Tilstand): String {
     }
 
   return """
-    <aside class="fs-card kort tavle">
       <h2 class="fs-heading" data-size="s">Tavle</h2>
       <table class="fs-table">
         <thead><tr><th>#</th><th>Navn</th><th>Poeng</th><th>App</th></tr></thead>
         <tbody>${rader.ifBlank { "<tr><td colspan=\"4\">Ingen på vakt.</td></tr>" }}</tbody>
       </table>
-    </aside>
   """
     .trimIndent()
 }
