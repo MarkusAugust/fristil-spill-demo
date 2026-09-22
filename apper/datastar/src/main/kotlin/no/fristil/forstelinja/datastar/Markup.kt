@@ -543,7 +543,15 @@ private fun vedtakskort(tilstand: Tilstand, kommuner: List<String>, feil: List<F
              Ellers lar vi komponenten finne på id-en. -->
         <fs-field>
           <label class="fs-label" for="hjemmel">Hjemmel</label>
-          <select class="fs-select" id="hjemmel" name="hjemmel" data-bind:hjemmel
+          <!-- `data-picker="styled"` ber nettleseren tegne lista inne i
+               siden, med systemets egne farger. Uten den er lista et vindu
+               fra operativsystemet: ingen CSS når inn i den, den følger
+               maskinens tema og ikke sidens, og i Chromes mobilemulering
+               havner den på feil sted og i feil størrelse. Firefox har det
+               ikke ennå, og får da sin egen liste, altså det feltet hadde
+               før. -->
+          <select class="fs-select" data-picker="styled" id="hjemmel" name="hjemmel"
+                  data-bind:hjemmel
                   ${beskrivesAv(feil, "hjemmel", "hjemmel-feil")} $ugyldigHjemmel>
             <option value="">Velg hjemmel</option>
             $hjemler
@@ -599,7 +607,7 @@ private fun vedtakskort(tilstand: Tilstand, kommuner: List<String>, feil: List<F
              legge til, og morfingen ingenting å ta bort. -->
         <fs-field>
           <label class="fs-label" for="felle">Er noe feil i søknaden?</label>
-          <select class="fs-select" id="felle" name="felle" data-bind:felle
+          <select class="fs-select" data-picker="styled" id="felle" name="felle" data-bind:felle
                   aria-describedby="felle-hjelp${if (feil.any { it.felt == "felle" }) " felle-feil" else ""}"
                   $ugyldigFelle>
             <option value="">Velg</option>

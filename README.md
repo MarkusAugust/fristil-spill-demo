@@ -176,6 +176,7 @@ nå at hver komponent som registreres faktisk står i markupen.
 | `<fs-popover>` | «Hva betyr hjemlene?» |
 | `<fs-error-summary>` | et ufullstendig vedtak |
 | `<fs-suggestion>` | kommunesøket, der en av fellene ligger |
+| `.fs-select` med `data-picker="styled"` | hjemmelen og «er noe feil», med lista tegnet i siden |
 | `<fs-dialog>` | resultatet når runden er over |
 | `<fs-connection-status>` | når sambandet til spilltjeneren ryker |
 

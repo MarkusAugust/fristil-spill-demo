@@ -541,4 +541,18 @@ class MarkupTest {
     assertTrue(html.contains("""attributeFilter: ["data-nede"]"""), "skriptet må lytte på merket")
     assertTrue(html.contains("reportFailure"), "og si fra til komponenten")
   }
+
+  @Test
+  fun `nedtrekkslistene tegnes i siden`() {
+    // Uten `data-picker="styled"` er lista et vindu fra operativsystemet:
+    // den følger maskinens tema og ikke sidens, ingen CSS når inn i den, og
+    // i Chromes mobilemulering havner den på feil sted og i feil størrelse.
+    val html = brett(tilstand, "Kari", listOf("Bergen"))
+
+    val lister = Regex("""<select[^>]*""").findAll(html).map { it.value }.toList()
+    assertEquals(2, lister.size, "fant ikke begge nedtrekkslistene")
+    for (liste in lister) {
+      assertTrue(liste.contains("""data-picker="styled""""), "en liste tegnes ikke i siden")
+    }
+  }
 }
