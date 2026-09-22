@@ -28,6 +28,14 @@ const val OPPGJOR_MS = 25_000L
 const val SLUTT_MS = 40_000L
 
 /**
+ * Pusten mellom «alle har svart» og oppgjøret.
+ *
+ * Den som svarte sist trykket nettopp, og skal rekke å se sin egen
+ * kvittering før dialogen legger seg over skjermen.
+ */
+const val PUST_MS = 4_000L
+
+/**
  * Hvor mange runder på rad en spiller kan la være å svare før hun ryddes
  * bort fra tavla.
  *
@@ -249,7 +257,14 @@ class Spill(
     if (endret) endringer.emit(Unit)
   }
 
-  /** Avslutter runden med én gang hvis alle har svart. */
+  /**
+   * Korter inn fristen når alle har svart.
+   *
+   * Ikke «avslutt med én gang»: den som svarte sist trykket nettopp, og fikk
+   * da oppgjøret kastet i fjeset før hun rakk å se sin egen kvittering. Nå
+   * settes fristen til noen sekunder fram, klokka teller dem ned, og
+   * `tikk()` gjør resten. Da er det én vei inn i oppgjøret, ikke to.
+   */
   suspend fun avsluttHvisAlleHarSvart() {
     val endret =
       laas.withLock {
@@ -261,9 +276,10 @@ class Spill(
         val med = spillere.values.filter { it.runderUtenSvar < RUNDER_UTEN_SVAR_FOR_BORTE - 1 }
         if (med.isEmpty()) return@withLock false
         if (med.any { it.svar == null }) return@withLock false
-        telleOpp()
-        fase = Fase.OPPGJOR
-        faseSlutt = klokke.na() + tider.oppgjor
+
+        val pust = klokke.na() + PUST_MS
+        if (faseSlutt <= pust) return@withLock false
+        faseSlutt = pust
         true
       }
     if (endret) endringer.emit(Unit)

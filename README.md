@@ -70,6 +70,10 @@ Når runden er over, kommer resultatet som en **modal dialog**: hva du svarte, h
 
 Den dialogen er grunnen til at `<fs-dialog>` finnes i Fristil. Å åpne en `<dialog>` er et kall, og en server som bare sender HTML kan ikke kalle noe; `<dialog open>` er bare en boks på siden. Demoen fant altså et hull i designsystemet, og hullet ble tettet der.
 
+Har alle svart før fristen, kortes den inn til fire sekunder framfor å ende
+med én gang. Den som svarte sist trykket nettopp, og skal rekke å se sin egen
+kvittering før oppgjøret legger seg over skjermen.
+
 Poeng for riktig, ikke for raskest. En ren reflekskonkurranse ville latt nettverksmodellen avgjøre, og da hadde demoen bevist noe annet enn den skulle.
 
 

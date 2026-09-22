@@ -236,7 +236,7 @@ class SpillTest {
   }
 
   @Test
-  fun `runden avsluttes med én gang alle har svart`() = runTest {
+  fun `fristen kortes inn når alle har svart, men ikke til null`() = runTest {
     val spill = nyttSpill()
     val en = spill.bliMed("Kari", Stack.TANSTACK)
     val to = spill.bliMed("Ola", Stack.DATASTAR)
@@ -247,7 +247,31 @@ class SpillTest {
 
     spill.svar(to.id, Svar(Vedtak.INNVILGET, "§ 4-1", null))
     spill.avsluttHvisAlleHarSvart()
+
+    // Ikke med én gang: den som svarte sist trykket nettopp, og skal rekke å
+    // se sin egen kvittering før oppgjøret kommer.
+    assertEquals(Fase.RUNDE, spill.fase, "oppgjøret kom i samme øyeblikk som siste svar")
+
+    klokke.gaa(PUST_MS)
+    spill.tikk()
     assertEquals(Fase.OPPGJOR, spill.fase)
+  }
+
+  @Test
+  fun `pusten forlenger aldri en frist som alt er kortere`() = runTest {
+    val spill = nyttSpill()
+    val spiller = spill.bliMed("Kari", Stack.TANSTACK)
+
+    // Svarer noen ett sekund før fristen, skal ikke «alle har svart» skyve
+    // den fire sekunder ut.
+    klokke.gaa(RUNDE_MS - 1_000)
+    spill.svar(spiller.id, Svar(Vedtak.INNVILGET, "§ 4-1", null))
+    spill.avsluttHvisAlleHarSvart()
+
+    klokke.gaa(1_000)
+    spill.tikk()
+
+    assertEquals(Fase.OPPGJOR, spill.fase, "fristen ble skjøvet ut i stedet for inn")
   }
 
   @Test
@@ -277,6 +301,8 @@ class SpillTest {
     spill.svar(her.id, Svar(fasit.vedtak, fasit.hjemmel, spill.sak.soker.kommune, fasit.felle))
     spill.avsluttHvisAlleHarSvart()
 
+    klokke.gaa(PUST_MS)
+    spill.tikk()
     assertEquals(Fase.OPPGJOR, spill.fase, "runden ventet på en som er gått hjem")
     assertNotNull(spill.tilstand(borte.id).meg, "hun står ennå på tavla til omgangen er over")
   }
