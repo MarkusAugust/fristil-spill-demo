@@ -125,10 +125,25 @@ To ting å passe på, notert før vi kom dit:
 
 Og én ting som **ikke er etterprøvd ennå**: jeg mener Railways private nett er IPv6-bare, slik at tjenesten må lytte på `::` og ikke `0.0.0.0` for å være synlig internt. Standarden her er `::`, men det må bekreftes mot Railways egen dokumentasjon når vi setter opp.
 
+## Datastar-appen
+
+Kotlin med Ktor. Den kan ikke kalle `fs.field()`, så den skriver klassene og koblingen selv og lar `<fs-field>` gjøre resten i nettleseren. Fordi serveren sender det samme området på nytt ved hver patch, står `data-preserve-attr` på hvert element komponenten rører, med verdiene hentet fra pakken selv.
+
+Den henter Fristil **fra CDN, uten npm**. Det er sporet «Uten byggverktøy» i Fristils egen dokumentasjon, og denne appen er beviset på at det virker fra en JVM.
+
+Fire ting kostet tid, og alle fire er notert i koden:
+
+- **Ktor-klienten har et standard tidsavbrudd**, og en SSE-strøm blir aldri ferdig. Oppstrømsforbindelsen døde med én gang, så ingen fikk beskjed om noe.
+- **`data-on:load` finnes ikke i Datastar 1.0.4.** Attributtet ble ignorert i stillhet, uten en eneste feil i konsollen, så skjermen oppdaterte seg bare når du selv gjorde noe. Det heter `data-init`.
+- **kotlinx.serialization utelater en verdi som er lik standardverdien**, også når kallstedet setter den uttrykkelig. Tavla sa «ukjent» om nettopp den kolonnen som bærer hele poenget. Standardverdien er fjernet, så hvert kallsted må si hva det er.
+- **Å bli med er en navigering, ikke en oppdatering.** Hendelsesstrømmen leser kapselen når den åpnes, én gang. Setter man kapselen midt i strømmens levetid, vet serveren fortsatt ikke hvem som sitter der, og dyttet innmeldingsskjemaet tilbake over spillet. Skjemaet er nå et vanlig skjema med omdirigering, som dessuten virker uten JavaScript.
+
+Etterprøvd med to nettlesere mot den publiserte pakken: den ene blir med, den andre ser henne dukke opp uten å gjøre noe, og et halvutfylt skjema beholder både fanevalget, feltverdiene og koblingen `<fs-field>` laget, gjennom en patch fra serveren.
+
 ## Status
 
 - [x] Spilltjeneren: regler, poeng, runder, SSE, SQLite
-- [ ] Datastar-appen (Kotlin)
+- [x] Datastar-appen (Kotlin)
 - [ ] TanStack Start-appen
 - [ ] Astro-appen
 - [ ] Skallet med bryteren
