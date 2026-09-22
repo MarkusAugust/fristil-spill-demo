@@ -159,6 +159,30 @@ oppgir Mosvik, og finner du den ikke i lista, er det svaret. En test krever
 at nøyaktig én sak har en kommune som ikke finnes, så ingen lager en felle
 til ved et uhell.
 
+### Serveren skriver struktur, ikke kobling
+
+Den viktigste rettelsen i appen. Dette er alt serveren sender for et felt:
+
+```html
+<fs-field>
+  <label class="fs-label">Navnet ditt</label>
+  <input class="fs-input" name="navn" type="text" required>
+  <p class="fs-help-text">Vises på tavla for alle.</p>
+</fs-field>
+```
+
+Ingen id-er, ingen `for`, ingen `aria-describedby`. Komponenten setter det i
+nettleseren, og gjør det likt uansett hvilket språk serveren er skrevet i.
+
+Det var fristende å skrive en Kotlin-utgave av `fs.field()` som regnet ut
+det samme. Det ville brutt med hele poenget: skulle hver server skrive
+Fristils regler på nytt, ville Fristil vært et JavaScript-designsystem med
+en manuell reserve for alle andre. Den utgaven er slettet igjen.
+
+Unntaket er elementer noe annet må peke på. Feiloppsummeringen lenker til
+`#hjemmel`, så det feltet får en id fra serveren. Regelen er: navngi det
+bare når noe skal finne det.
+
 ### To ting som kostet tid her
 
 **`data-preserve-attr` betyr «ikke rør», og det gjelder begge veier.**

@@ -153,10 +153,13 @@ fun blimed(): String =
          dytter dette skjemaet tilbake over spillet. Det virker dessuten
          uten JavaScript i det hele tatt. -->
     <form method="post" action="/bli-med">
+      <!-- Bare struktur. Ingen id-er, ingen `for`, ingen
+           `aria-describedby`: komponenten setter koblingen i nettleseren, og
+           gjør det likt uansett hvilket språk serveren er skrevet i. -->
       <fs-field>
-        <label class="fs-label" for="navn">Navnet ditt</label>
-        <input class="fs-input" id="navn" name="navn" type="text" required>
-        <p class="fs-help-text" id="navn-hjelp">Vises på tavla for alle.</p>
+        <label class="fs-label">Navnet ditt</label>
+        <input class="fs-input" name="navn" type="text" required>
+        <p class="fs-help-text">Vises på tavla for alle.</p>
       </fs-field>
 
       <button class="fs-button" type="submit">Begynn vakta</button>
@@ -249,6 +252,9 @@ fun runde(tilstand: Tilstand, kommuner: List<String>, feil: List<Feil> = emptyLi
               </label>
             </fieldset>
 
+            <!-- Id-en står her fordi feiloppsummeringen lenker til feltet.
+                 Skal noe annet peke på et element, må serveren navngi det.
+                 Ellers lar vi komponenten finne på id-en. -->
             <fs-field>
               <label class="fs-label" for="hjemmel">Hjemmel</label>
               <select class="fs-select" id="hjemmel" name="hjemmel" data-bind:hjemmel
@@ -298,14 +304,14 @@ fun runde(tilstand: Tilstand, kommuner: List<String>, feil: List<Feil> = emptyLi
             </fs-suggestion>
 
             <fs-field>
-              <label class="fs-label" for="felle">Er noe feil i søknaden?</label>
-              <select class="fs-select" id="felle" name="felle" data-bind:felle>
+              <label class="fs-label">Er noe feil i søknaden?</label>
+              <select class="fs-select" name="felle" data-bind:felle>
                 <option value="">Nei, saken er i orden</option>
                 <option value="fodselsdato">Fødselsdatoen</option>
                 <option value="kommune">Kommunen</option>
                 <option value="epost">E-postadressen</option>
               </select>
-              <p class="fs-help-text" id="felle-hjelp">Å se at alt er i orden teller like mye.</p>
+              <p class="fs-help-text">Å se at alt er i orden teller like mye.</p>
             </fs-field>
 
             <button class="fs-button" type="submit" ${if (harSvart) "disabled" else ""}>
