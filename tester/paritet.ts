@@ -70,7 +70,7 @@ for (const app of APPER) {
   side.on("pageerror", (e) => si(`sidefeil: ${e.message}`))
   side.setDefaultTimeout(20_000)
   side.on("console", (m) => {
-    if (m.type() === "error") si(`konsollfeil: ${m.text().slice(0, 200)}`)
+    if (m.type() === "error") si(`konsollfeil: ${m.text().slice(0, 300)}`)
   })
 
   try {
@@ -157,11 +157,44 @@ for (const app of APPER) {
       )
       .catch(() => si("temaet overlevde ikke en ny side"))
 
-    // Nedtellingen skal telle, ikke bare stå der.
-    const forst = await side.locator(".nedtelling").first().textContent()
-    await side.waitForTimeout(2500)
-    if ((await side.locator(".nedtelling").first().textContent()) === forst) {
-      si(`nedtellingen står stille på ${forst}`)
+    /*
+     * Nedtellingen skal telle, ikke bare stå der.
+     *
+     * Den står med vilje stille på 0:00 mellom rundene, mens oppgjøret
+     * kjører. En avlesning to og et halvt sekund etter den forrige traff
+     * derfor tilfeldig i det oppholdet, og testen meldte avvik på noe som
+     * var i orden. Vi venter i stedet på at klokka faktisk går, og sjekker så
+     * at den beveger seg.
+     */
+    const gar = await side
+      .waitForFunction(
+        () => {
+          const tid = document
+            .querySelector(".nedtelling")
+            ?.textContent?.trim()
+          return tid && tid !== "0:00" ? tid : null
+        },
+        undefined,
+        { timeout: 45_000 },
+      )
+      .then((h) => h.jsonValue() as Promise<string>)
+      .catch(() => null)
+
+    if (!gar) {
+      si("nedtellingen kom aldri i gang")
+    } else if (
+      !(await side
+        .waitForFunction(
+          (forrige) =>
+            document.querySelector(".nedtelling")?.textContent?.trim() !==
+            forrige,
+          gar,
+          { timeout: 5000 },
+        )
+        .then(() => true)
+        .catch(() => false))
+    ) {
+      si(`nedtellingen står stille på ${gar}`)
     }
 
     /*
@@ -231,11 +264,62 @@ for (const app of APPER) {
       si("fant ikke spilleren selv på tavla")
     }
 
+    /*
+     * Panelet, som er det eneste i demoen som skal være ulikt.
+     *
+     * De tre utgavene deler `felles/panel.js`, og panelet finner selv ut hva
+     * som ble byttet ut og hva som kom over ledningen. Her sjekkes bare at
+     * det virker i alle tre: at knappen finnes, at panelet åpner seg, at
+     * teknikkteksten er appens egen, og at loggen har fått noe i seg. Hva den
+     * sier er med vilje forskjellig, og det er nettopp poenget.
+     *
+     * React bygger panelet fra en effekt etter en dynamisk import, så det
+     * kommer et øyeblikk etter tavla. Vent på knappen, ikke på klokka.
+     */
+    const panelknapp = side.getByRole("button", { name: "Hva skjedde?" })
+    await panelknapp
+      .first()
+      .waitFor({ timeout: 15000 })
+      .catch(() => si("fant ingen knapp som åpner panelet"))
 
+    if ((await panelknapp.count()) > 0) {
+      await panelknapp.first().click()
+
+      const panel = await side
+        .waitForFunction(
+          () => {
+            const boks = document.querySelector("#panel")
+            if (!boks || boks.hasAttribute("hidden")) return null
+            return {
+              teknikk:
+                document.querySelector(".panel__teknikk")?.textContent ?? "",
+              linjer: document.querySelectorAll(".panel__linje").length,
+            }
+          },
+          undefined,
+          { timeout: 10_000 },
+        )
+        .then((h) => h.jsonValue())
+        .catch(() => null)
+
+      if (!panel) si("panelet åpnet seg ikke")
+      else {
+        if (panel.teknikk.trim() === "") si("panelet sa ikke hvilken teknikk")
+        if (panel.linjer === 0) si("panelet hadde ingen linjer i loggen")
+      }
+    }
   } catch (e) {
     // En feil her sier hvilken app det gjaldt. Uten dette kom bare en
     // stakksporing fra Playwright, uten et ord om hvilken av de tre.
-    si(`stoppet underveis: ${(e as Error).message.split("\n")[0]}`)
+    // Med bare første linje sto det «click: Timeout 20000ms exceeded» uten et
+    // ord om hva som ble klikket. Playwright skriver velgeren i loggen under.
+    const melding = (e as Error).message
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .slice(0, 4)
+      .join(" | ")
+    si(`stoppet underveis: ${melding}`)
     await side.screenshot({ path: `${app.navn}-stoppet.png` }).catch(() => {})
   }
 

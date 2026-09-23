@@ -83,6 +83,10 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
       call.respondText(BRETT_CSS, ContentType.Text.CSS)
     }
 
+    get("/panel.js") {
+      call.respondText(PANEL_JS, ContentType.Text.JavaScript)
+    }
+
     get("/") {
       /*
        * Billetten fra en annen utgave.

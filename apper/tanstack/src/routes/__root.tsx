@@ -50,6 +50,15 @@ export const Route = createRootRoute({
   component: Skall,
 })
 
+/** Ruta panelmodulen ligger på. Se kommentaren over effekten. */
+const PANELMODUL = "/panel.js"
+
+const PANELTEKST = {
+  teknikk: "Serveren sendte JSON, og React tegnet om komponenten.",
+  forklaring:
+    "Hendelsesstrømmen bærer tilstanden som JSON. React sammenligner og bytter ut nøyaktig de nodene som ble annerledes, uten at siden lastes på nytt.",
+}
+
 function Skall() {
   const tema = Route.useLoaderData()
   /*
@@ -76,6 +85,27 @@ function Skall() {
     defineFsConnectionStatus()
   }, [])
 
+  /*
+   * Panelet startes etter hydreringen, og verten rendres av React.
+   *
+   * Første utgave var en skripttagg i markupen, som i de to andre appene.
+   * Panelet sto der ved innlasting og var borte i det brukeren meldte seg på:
+   * `document.body` er en del av komponenttreet, og en strukturell rendring
+   * kaster bort noder React ikke vet om. Nå eier React boksen, og modulen
+   * eier innholdet.
+   *
+   * Adressen står i en variabel, og ikke som en streng i `import()`. Vite
+   * leser et bokstavelig kall og prøver å slå opp fila under bygget, og
+   * `/panel.js` er en rute på serveren og ingen fil på disk. Da feilet hele
+   * dev-serveren med «Failed to resolve import». En variabel kan ikke leses
+   * statisk, og `@vite-ignore` sier i tillegg fra.
+   */
+  useEffect(() => {
+    import(/* @vite-ignore */ PANELMODUL).then(({ startPanel }) =>
+      (startPanel as (tekst: typeof PANELTEKST) => void)(PANELTEKST),
+    )
+  }, [])
+
   return (
     <html lang="nb" data-theme={tema === "system" ? undefined : tema}>
       <head>
@@ -84,6 +114,18 @@ function Skall() {
       <body>
         <Outlet />
         <Scripts />
+        {/* Verten til panelet. React rendrer den tomme boksen, `panel.js`
+            fyller den ut. Se kommentaren over effekten. */}
+        <div className="panelvert" />
+        {/* Modulen lastes her, før hydreringen, fordi den legger seg utenpå
+            `EventSource` i det den evalueres. Venter vi til effekten, er
+            strømmen alt åpnet, og «Med hva» står tom. Panelet bygges likevel
+            først i effekten. */}
+        <script
+          type="module"
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: egen konstant, ikke inndata
+          dangerouslySetInnerHTML={{ __html: 'import "/panel.js"' }}
+        />
       </body>
     </html>
   )

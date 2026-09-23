@@ -31,6 +31,12 @@ const BRETT_CSS: string = readFileSync(
   "utf8",
 )
 
+/** Panelet, samme fil som de to andre appene serverer. */
+const PANEL_JS: string = readFileSync(
+  process.env.PANEL_JS_FIL ?? "../../felles/panel.js",
+  "utf8",
+)
+
 /**
  * Hvordan kapselen skal merkes.
  *
@@ -154,6 +160,12 @@ export default {
 
     if (url.pathname === "/brett.css") {
       return new Response(BRETT_CSS, { headers: { "content-type": "text/css" } })
+    }
+
+    if (url.pathname === "/panel.js") {
+      return new Response(PANEL_JS, {
+        headers: { "content-type": "text/javascript" },
+      })
     }
 
     if (url.pathname === "/hendelser") {

@@ -58,5 +58,20 @@ const tema = valgt === "light" || valgt === "dark" ? valgt : null
   </head>
   <body>
     <slot />
+
+    <!-- Panelet som viser hva som ble oppdatert. Felles fil, egen teknikk.
+
+         `is:inline` fordi `/panel.js` er en rute og ikke en fil på disken.
+         Uten den prøver Vite å løse importen under bygget, og bygget stopper
+         med «Could not resolve '/panel.js'». -->
+    <script is:inline type="module">
+      import { startPanel } from "/panel.js"
+
+      startPanel({
+        teknikk: "Serveren sendte hele siden på nytt.",
+        forklaring:
+          "Et vedtak er en vanlig innsending, og svaret er en ny side. Bare tavla oppdaterer seg uten det, fra en hendelsesstrøm som bytter ut tabellkroppen.",
+      })
+    </script>
   </body>
 </html>

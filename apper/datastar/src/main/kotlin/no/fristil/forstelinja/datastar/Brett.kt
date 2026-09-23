@@ -18,3 +18,16 @@ val BRETT_CSS: String by lazy {
   require(fil.exists()) { "Fant ingen brett.css på «$sti». Sett BRETT_CSS_FIL." }
   fil.readText()
 }
+
+/**
+ * Panelet som viser hva som ble oppdatert, lest fra `felles/panel.js`.
+ *
+ * Samme fil og samme grunn som stilarket: panelet skal være det samme i de tre
+ * utgavene, ellers viser det forskjeller som er panelets egne.
+ */
+val PANEL_JS: String by lazy {
+  val sti = System.getenv("PANEL_JS_FIL") ?: "../../felles/panel.js"
+  val fil = File(sti)
+  require(fil.exists()) { "Fant ingen panel.js på «$sti». Sett PANEL_JS_FIL." }
+  fil.readText()
+}

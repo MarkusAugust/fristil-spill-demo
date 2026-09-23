@@ -269,6 +269,9 @@ body:has(.fs-connection-status__bar) .topplinje {
 
 .velkomst {
   --fs-dialog-width: min(38rem, 100%, calc(100vw - var(--size-8)));
+  /* Toppen og kroppen setter sin egen luft. Med dialogens padding i tillegg
+     ble det en hvit kant rundt det blå båndet, altså en boks inni en boks. */
+  --fs-dialog-padding: 0;
 }
 
 .velkomst__topp {
@@ -289,6 +292,13 @@ body:has(.fs-connection-status__bar) .topplinje {
 }
 
 .velkomst .fs-dialog__body p { margin: 0; line-height: 1.6; }
+
+/* Fotfeltet får luften kroppen ellers ga det, siden dialogen ikke har noen
+   egen lenger. Uten dette lå knappen inntil kanten. */
+.velkomst .fs-dialog__footer {
+  margin-block-start: 0;
+  padding: 0 var(--size-5) var(--size-5);
+}
 
 .velkomst__valg { margin: var(--size-2) 0 0; }
 
@@ -805,4 +815,131 @@ body:has(.fs-connection-status__bar) .topplinje {
   /* Med 12rem til ledeteksten fikk verdien rundt 95 piksler, og
      «Ingen, saken var i orden» brakk over fem linjer. */
   .fasit__rad { grid-template-columns: 1fr; gap: 0; }
+}
+
+/*
+ * Panelet som viser hva som ble oppdatert, hvordan, og med hva.
+ *
+ * Alt her er felles, av samme grunn som resten av fila: de tre utgavene skal
+ * se like ut, så forskjellen man ser er den ekte forskjellen og ikke to ulike
+ * stilark. Skriptet ligger i `felles/panel.js`.
+ */
+.panelvert {
+  position: fixed;
+  inset-block-end: var(--size-4);
+  inset-inline-end: var(--size-4);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--size-2);
+  max-inline-size: min(34rem, calc(100vw - var(--size-8)));
+}
+
+.panelknapp {
+  box-shadow: 0 10px 30px -14px rgb(0 0 0 / 55%);
+}
+
+/* `[hidden]` er en regel i nettleserens eget stilark, og en klasse med
+   `display` slår den. Uten denne linja sto panelet åpent fra start, mens
+   knappen sa «Hva skjedde?» og trodde det var lukket. */
+.panel[hidden] {
+  display: none;
+}
+
+/* Panelet er et kort, og arver flate, kant og hjørner av `.fs-card`. Det sto
+   en gang `var(--semantic-surface-background)` her, et token som ikke finnes,
+   så regelen var ugyldig og panelet var gjennomsiktig: sidens tekst slo
+   gjennom loggen. Mørkt tema har alt en regel for `.fs-card` lenger nede. */
+.panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--size-4);
+  inline-size: min(34rem, calc(100vw - var(--size-8)));
+  max-block-size: min(26rem, 60vh);
+  overflow: auto;
+  box-shadow: 0 24px 60px -30px rgb(0 0 0 / 60%);
+}
+
+.panel__del--bred {
+  grid-column: 1 / -1;
+}
+
+.panel__tittel {
+  margin-block-end: var(--size-1);
+}
+
+.panel__logg {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-1);
+  font-size: var(--font-size-s);
+}
+
+/* Den siste står øverst, og skal være den man ser først. */
+.panel__linje:first-child {
+  font-weight: 600;
+  color: var(--semantic-info-foreground);
+}
+
+.panel__teknikk {
+  font-weight: 600;
+}
+
+.panel__nyttelast {
+  max-block-size: 10rem;
+  overflow: auto;
+  margin: 0;
+  padding: var(--size-2);
+  font-family: var(--font-family-mono, ui-monospace, monospace);
+  font-size: var(--font-size-xs);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: var(--semantic-page-background);
+  border: 1px solid var(--semantic-divider-30);
+  border-radius: var(--size-1);
+}
+
+/*
+ * Ramma som lyser der noe nettopp ble byttet ut.
+ *
+ * `outline` og ikke `border`: en ramme som tar plass ville flyttet innholdet
+ * hver gang noe oppdaterte seg, og da er det ikke lenger det samme brettet.
+ */
+.panel-lyser {
+  outline: 2px solid var(--semantic-info-foreground);
+  outline-offset: 2px;
+  border-radius: var(--size-1);
+  animation: panel-puls 1.2s ease-out;
+}
+
+@keyframes panel-puls {
+  from {
+    outline-color: var(--semantic-info-foreground);
+    background-color: var(--semantic-info-background);
+  }
+  to {
+    outline-color: transparent;
+    background-color: transparent;
+  }
+}
+
+/* Den som har bedt om mindre bevegelse får rammen uten pulsen. */
+@media (prefers-reduced-motion: reduce) {
+  .panel-lyser {
+    animation: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .panel {
+    grid-template-columns: 1fr;
+    max-block-size: 50vh;
+  }
+
+  .panelvert {
+    inset-inline: var(--size-3);
+    align-items: stretch;
+  }
 }

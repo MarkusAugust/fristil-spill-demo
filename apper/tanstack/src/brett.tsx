@@ -192,6 +192,18 @@ function Nedtelling({
   return (
     <span
       className="nedtelling"
+      /*
+       * Tida på serveren og tida i nettleseren er ikke den samme.
+       *
+       * Serveren regner ut `igjen` i det siden sendes, og nettleseren regner
+       * den ut igjen ved hydreringen, et sekund eller to senere. Da skiller
+       * både fargen i `style` og `data-rister` seg, og React meldte
+       * «some attributes of the server rendered HTML didn't match». Advarselen
+       * kommer bare i utviklingsbygget, men den er ekte, og den er ventet:
+       * dette er nøyaktig tilfellet attributtet finnes for. Alt annet i treet
+       * skal fortsatt stemme, så det står her og ikke på noe høyere opp.
+       */
+      suppressHydrationWarning
       data-rister={rist > 0 ? "" : undefined}
       style={
         {
@@ -490,12 +502,14 @@ function Vedtakskort({
 
         {/* Kommunefeltet. Her er det React som filtrerer: `treff` regnes ut
             av det som står i feltet, og bare de alternativene rendres.
-            `server-filtered` sier fra om det, så komponenten ikke gjør det
-            samme arbeidet en gang til. Uten attributtet skjuler den
-            alternativer React nettopp bestemte seg for å vise, og de to
-            kjemper om den samme lista. Komponenten tar fortsatt piltastene,
-            markeringen og `aria-activedescendant`. */}
-        <fs-suggestion className="kommunefelt" server-filtered>
+            `prefiltered` sier fra om det.
+
+            Filteret her er «teksten inneholder søkeordet», altså det samme
+            komponenten ville gjort, så de to ville vært enige uansett.
+            Attributtet står her fordi det er ærligere: filtreringen skjer én
+            gang, i React, og demoen viser hva en app som filtrerer selv skal
+            gjøre. Antall treff leses opp av komponenten uansett. */}
+        <fs-suggestion className="kommunefelt" prefiltered>
           <label {...forslag.label}>Bekreft kommunen søkeren hører til</label>
           <div {...forslag.field}>
             <input
