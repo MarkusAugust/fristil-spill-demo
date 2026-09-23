@@ -13,7 +13,7 @@ import kotlin.test.assertTrue
  * området på nytt ved hver patch, må `data-preserve-attr` stå på hvert
  * element komponenten rører.
  *
- * Uten disse testene kan en bevaringsliste forsvinne i en redigering, og
+ * Uten disse testene kan noe av dette forsvinne i en redigering, og
  * feilen ville først vist seg som et skjema som mister koblingen sin etter
  * første oppdatering, hos noen andre, senere.
  */
@@ -62,16 +62,19 @@ class MarkupTest {
 
     // `data-preserve-attr` betyr «ikke rør», og det gjelder begge veier.
     // Fredet vi `aria-invalid` eller `data-state`, kunne serveren aldri
-    // meldt feltet som ugyldig: morfingen ville nektet å sette dem.
+    // meldt feltet som ugyldig: morfingen ville nektet å sette dem. De
+    // listene er borte nå, men appen har fortsatt sine egne, og regelen
+    // gjelder like fullt for dem.
     val lister = Regex("""data-preserve-attr="([^"]*)"""").findAll(html).map { it.groupValues[1] }.toList()
-
-    // Uten denne ville testen meldt grønt om hver eneste liste forsvant.
-    assertTrue(lister.size >= 8, "fant bare ${lister.size} bevaringslister")
 
     for (liste in lister) {
       assertFalse(liste.contains("aria-invalid"), "«$liste» freder serverens eget svar")
       assertFalse(liste.contains("data-state"), "«$liste» freder serverens eget svar")
     }
+
+    // Og svaret må faktisk stå der, ellers sier testen over ingenting.
+    val medFeil = brett(tilstand, "Kari", listOf("Bergen"), listOf(Feil("hjemmel", "Mangler")))
+    assertTrue(medFeil.contains("""aria-invalid="""), "fant ingen aria-invalid å sjekke")
   }
 
   @Test
@@ -100,42 +103,37 @@ class MarkupTest {
   }
 
   @Test
-  fun `bare det brukeren eier fredes`() {
+  fun `ingen bevaringslister på Fristils komponenter`() {
+    // Fram til Fristil 0.10.0 måtte malen liste opp hvert attributt
+    // komponentene rører, i `data-preserve-attr`. Ni strenger kopiert fra
+    // dokumentasjonen, som ingen kompilator så på. Komponentene setter nå selv
+    // tilbake det en patch river bort, og kommer listene hit igjen, har noen
+    // kopiert gammel dokumentasjon.
     val html = brett(tilstand, "Kari", listOf("Bergen"))
 
-    // Fanevalget, sprettoppvinduet og forslagslista endres i nettleseren,
-    // og serveren får aldri vite om det.
-    for (liste in listOf(Bevar.FANE, Bevar.SPRETTOPP_VERT, Bevar.FORSLAG_KONTROLL)) {
-      assertTrue(
-        html.contains("""data-preserve-attr="$liste""""),
-        "dette må fredes: $liste",
+    for (tagg in listOf("fs-tabs", "fs-popover", "fs-suggestion", "fs-dialog", "fs-field")) {
+      val fra = html.indexOf("<$tagg")
+      if (fra < 0) continue
+      val til = html.indexOf("</$tagg>", fra)
+      val bit = if (til < 0) html.substring(fra) else html.substring(fra, til)
+      assertFalse(
+        bit.contains("data-preserve-attr"),
+        "<$tagg> trenger ingen bevaringsliste, komponenten reparerer seg selv",
       )
     }
   }
 
   @Test
-  fun `fanene bærer sine, siden komponenten flytter valget`() {
-    val html = brett(tilstand, "Kari", listOf("Bergen"))
+  fun `nedtellingen er appens egen, og den fredes fortsatt`() {
+    // Mekanismen finnes fortsatt i Datastar, og appen bruker den på sitt
+    // eget element: nedtellingen animeres av appens eget skript, og serveren
+    // vet ingenting om hvor langt den har kommet.
+    val html = topp(tilstand) + brett(tilstand, "Kari", listOf("Bergen"))
 
-    // Komponenten flytter `aria-selected` og `tabindex` når brukeren blar,
-    // og slår `hidden` av og på på panelene.
-    val faner = Regex("""role="tab"[^>]*""").findAll(html).toList()
-    assertEquals(2, faner.size, "fant ikke begge fanene")
-    for (fane in faner) {
-      assertTrue(fane.value.contains(Bevar.FANE), "en fane mangler bevaringslista")
-    }
-
-    // Panelene telles for seg: `Bevar.FANEPANEL` er strengen «hidden», og
-    // forslagsfeltet bruker den samme strengen. En telling over hele
-    // markupen ville derfor vært grønn selv om begge panelene mistet sin.
-    val paneler = Regex("""role="tabpanel"[^>]*""").findAll(html).toList()
-    assertEquals(2, paneler.size, "fant ikke begge panelene")
-    for (panel in paneler) {
-      assertTrue(
-        panel.value.contains("""data-preserve-attr="${Bevar.FANEPANEL}""""),
-        "et fanepanel mangler bevaringslista",
-      )
-    }
+    assertTrue(
+      html.contains("""data-preserve-attr="style"""),
+      "nedtellingen mistet fredningen av sin egen stil",
+    )
   }
 
   @Test
@@ -495,7 +493,11 @@ class MarkupTest {
     val dialogtagg = Regex("""<dialog[^>]*""").find(html)?.value ?: ""
     val verten = Regex("""<fs-dialog[^>]*""").find(html)?.value ?: ""
 
-    assertTrue(dialogtagg.contains("""data-preserve-attr="open""""), "dialogen må fredes")
+    // Fra Fristil 0.10.0 fredes ingen av dem. `open` på selve `<dialog>`
+    // setter komponenten tilbake så lenge dialogen står i topplaget, og
+    // `open` på verten er serverens beskjed, som hver patch bestemmer over.
+    assertTrue(dialogtagg.contains("open"), "dialogen må sendes åpen")
+    assertFalse(dialogtagg.contains("data-preserve-attr"), "dialogen skal ikke fredes")
     assertFalse(verten.contains("data-preserve-attr"), "verten skal ikke fredes")
   }
 

@@ -54,6 +54,19 @@ for (const app of APPER) {
     { name: "forstelinja-test", value: "1", url: app.url },
   ])
 
+  /*
+   * En oppvarming først, og så tas feilene.
+   *
+   * Vite optimaliserer avhengighetene sine ved første forespørsel, og svarer
+   * «504 Outdated Optimize Dep» på sine egne moduler mens den holder på. Den
+   * første lastingen etter at dev-serveren er startet feilet derfor i
+   * React-utgaven, og testen meldte avvik på noe som var i orden ved neste
+   * runde. Mot en utrullet app koster oppvarmingen én ekstra lasting og
+   * ingenting annet.
+   */
+  await side.goto(app.url, { waitUntil: "domcontentloaded" }).catch(() => {})
+  await side.waitForTimeout(1500)
+
   side.on("pageerror", (e) => si(`sidefeil: ${e.message}`))
   side.setDefaultTimeout(20_000)
   side.on("console", (m) => {

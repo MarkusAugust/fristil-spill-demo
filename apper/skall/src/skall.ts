@@ -11,7 +11,7 @@
  */
 
 /** Versjonen av Fristil skallet henter tokens fra. Samme som appene bruker. */
-const FRISTIL = "0.9.0"
+const FRISTIL = "0.10.0"
 
 const PORT = Number(process.env.PORT ?? 8084)
 const HOST = process.env.HOST ?? "::"

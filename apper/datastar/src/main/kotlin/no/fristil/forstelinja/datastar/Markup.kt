@@ -5,13 +5,13 @@ package no.fristil.forstelinja.datastar
  *
  * Med vilje strengmaler og ikke kotlinx.html: poenget med demoen er at en
  * leser skal kunne sammenligne markupen med den samme skjermen i React og i
- * Astro. Da må den stå slik den havner i nettleseren, med klassene og
- * bevaringslistene synlige.
+ * Astro. Da må den stå slik den havner i nettleseren, med klassene synlige.
  *
  * Her kalles ingen `fs.field()`. Kotlin kan ikke kalle en TypeScript-
- * funksjon, så serveren skriver klassene selv og lar `<fs-field>` gjøre
- * koblingen i nettleseren. Derfor står `data-preserve-attr` på det
- * komponenten lager, og bare på det.
+ * funksjon, så serveren skriver klassene selv og lar komponentene gjøre
+ * resten i nettleseren. Fra Fristil 0.10.0 står det ingen bevaringslister
+ * her i det hele tatt: komponentene setter selv tilbake det en patch river
+ * bort, og malen trenger ikke kjenne til attributtene.
  */
 
 private fun String.trygg(): String =
@@ -54,7 +54,7 @@ fun velkomst(tema: String? = null): String =
   """
   <fs-dialog id="velkomst" open>
     <dialog class="fs-dialog velkomst" aria-labelledby="velkomst-tittel"
-            open data-preserve-attr="open">
+            open>
       <div class="velkomst__topp">
         <h2 class="fs-dialog__title" id="velkomst-tittel">Velkommen til Førstelinja</h2>
       </div>
@@ -500,7 +500,7 @@ fun blimed(tilstand: Tilstand? = null): String {
          uten JavaScript i det hele tatt. -->
     <form method="post" action="/bli-med">
       <!-- Bare struktur. Ingen id-er, ingen `for`, ingen
-           `aria-describedby`, og fra 0.9.0 heller ingen `data-preserve-attr`:
+           `aria-describedby`, og ingen bevaringsliste:
            komponenten setter koblingen i nettleseren, ser at en patch har
            revet den bort, og setter den tilbake. Malen slipper dermed å
            kjenne til attributtene i det hele tatt, og den kan ikke gå stille
@@ -565,19 +565,18 @@ private fun sakskort(sak: SakUt): String =
     <fs-tabs class="sakskort__faner">
       <div class="fs-tabs__list" role="tablist" aria-label="Saken">
         <button id="f-0" role="tab" type="button" aria-selected="true" aria-controls="p-0"
-                tabindex="0" data-preserve-attr="${Bevar.FANE}">Søknaden</button>
+                tabindex="0">Søknaden</button>
         <button id="f-1" role="tab" type="button" aria-selected="false" aria-controls="p-1"
-                tabindex="-1" data-preserve-attr="${Bevar.FANE}">Søkeren</button>
+                tabindex="-1">Søkeren</button>
       </div>
 
-      <div id="p-0" class="fs-tabs__panel" role="tabpanel" aria-labelledby="f-0" tabindex="0"
-           data-preserve-attr="${Bevar.FANEPANEL}">
+      <div id="p-0" class="fs-tabs__panel" role="tabpanel" aria-labelledby="f-0" tabindex="0">
         <p class="fs-paragraph sakskort__tekst">${sak.tekst.trygg()}</p>
         <p class="sakskort__signatur">Med vennlig hilsen<br>${sak.soker.navn.trygg()}</p>
       </div>
 
       <div id="p-1" class="fs-tabs__panel" role="tabpanel" aria-labelledby="f-1" tabindex="0"
-           hidden data-preserve-attr="${Bevar.FANEPANEL}">
+           hidden>
         <table class="fs-table">
           <tbody>
             <tr><th scope="row">Navn</th><td>${sak.soker.navn.trygg()}</td></tr>
@@ -664,7 +663,7 @@ private fun vedtakskort(tilstand: Tilstand, kommuner: List<String>, feil: List<F
   val kommunevalg =
     kommuner.withIndex().joinToString("\n") { (nr, navn) ->
       "<li class=\"fs-suggestion__option\" id=\"kommune-option-$nr\" role=\"option\" " +
-        "aria-selected=\"false\" data-preserve-attr=\"${Bevar.FORSLAG_VALG}\">${navn.trygg()}</li>"
+        "aria-selected=\"false\">${navn.trygg()}</li>"
     }
 
   val feiloppsummering =
@@ -731,16 +730,13 @@ private fun vedtakskort(tilstand: Tilstand, kommuner: List<String>, feil: List<F
         </fs-field>
 
         <!-- Hjelpen til hjemlene. Serveren skriver koblingen mellom
-             knappen og panelet; komponenten plasserer det og lukker det.
-             Det brukeren gjør, står i data-preserve-attr, for serveren
-             vet ikke om vinduet er åpent. -->
-        <fs-popover class="hjelpelenke" placement="bottom-start"
-                    data-preserve-attr="${Bevar.SPRETTOPP_VERT}">
+             knappen og panelet; komponenten plasserer det, lukker det, og
+             setter tilbake at det er åpent når en patch river det bort.
+             Serveren vet jo ikke om vinduet er åpent. -->
+        <fs-popover class="hjelpelenke" placement="bottom-start">
           <button type="button" class="fs-button" data-variant="ghost"
-                  aria-expanded="false" aria-controls="hjemmelhjelp"
-                  data-preserve-attr="${Bevar.SPRETTOPP_KNAPP}">Hva betyr hjemlene?</button>
-          <div class="fs-popover" id="hjemmelhjelp" popover="manual"
-               data-preserve-attr="${Bevar.SPRETTOPP_PANEL}">
+                  aria-expanded="false" aria-controls="hjemmelhjelp">Hva betyr hjemlene?</button>
+          <div class="fs-popover" id="hjemmelhjelp" popover="manual">
             <ul class="fs-list">
               $hjemmelforklaringer
             </ul>
@@ -758,14 +754,11 @@ private fun vedtakskort(tilstand: Tilstand, kommuner: List<String>, feil: List<F
                    aria-controls="kommune-list"
                    aria-describedby="kommune-hjelp kommune-status${if (feil.any { it.felt == "kommune" }) " kommune-feil" else ""}"
                    data-bind:kommune
-                   $ugyldigKommune
-                   data-preserve-attr="${Bevar.FORSLAG_KONTROLL}">
-            <ul class="fs-suggestion__list" id="kommune-list" role="listbox" hidden
-                data-preserve-attr="${Bevar.FORSLAG_LISTE}">
+                   $ugyldigKommune>
+            <ul class="fs-suggestion__list" id="kommune-list" role="listbox" hidden>
               $kommunevalg
             </ul>
-            <p class="fs-suggestion__empty" hidden
-               data-preserve-attr="${Bevar.FORSLAG_TOM}">Ingen treff. Finnes kommunen fortsatt?</p>
+            <p class="fs-suggestion__empty" hidden>Ingen treff. Finnes kommunen fortsatt?</p>
             <span class="fs-sr-only" id="kommune-status" role="status" aria-live="polite"
                   data-ignore-morph></span>
           </div>
@@ -894,8 +887,9 @@ private fun besteIRunden(tilstand: Tilstand): String {
  * `open` står begge steder. På verten er det serverens beskjed til
  * komponenten. På selve `<dialog>` er det reserven for den som ikke har
  * JavaScript: uten attributtet er dialogen skjult, og innholdet finnes ikke.
- * `data-preserve-attr="open"` står der fordi nettleseren setter det samme
- * attributtet når `showModal()` kalles, og morfingen ellers river det bort.
+ * Nettleseren setter det samme attributtet når `showModal()` kalles, og en
+ * patch river det bort igjen. Komponenten setter det tilbake så lenge
+ * dialogen står i topplaget, så malen trenger ingen bevaringsliste.
  */
 fun resultatdialog(tilstand: Tilstand): String {
   val fasit = tilstand.fasit
@@ -1015,7 +1009,7 @@ fun resultatdialog(tilstand: Tilstand): String {
   return """
     <fs-dialog id="resultat" open>
       <dialog class="fs-dialog resultat" aria-labelledby="resultat-tittel"
-              data-utfall="$utfall" open data-preserve-attr="open">
+              data-utfall="$utfall" open>
         <div class="resultat__topp">
           <h2 class="fs-dialog__title" id="resultat-tittel">${overskrift.trygg()}</h2>
           $innledning

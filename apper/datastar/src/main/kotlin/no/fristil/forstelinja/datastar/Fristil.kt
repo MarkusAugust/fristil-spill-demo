@@ -1,39 +1,5 @@
 package no.fristil.forstelinja.datastar
 
-/**
- * Tilstanden Fristil krever at malen freder.
- *
- * Denne appen er skrevet i Kotlin. Den kan altså ikke kalle byggefunksjonene
- * i pakken, og må i stedet skrive klassene selv, og la web-komponentene gjøre
- * resten i nettleseren.
- *
- * Feltet står ikke her lenger. Fram til 0.9.0 måtte malen liste opp hvert
- * attributt `<fs-field>` satte, i `data-preserve-attr`, ellers rev morfingen
- * koblingen bort ved første patch. Komponenten ser nå selv at den er borte og
- * setter den tilbake, så de tre listene er slettet. Ingen kompilator så på
- * dem, og hadde Fristil endret hva komponenten satte, ville denne appen gått
- * stille i stykker.
- *
- * Det som står igjen er brukerens egen tilstand. Den kan ikke repareres:
- * komponenten har ingen kilde å regne den ut fra, og en reparasjon ville
- * kjempet mot en server som med vilje endret noe.
- *
- * Verdiene er hentet fra @fristil/designsystem 0.9.0, ikke skrevet av
- * hukommelsen.
- */
-object Bevar {
-  const val SPRETTOPP_VERT = "open"
-  const val SPRETTOPP_KNAPP = "aria-expanded"
-  const val SPRETTOPP_PANEL = "style"
-
-  const val FANE = "aria-selected tabindex"
-  const val FANEPANEL = "hidden"
-
-  const val FORSLAG_KONTROLL = "aria-expanded aria-activedescendant"
-  const val FORSLAG_LISTE = "hidden"
-  const val FORSLAG_VALG = "aria-selected hidden"
-  const val FORSLAG_TOM = "hidden"
-}
 
 /**
  * Navnet denne utgaven har utad.
@@ -93,7 +59,7 @@ val UTGAVER =
   )
 
 /** Versjonen av designsystemet siden henter fra CDN. */
-const val FRISTIL_VERSJON = "0.9.0"
+const val FRISTIL_VERSJON = "0.10.0"
 
 private const val CDN = "https://cdn.jsdelivr.net/npm/@fristil/designsystem@$FRISTIL_VERSJON"
 
