@@ -130,7 +130,8 @@ data class Svar(
 data class Spiller(
   val id: String,
   val navn: String,
-  val stack: Stack,
+  /** Utgaven spilleren sitter i nå. Den kan bytte underveis. */
+  var stack: Stack,
   /**
    * Om spilleren var med da saken kom på bordet.
    *
@@ -399,7 +400,35 @@ class Spill(
     spillere.values.sortedWith(compareByDescending<Spiller> { it.poeng }.thenBy { it.navn })
 
   /** Tilstanden slik én spiller skal se den. */
-  suspend fun tilstand(spillerId: String?): Tilstand =
+  /**
+   * Flytter en spiller til utgaven hun sitter i nå.
+   *
+   * Stacken settes når du melder deg på, og sto stille etterpå. Bytter du
+   * utgave underveis, med billetten i lenka eller med den delte kapselen
+   * lokalt, sto du fortsatt oppført med den gamle appen, både på tavla og i
+   * den evige topplista, som lagrer `spiller.stack` ved omgangsslutt.
+   *
+   * Hver app sier fra når den henter tilstanden, som den gjør for hver
+   * spiller uansett. Da trengs det ikke et kall til, og det dekker begge
+   * måtene å bytte på.
+   */
+  private fun flyttTilUtgave(spiller: Spiller, stack: Stack?): Boolean {
+    if (stack == null || stack == Stack.UKJENT || spiller.stack == stack) return false
+    spiller.stack = stack
+    return true
+  }
+
+  suspend fun tilstand(spillerId: String?, stack: Stack? = null): Tilstand {
+    val flyttet =
+      laas.withLock {
+        val spiller = spillerId?.let { spillere[it] }
+        spiller != null && flyttTilUtgave(spiller, stack)
+      }
+    if (flyttet) endringer.emit(Unit)
+    return tilstandNa(spillerId)
+  }
+
+  private suspend fun tilstandNa(spillerId: String?): Tilstand =
     laas.withLock {
       val tavle = tavleliste()
       val meg = spillerId?.let { spillere[it] }

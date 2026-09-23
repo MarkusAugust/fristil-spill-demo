@@ -77,7 +77,13 @@ fun Application.spillModul(spill: Spill, varme: Varme = Varme()) {
     }
 
     get("/api/tilstand") {
-      call.respond(spill.tilstand(call.request.queryParameters["spiller"]))
+      // `stack` sier hvilken utgave spilleren sitter i nå. Appene sender den
+      // med, så tavla og topplista følger med når noen bytter underveis.
+      val stack =
+        call.request.queryParameters["stack"]?.let { navn ->
+          runCatching { Stack.valueOf(navn.uppercase()) }.getOrNull()
+        }
+      call.respond(spill.tilstand(call.request.queryParameters["spiller"], stack))
     }
 
     /**

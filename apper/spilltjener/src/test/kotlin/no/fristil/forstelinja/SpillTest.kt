@@ -463,6 +463,33 @@ class SpillTest {
   }
 
   @Test
+  fun `bytter du utgave, følger tavla og topplista med`() = runTest {
+    val spill = nyttSpill()
+    val kari = spill.bliMed("Kari", Stack.DATASTAR)
+
+    // Hun bytter til React-utgaven, og den appen sier fra når den henter
+    // tilstanden for henne.
+    spill.tilstand(kari.id, Stack.TANSTACK)
+
+    assertEquals(
+      Stack.TANSTACK,
+      spill.tilstand(null).tavle.first { it.navn == "Kari" }.stack,
+      "tavla står igjen med utgaven hun meldte seg på i",
+    )
+  }
+
+  @Test
+  fun `en ukjent utgave rører ikke spilleren`() = runTest {
+    val spill = nyttSpill()
+    val kari = spill.bliMed("Kari", Stack.ASTRO)
+
+    spill.tilstand(kari.id, Stack.UKJENT)
+    spill.tilstand(kari.id, null)
+
+    assertEquals(Stack.ASTRO, spill.tilstand(null).tavle.first().stack)
+  }
+
+  @Test
   fun `den som går av vakt er borte med en gang`() = runTest {
     val spill = nyttSpill()
     val kari = spill.bliMed("Kari", Stack.ASTRO)

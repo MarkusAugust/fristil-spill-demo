@@ -13,6 +13,9 @@ const ADRESSE = process.env.SPILLTJENER ?? "http://127.0.0.1:8080"
 export async function tilstand(spillerId: string | null): Promise<Tilstand> {
   const url = new URL(`${ADRESSE}/api/tilstand`)
   if (spillerId) url.searchParams.set("spiller", spillerId)
+  // Hvilken utgave spilleren sitter i nå. Uten denne sto stacken på tavla og
+  // i den evige topplista stille når noen byttet utgave underveis.
+  url.searchParams.set("stack", "astro")
   const svar = await fetch(url)
   if (!svar.ok) throw new Error(`Spilltjeneren svarte ${svar.status}`)
   return (await svar.json()) as Tilstand

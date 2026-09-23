@@ -51,7 +51,12 @@ class Spilltjener(private val adresse: String) {
 
   suspend fun tilstand(spillerId: String?): Tilstand =
     klient
-      .get("$adresse/api/tilstand") { spillerId?.let { parameter("spiller", it) } }
+      .get("$adresse/api/tilstand") {
+        spillerId?.let { parameter("spiller", it) }
+        // Hvilken utgave spilleren sitter i nå. Uten denne sto stacken på
+        // tavla og i den evige topplista stille når noen byttet underveis.
+        parameter("stack", "datastar")
+      }
       .body()
 
   suspend fun bliMed(navn: String): BliMedUt =

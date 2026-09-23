@@ -699,7 +699,15 @@ class MarkupTest {
   fun `hilsenen kommer bare før du har meldt deg på`() {
     // Den står utenfor det serveren patcher, så den kan ikke sprette opp
     // igjen mens du spiller.
-    assertFalse(side(tilstand, "Kari").contains("velkomst"), "hilsenen skal være borte etterpå")
+    //
+    // Selve dialogen, ikke ordet: skriptet i siden peker på
+    // `.velkomst__lenke` når det skal bære temavalget videre, og et søk
+    // etter «velkomst» traff det. Da meldte prøven feil på noe som var helt
+    // riktig.
+    assertFalse(
+      side(tilstand, "Kari").contains("<fs-dialog id=\"velkomst"),
+      "hilsenen skal være borte etterpå",
+    )
   }
 
   @Test
