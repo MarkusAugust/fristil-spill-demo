@@ -181,8 +181,31 @@ for (const app of APPER) {
       // Forslagslista filtrerer selv, av komponenten, i alle tre appene.
       await side.locator("#kommune").click()
       await side.locator("#kommune").fill("Inder")
-      await side.waitForTimeout(300)
-      const treff = await side.locator("#kommune-list li:visible").count()
+
+      /*
+       * Vent på at filtreringen har skjedd, ikke på klokka.
+       *
+       * En fast pause på 300 millisekunder holdt lokalt og feilet i drift:
+       * testen leste lista før komponenten hadde rukket å skjule noe, og
+       * meldte «0 treff» på et felt som et øyeblikk senere viste ett. En test
+       * som feiler tilfeldig blir ignorert.
+       */
+      const treff = await side
+        .waitForFunction(
+          () => {
+            const liste = document.getElementById("kommune-list")
+            if (!liste || liste.hidden) return null
+            const synlige = [
+              ...liste.querySelectorAll<HTMLElement>("[role='option']"),
+            ].filter((v) => !v.hidden).length
+            return synlige > 0 ? synlige : null
+          },
+          undefined,
+          { timeout: 10_000 },
+        )
+        .then((h) => h.jsonValue())
+        .catch(() => 0)
+
       if (treff === 0 || treff > 5) si(`forslagslista viste ${treff} treff på «Inder»`)
 
       // Fanene byttes med piltastene, av komponenten.
