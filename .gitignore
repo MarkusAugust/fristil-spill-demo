@@ -12,6 +12,9 @@ dist/
 *.db
 *.db-journal
 
+# Skjermbilder prøven tar når noe stopper underveis.
+prover/*-stoppet.png
+
 # macOS
 .DS_Store
 
