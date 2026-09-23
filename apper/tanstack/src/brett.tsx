@@ -488,10 +488,14 @@ function Vedtakskort({
 
         <Hjemmelhjelp hjemler={tilstand.hjemler} />
 
-        {/* Kommunefeltet. Serveren sender hele lista, komponenten filtrerer
-            mens du skriver og tar piltastene. Finner du den ikke, er det
-            fordi kommunen ikke finnes lenger. */}
-        <fs-suggestion className="kommunefelt">
+        {/* Kommunefeltet. Her er det React som filtrerer: `treff` regnes ut
+            av det som står i feltet, og bare de alternativene rendres.
+            `server-filtered` sier fra om det, så komponenten ikke gjør det
+            samme arbeidet en gang til. Uten attributtet skjuler den
+            alternativer React nettopp bestemte seg for å vise, og de to
+            kjemper om den samme lista. Komponenten tar fortsatt piltastene,
+            markeringen og `aria-activedescendant`. */}
+        <fs-suggestion className="kommunefelt" server-filtered>
           <label {...forslag.label}>Bekreft kommunen søkeren hører til</label>
           <div {...forslag.field}>
             <input
