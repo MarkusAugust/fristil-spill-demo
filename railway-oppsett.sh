@@ -19,6 +19,8 @@ set -euo pipefail
 
 REPO="${REPO:-MarkusAugust/fristil-spill-demo}"
 GREN="${GREN:-master}"
+PROSJEKT="${PROSJEKT:-forstelinja}"
+MILJO="${MILJO:-production}"
 
 if ! railway whoami > /dev/null 2>&1; then
   echo "Ikke innlogget. Kjør «railway login» først."
@@ -51,10 +53,12 @@ lag astro    apper/astro/Dockerfile    "SPILLTJENER=$INTERN"
 lag skall    apper/skall/Dockerfile
 
 # Topplista skal overleve en utrulling, og hører derfor på et volum.
+# `railway volume add` tar ingen `--service`: den legger volumet på tjenesten
+# som er lenket, så lenkingen er selve valget.
 echo
 echo "== volum på spilltjeneren"
-railway volume add --mount-path /data --service spilltjener \
-  || echo "  (fantes fra før, går videre)"
+railway link --project "$PROSJEKT" --environment "$MILJO" --service spilltjener > /dev/null
+railway volume add --mount-path /data || echo "  (fantes fra før, går videre)"
 
 # De fire som skal nås utenfra får hver sitt domene.
 for tjeneste in datastar tanstack astro skall; do
