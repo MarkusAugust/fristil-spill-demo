@@ -138,6 +138,18 @@ for (const app of APPER) {
     await side.screenshot({ path: `${app.navn}-stoppet.png` }).catch(() => {})
   }
 
+  /*
+   * Og så av vakt igjen.
+   *
+   * Uten dette sto «Prøve datastar», «Prøve tanstack» og «Prøve astro» igjen
+   * på tavla i seks minutter etter hver kjøring, og telte med i «tre av fire
+   * saksbehandlere har levert». En prøve som skitner til det den prøver er
+   * en dårlig prøve.
+   */
+  await side
+    .evaluate(() => fetch("/ga-av", { method: "POST" }).then(() => undefined))
+    .catch(() => si("kom ikke av vakt igjen"))
+
   await kontekst.close()
 }
 

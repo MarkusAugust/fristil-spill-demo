@@ -204,6 +204,21 @@ class Spill(
   }
 
   /**
+   * Melder en spiller av vakta.
+   *
+   * En ekte spiller trenger den ikke: lukker du fanen, er du borte etter tre
+   * runder uten svar. Den finnes fordi paritetsprøven melder på en spiller i
+   * hver utgave, og en prøve som lar tre «Prøve …» stå igjen på tavla
+   * skitner til det den skal prøve. Det er det samme kallet en «gå av
+   * vakt»-knapp ville gjort.
+   */
+  suspend fun gaAv(spillerId: String): Boolean {
+    val fantes = laas.withLock { spillere.remove(spillerId) != null }
+    if (fantes) endringer.emit(Unit)
+    return fantes
+  }
+
+  /**
    * Tar imot ett vedtak per spiller per runde.
    *
    * Et svar kan ikke endres. Det er ikke pynt: spilleren får vite med én

@@ -169,6 +169,19 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
       call.respondRedirect("/")
     }
 
+    /**
+     * Går av vakt, og blir borte fra tavla med en gang.
+     *
+     * Ingen knapp peker hit. Paritetsprøven bruker den for å rydde etter
+     * seg, og det er det samme kallet en «gå av vakt»-knapp ville gjort.
+     */
+    post("/ga-av") {
+      val spillerId = call.request.cookies[KAPSEL]
+      if (spillerId != null) runCatching { spilltjener.gaAv(spillerId) }
+      call.response.cookies.append(Cookie(KAPSEL, "", path = "/", maxAge = 0))
+      call.respondText("ok")
+    }
+
     post("/svar") {
       val spillerId = call.request.cookies[KAPSEL]
       val signaler = call.signaler()

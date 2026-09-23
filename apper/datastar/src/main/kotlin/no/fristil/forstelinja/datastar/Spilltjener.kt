@@ -62,6 +62,21 @@ class Spilltjener(private val adresse: String) {
       }
       .body()
 
+  /**
+   * Melder en spiller av vakta.
+   *
+   * En ekte spiller trenger den ikke: lukker du fanen, er du borte etter tre
+   * runder uten svar. Den finnes fordi paritetsprøven melder på en spiller i
+   * hver utgave, og en prøve som lar tre «Prøve …» stå igjen på tavla
+   * skitner til det den skal prøve.
+   */
+  suspend fun gaAv(spillerId: String) {
+    klient.post("$adresse/api/ga-av") {
+      contentType(ContentType.Application.Json)
+      setBody(GaAvInn(spillerId))
+    }
+  }
+
   suspend fun svar(spillerId: String, svar: Svar) {
     klient.post("$adresse/api/svar") {
       contentType(ContentType.Application.Json)

@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs"
 import { createStartHandler, defaultStreamHandler } from "@tanstack/react-start/server"
 
 import { KOMMUNER } from "./kommuner"
-import { bliMed, pulsen, svarInn, tilstand } from "./spilltjener"
+import { bliMed, gaAv, pulsen, svarInn, tilstand } from "./spilltjener"
 import type { Skjermbilde } from "./tilstand"
 import { valider } from "./validering"
 
@@ -178,6 +178,20 @@ export default {
           location: "/",
           "set-cookie": `${KAPSEL}=${spiller.spillerId}; Path=/; Max-Age=${8 * 60 * 60}; HttpOnly; ${kapselTvers(request)}`,
         },
+      })
+    }
+
+    /*
+     * Går av vakt, og blir borte fra tavla med en gang.
+     *
+     * Ingen knapp peker hit. Paritetsprøven bruker den for å rydde etter
+     * seg, og det er det samme kallet en «gå av vakt»-knapp ville gjort.
+     */
+    if (url.pathname === "/ga-av" && request.method === "POST") {
+      const spillerId = kapsel(request, KAPSEL)
+      if (spillerId) await gaAv(spillerId).catch(() => {})
+      return new Response("ok", {
+        headers: { "set-cookie": `${KAPSEL}=; Path=/; Max-Age=0` },
       })
     }
 

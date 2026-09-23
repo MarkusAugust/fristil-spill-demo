@@ -32,6 +32,8 @@ import kotlinx.serialization.json.Json
 
 @Serializable data class SvarInn(val spillerId: String, val svar: Svar)
 
+@Serializable data class GaAvInn(val spillerId: String)
+
 @Serializable data class Kvittering(val ok: Boolean, val grunn: String? = null)
 
 val tjenerJson = Json {
@@ -68,6 +70,11 @@ fun Application.spillModul(spill: Spill, varme: Varme = Varme()) {
       )
     }
 
+
+    post("/api/ga-av") {
+      val inn = call.receive<GaAvInn>()
+      call.respond(Kvittering(spill.gaAv(inn.spillerId)))
+    }
 
     get("/api/tilstand") {
       call.respond(spill.tilstand(call.request.queryParameters["spiller"]))

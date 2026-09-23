@@ -109,6 +109,8 @@ data class Svar(
   val felle: String? = null,
 )
 
+@Serializable data class GaAvInn(val spillerId: String)
+
 @Serializable data class SvarInn(val spillerId: String, val svar: Svar)
 
 /**

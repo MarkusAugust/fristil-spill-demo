@@ -29,6 +29,17 @@ class VarmeTest {
   }
 
   @Test
+  fun `standarden er av, så ingenting slår opp navn på en utviklermaskin`() {
+    // `VARM_TIMER` settes i drift. Står den ikke, skal tjenesten oppføre seg
+    // som før: ingen bakgrunnsløkke, ingen oppslag.
+    val varme = Varme()
+    varme.abonner()
+    varme.avmeld()
+
+    assertFalse(varme.erVarm(System.currentTimeMillis() + 1000), "holdt varmen uten å være bedt om det")
+  }
+
+  @Test
   fun `null timer betyr at den sovner med en gang`() {
     val varme = Varme(timer = 0.0)
     varme.abonner()

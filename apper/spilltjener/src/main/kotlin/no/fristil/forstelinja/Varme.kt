@@ -3,7 +3,9 @@ package no.fristil.forstelinja
 import java.net.InetAddress
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
 /**
  * Holder tjenesten våken en stund etter at den siste spilleren er borte.
@@ -22,9 +24,11 @@ import kotlinx.coroutines.delay
  * dvalen. Det er verdt å si rett ut: det er en fot i døra, ikke et
  * helsesjekk.
  *
- * `VARM_TIMER=0` slår det av, og da sovner tjenesten så snart Railway vil.
+ * Standarden er null, altså av. Den hører hjemme i drift og ingen andre
+ * steder, og på en utviklermaskin skal ingenting slå opp navn i bakgrunnen
+ * hvert annet minutt. På Railway settes `VARM_TIMER=3`.
  */
-class Varme(private val timer: Double = System.getenv("VARM_TIMER")?.toDoubleOrNull() ?: 3.0) {
+class Varme(private val timer: Double = System.getenv("VARM_TIMER")?.toDoubleOrNull() ?: 0.0) {
   private val seere = AtomicInteger(0)
   private val sistSett = AtomicLong(System.currentTimeMillis())
 
@@ -56,7 +60,11 @@ class Varme(private val timer: Double = System.getenv("VARM_TIMER")?.toDoubleOrN
     while (true) {
       delay(2 * 60 * 1000)
       if (!erVarm()) continue
-      runCatching { InetAddress.getByName("railway.com") }
+      // `Dispatchers.IO`, ikke tråden vi står på. `getByName` blokkerer, og
+      // løkka kjører i den samme `runBlocking`-konteksten som tjeneren.
+      // Uten dette sto hele spilltjeneren stille mens oppslaget pågikk, og
+      // paritetsprøven feilet tilfeldig i en annen app for hver kjøring.
+      withContext(Dispatchers.IO) { runCatching { InetAddress.getByName("railway.com") } }
     }
   }
 }

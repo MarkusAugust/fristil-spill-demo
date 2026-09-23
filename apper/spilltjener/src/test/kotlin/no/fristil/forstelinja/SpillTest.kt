@@ -461,4 +461,25 @@ class SpillTest {
     assertEquals("Anonym", spill.bliMed("   ", Stack.UKJENT).navn)
     assertEquals(24, spill.bliMed("x".repeat(90), Stack.UKJENT).navn.length)
   }
+
+  @Test
+  fun `den som går av vakt er borte med en gang`() = runTest {
+    val spill = nyttSpill()
+    val kari = spill.bliMed("Kari", Stack.ASTRO)
+    spill.bliMed("Ola", Stack.DATASTAR)
+
+    assertTrue(spill.gaAv(kari.id), "sa at spilleren ikke fantes")
+
+    val tavle = spill.tilstand(null).tavle
+    assertEquals(listOf("Ola"), tavle.map { it.navn }, "spilleren står igjen på tavla")
+  }
+
+  @Test
+  fun `å gå av vakt to ganger sier fra andre gang`() = runTest {
+    val spill = nyttSpill()
+    val kari = spill.bliMed("Kari", Stack.ASTRO)
+
+    assertTrue(spill.gaAv(kari.id))
+    assertFalse(spill.gaAv(kari.id), "en ukjent id skal ikke se ut som en avmelding")
+  }
 }

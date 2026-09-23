@@ -28,6 +28,22 @@ export async function bliMed(navn: string): Promise<{ spillerId: string; navn: s
   return (await svar.json()) as { spillerId: string; navn: string }
 }
 
+/**
+ * Melder en spiller av vakta.
+ *
+ * En ekte spiller trenger den ikke: lukker du fanen, er du borte etter tre
+ * runder uten svar. Den finnes fordi paritetsprøven melder på en spiller i
+ * hver utgave, og en prøve som lar tre «Prøve …» stå igjen på tavla skitner
+ * til det den skal prøve.
+ */
+export async function gaAv(spillerId: string): Promise<void> {
+  await fetch(`${ADRESSE}/api/ga-av`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ spillerId }),
+  })
+}
+
 export async function svarInn(
   spillerId: string,
   svar: { vedtak: string | null; hjemmel: string | null; kommune: string | null; felle: string | null },

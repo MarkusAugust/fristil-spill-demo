@@ -733,18 +733,49 @@ body:has(.fs-connection-status__bar) .topplinje {
   .brett__innhold { grid-template-columns: 1fr; }
 }
 
-/* På smal skjerm får navnet en linje for seg, og runde, klokke og app
-   står på linja under. Ellers havner klokka alene under navnet med et
-   tomrom ved siden av. */
+/*
+ * På smal skjerm legges topplinja i et rutenett, ikke i en flytende rad.
+ *
+ * Raden brøt ulikt i de tre utgavene, og grunnen var teksten: merket sier
+ * «Kotlin · Datastar», «React · TanStack Start» eller «Serverside · Astro»,
+ * og navnet ditt står ved siden av. Med `flex-wrap` bestemmer lengden på
+ * den teksten hvor bruddet havner, og på 375 og 393 piksler ble headeren
+ * fire linjer høy i én app og fem i en annen. Det er nettopp den forskjellen
+ * demoen sier at du ikke skal se.
+ *
+ * Rutenettet gir faste plasser: etaten øverst, runde og klokke på neste
+ * linje, merket og navnet på den siste. Da er det bare teksten inni som er
+ * ulik, og den klippes med ellipse om den blir for lang.
+ */
 @media (max-width: 640px) {
-  .topplinje__merke { flex-basis: 100%; }
+  .topplinje__hoved {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--size-2) var(--size-4);
+  }
+
+  .topplinje__merke { grid-column: 1 / -1; }
 
   .topplinje__klokke {
     flex-direction: row;
     align-items: baseline;
+    justify-content: flex-end;
     gap: var(--size-2);
-    margin-inline-end: auto;
   }
+
+  .topplinje__stack,
+  .topplinje__meg {
+    min-inline-size: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  /* Merket skal klemme seg rundt teksten sin, ikke strekke seg over hele
+     cellen: strukket ser det ut som et skjemafelt. */
+  .topplinje__stack { justify-self: start; }
+  .topplinje__meg { justify-self: end; }
 
   .topplinje .nedtelling { font-size: var(--font-size-xl); }
 }
