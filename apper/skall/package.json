@@ -1,0 +1,9 @@
+{
+  "name": "forstelinja-skall",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run src/skall.ts",
+    "start": "bun run src/skall.ts"
+  }
+}

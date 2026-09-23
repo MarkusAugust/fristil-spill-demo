@@ -21,10 +21,10 @@ fi
 # `lsof -nP -iTCP:<port> -sTCP:LISTEN` og ikke `lsof -ti tcp:<port>`: den
 # siste treffer også klientsiden av en åpen forbindelse, altså nettleseren
 # din, og et `kill` på den lista feller mer enn tjeneren.
-for port in 8080 8081 8082 8083; do
+for port in 8080 8081 8082 8083 8084; do
   if lsof -nP -iTCP:"$port" -sTCP:LISTEN -t >/dev/null 2>&1; then
     echo "Port $port er opptatt. Noe kjører fra før."
-    echo "Stopp det med:  lsof -nP -iTCP:8080 -iTCP:8081 -iTCP:8082 -iTCP:8083 -sTCP:LISTEN -t | xargs kill"
+    echo "Stopp det med:  lsof -nP -iTCP:8080 -iTCP:8081 -iTCP:8082 -iTCP:8083 -iTCP:8084 -sTCP:LISTEN -t | xargs kill"
     exit 1
   fi
 done
@@ -92,13 +92,21 @@ vent_pa http://localhost:8082/helse
 (cd apper/astro && exec env HOST=127.0.0.1 PORT=8083 SPILLTJENER=http://127.0.0.1:8080 \
   node ./dist/server/entry.mjs) &
 PIDER+=($!)
-vent_pa http://127.0.0.1:8083/brett.css
+vent_pa http://127.0.0.1:8083/helse
+
+# Skallet viser de tre side om side. Det har ingen avhengigheter og snakker
+# ikke med spilltjeneren; hver ramme er en helt vanlig adresse.
+(cd apper/skall && exec env PORT=8084 HOST=127.0.0.1 bun run src/skall.ts) &
+PIDER+=($!)
+vent_pa http://127.0.0.1:8084/helse
 
 echo
 echo "  Førstelinja kjører:"
 echo "    Datastar og Kotlin:      http://localhost:8081"
 echo "    TanStack Start og React: http://localhost:8082"
 echo "    Astro, hele sider:       http://localhost:8083"
+echo
+echo "    Alle tre side om side:   http://localhost:8084"
 echo
 echo "  Åpne den i to vinduer, ett vanlig og ett privat, så spiller du mot"
 echo "  deg selv og ser tavla oppdatere seg begge steder."

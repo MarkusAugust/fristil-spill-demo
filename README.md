@@ -115,6 +115,7 @@ Da kjører de tre utgavene på hver sin adresse:
 | http://localhost:8081 | Datastar og Kotlin |
 | http://localhost:8082 | TanStack Start og React |
 | http://localhost:8083 | Astro, hele sider fra serveren |
+| http://localhost:8084 | Skallet, alle tre side om side |
 
 Åpne **to av dem ved siden av hverandre**, gjerne to forskjellige. Da er du
 to spillere på det samme brettet, og du ser tavla oppdatere seg begge steder
@@ -179,9 +180,10 @@ plukker utgave der, og kan bytte når som helst fra topplinja. Lokalt deler de
 tre kapselen, siden kapsler ikke bryr seg om portnummer, så du beholder navnet
 ditt og plassen din på tavla når du bytter.
 
-Derfor er det ingen egen skallside med tre rammer. Valget hører hjemme i
-appen, og da tar du med deg dine egne øyne mellom utgavene framfor å se dem
-gjennom tre vinduer samtidig.
+Valget hører altså hjemme i appen, og da tar du med deg dine egne øyne mellom
+utgavene. Skallet på 8084 er noe annet enn det: det er ikke en vei inn i
+spillet, men én skjerm der du ser alle tre samtidig og kan sammenligne dem
+side om side. Det er den eneste måten å se påstanden til demoen på én gang.
 
 ## Datastar-appen
 
@@ -344,4 +346,5 @@ oppdatert. Spilltjeneren sier nå fra om at fila er en inngang.
 - [x] TanStack Start-appen (React), samme skjerm av JSON
 - [x] Astro-appen, hele sider og én øy
 - [x] Bytte mellom utgavene, i velkomsthilsenen og i topplinja
+- [x] Skallet, som viser de tre side om side
 - [ ] Railway
