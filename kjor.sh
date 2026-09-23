@@ -21,10 +21,10 @@ fi
 # `lsof -nP -iTCP:<port> -sTCP:LISTEN` og ikke `lsof -ti tcp:<port>`: den
 # siste treffer også klientsiden av en åpen forbindelse, altså nettleseren
 # din, og et `kill` på den lista feller mer enn tjeneren.
-for port in 8080 8081 8082; do
+for port in 8080 8081 8082 8083; do
   if lsof -nP -iTCP:"$port" -sTCP:LISTEN -t >/dev/null 2>&1; then
     echo "Port $port er opptatt. Noe kjører fra før."
-    echo "Stopp det med:  lsof -nP -iTCP:8080 -iTCP:8081 -iTCP:8082 -sTCP:LISTEN -t | xargs kill"
+    echo "Stopp det med:  lsof -nP -iTCP:8080 -iTCP:8081 -iTCP:8082 -iTCP:8083 -sTCP:LISTEN -t | xargs kill"
     exit 1
   fi
 done
@@ -35,6 +35,7 @@ echo "Bygger …"
 (cd apper/spilltjener && ./gradlew --quiet installDist)
 (cd apper/datastar && ./gradlew --quiet installDist)
 (cd apper/tanstack && bun install --silent)
+(cd apper/astro && bun install --silent && ./node_modules/.bin/astro build >/dev/null)
 
 PIDER=()
 
@@ -85,10 +86,19 @@ PIDER+=($!)
 # ville stått og ventet på noe som aldri kommer.
 vent_pa http://localhost:8082/helse
 
+# Astro-appen kjøres bygget, ikke i utviklingsmodus. `astro dev` legger seg i
+# bakgrunnen og svarer ikke på Ctrl+C her, og den bygde tjeneren er dessuten
+# den samme som kjører i drift.
+(cd apper/astro && exec env HOST=127.0.0.1 PORT=8083 SPILLTJENER=http://127.0.0.1:8080 \
+  node ./dist/server/entry.mjs) &
+PIDER+=($!)
+vent_pa http://127.0.0.1:8083/brett.css
+
 echo
 echo "  Førstelinja kjører:"
 echo "    Datastar og Kotlin:      http://localhost:8081"
 echo "    TanStack Start og React: http://localhost:8082"
+echo "    Astro, hele sider:       http://localhost:8083"
 echo
 echo "  Åpne den i to vinduer, ett vanlig og ett privat, så spiller du mot"
 echo "  deg selv og ser tavla oppdatere seg begge steder."

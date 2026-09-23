@@ -1,5 +1,5 @@
 import { fs } from "@fristil/designsystem/react"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useId, useRef, useState } from "react"
 
 import { APPNAVN, UTGAVER } from "./fristil"
 import type { Feil, SakUt, Skjermbilde, TavleRad, Tilstand } from "./tilstand"
@@ -870,7 +870,7 @@ function Tavle({ tilstand }: { tilstand: Tilstand }) {
               </tr>
             ) : (
               tilstand.tavle.map((rad) => (
-                <tr className={rad.erMeg ? "meg" : undefined} key={rad.navn}>
+                <tr className={rad.erMeg ? "meg" : undefined} key={rad.plass}>
                   <td>{rad.plass}</td>
                   <td>
                     <span className="tavle__navn">
@@ -1147,7 +1147,16 @@ function Velkomst({ apen, settApen }: { apen: boolean; settApen: (a: boolean) =>
  * virker dessuten uten JavaScript i det hele tatt.
  */
 function BliMed({ tilstand }: { tilstand: Tilstand }) {
-  const felt = fs.field({ help: true })
+  /*
+   * Id-en kommer fra React, ikke fra Fristil.
+   *
+   * `fs.field()` lager en selv når den ikke får en, og den kan ikke bli den
+   * samme på serveren og i nettleseren. Da melder React hydreringsfeil på
+   * ledeteksten, feltet og hjelpeteksten, og koblingen mellom dem er brutt
+   * til React har rettet den opp. `useId()` gir den samme verdien begge
+   * steder, og det er hele grunnen til at kroken finnes.
+   */
+  const felt = fs.field({ id: useId(), help: true })
   const sekunder = Math.round(tilstand.rundeLengdeMs / 1000)
   const tid =
     sekunder % 60 !== 0

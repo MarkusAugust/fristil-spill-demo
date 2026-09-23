@@ -107,16 +107,26 @@ Arbeidet er ekte saksbehandling. Vitsen er saken:
 ./kjor.sh
 ```
 
-Åpne så **http://localhost:8081**. Skriptet bygger og starter begge
-tjenestene, og stopper dem med Ctrl+C.
+Skriptet bygger og starter alle fire tjenestene, og stopper dem med Ctrl+C.
+Da kjører de tre utgavene på hver sin adresse:
 
-Åpne adressen i **to vinduer, ett vanlig og ett privat**. Da er du to
-spillere, og du ser tavla oppdatere seg begge steder uten at du gjør noe.
-Det er hele poenget med demoen.
+| Adresse | Utgave |
+| --- | --- |
+| http://localhost:8081 | Datastar og Kotlin |
+| http://localhost:8082 | TanStack Start og React |
+| http://localhost:8083 | Astro, hele sider fra serveren |
+
+Åpne **to av dem ved siden av hverandre**, gjerne to forskjellige. Da er du
+to spillere på det samme brettet, og du ser tavla oppdatere seg begge steder
+uten at du gjør noe. Skjermene skal se like ut. Det er hele poenget med
+demoen.
+
+Velkomsthilsenen lar deg bytte utgave underveis, og det gjør topplinja også.
 
 Skal du bare se at det virker, gir `./kjor.sh rask` runder på 30 sekunder.
 
-Krever Java 21 eller nyere. Gradle henter seg selv.
+Krever Java 21 eller nyere og [Bun](https://bun.com). Gradle henter seg selv,
+og skriptet installerer avhengighetene til de to JavaScript-appene.
 
 ### Eller hver for seg
 
@@ -187,6 +197,61 @@ Fire ting kostet tid, og alle fire er notert i koden:
 - **Å bli med er en navigering, ikke en oppdatering.** Hendelsesstrømmen leser kapselen når den åpnes, én gang. Setter man kapselen midt i strømmens levetid, vet serveren fortsatt ikke hvem som sitter der, og dyttet innmeldingsskjemaet tilbake over spillet. Skjemaet er nå et vanlig skjema med omdirigering, som dessuten virker uten JavaScript.
 
 Etterprøvd med to nettlesere mot den publiserte pakken: den ene blir med, den andre ser henne dukke opp uten å gjøre noe, og et halvutfylt skjema beholder både fanevalget, feltverdiene og koblingen `<fs-field>` laget, gjennom en patch fra serveren.
+
+## TanStack Start-appen
+
+React, med Vite og en egen tjenerinngang i `src/server.ts`. Serveren snakker
+med spilltjeneren og sender **JSON** ned til nettleseren; React setter sammen
+skjermen. Hendelsesstrømmen sender hele tilstanden ved hvert pulsslag, og
+innsendingen svarer med det samme skjermbildet, så det finnes bare én form
+data kommer i.
+
+Byggefunksjonene hentes fra `@fristil/designsystem/react`, som gir
+`className` og `htmlFor`. Appen henter pakken **fra npm**, ikke fra CDN, og
+det er med vilje: den ene utgaven viser at Fristil virker uten byggverktøy,
+den andre at det virker med.
+
+Tre ting kostet tid, og alle tre ble rettet i designsystemet:
+
+- **`tabIndex` kom ut som en streng.** React vil ha et tall, så TypeScript
+  avviste `fs.tabs()` i hele appen. Det virket i nettleseren, siden React
+  gjør om verdien selv, så feilen fantes bare i typene.
+- **`open` kunne ikke sendes som tom streng.** React 19 setter egenskaper
+  framfor attributter på egendefinerte elementer, og `el.open = ""` er usant,
+  så dialogen åpnet seg ikke. Byggefunksjonene sender nå `true`.
+- **En id som lages av seg selv, overlever ikke hydrering.** `fs.field()`
+  lager en når den ikke får en, og serveren og nettleseren lager da hver sin.
+  Id-en kommer nå fra Reacts `useId()`, og det står i dokumentasjonen.
+
+## Astro-appen
+
+Hele sider fra serveren. Skjemaet er en vanlig `<form method="post">` til
+samme adresse, og svaret er en ny side: enten med feiloppsummeringen og
+svarene stående, eller med kvitteringen. Ingenting av det trenger JavaScript.
+
+Det eneste skriptet er øya i `src/oya.ts`, og den gjør fire ting: registrerer
+web-komponentene, teller ned fristen, bytter ut tavla av JSON fra
+hendelsesstrømmen, og henter en ny side når runden er en annen enn den siden
+ble tegnet med. Ingen skjemahåndtering, ingen validering, ingen tilstand.
+
+Tavleradene lages av den samme funksjonen på serveren og i øya. Uten den
+ville radmarkupen finnes to ganger, i en mal og i et skript, og de to ville
+gått fra hverandre første gang noen la til en kolonne.
+
+Kommunefeltet er verdt å se på: `<fs-suggestion>` filtrerer lista og tar
+piltastene helt selv. Serveren sender alle kommunene, og appen har ikke en
+eneste linje kode for feltet. I React-utgaven må appen filtrere selv, for der
+er det React som eier DOM-en.
+
+To ting kostet tid:
+
+- **Astro skriver to `class`-attributter** når en byggefunksjon spres sammen
+  med en egen klasse, og nettleseren beholder det første. Klassen må trekkes
+  ut av spredningen. Det står i Fristils dokumentasjon, og jeg gjorde det
+  likevel feil i ni komponenter.
+- **Kommunelista ligger under en nøkkel i fila**, ikke i rota. Appen leste den
+  som en liste, og feilen kom først når noen skulle fylle ut skjemaet. Nå sier
+  den fra ved oppstart i stedet.
 
 ## Komponentene i bruk
 
@@ -276,7 +341,7 @@ oppdatert. Spilltjeneren sier nå fra om at fila er en inngang.
 
 - [x] Spilltjeneren: regler, poeng, runder, SSE, SQLite
 - [x] Datastar-appen (Kotlin), med sju komponenter i bruk
-- [ ] TanStack Start-appen
-- [ ] Astro-appen
-- [ ] Skallet med bryteren
+- [x] TanStack Start-appen (React), samme skjerm av JSON
+- [x] Astro-appen, hele sider og én øy
+- [x] Bytte mellom utgavene, i velkomsthilsenen og i topplinja
 - [ ] Railway
