@@ -189,6 +189,26 @@ fun side(
       // skrive attributtet når den tegner siden. Da er det ingenting å rette
       // opp etterpå, og ingen lysglimt. Kapselen deles med de to andre
       // utgavene, så valget følger med når du bytter.
+      /*
+       * Lenkene til de to andre utgavene bærer valget ditt videre.
+       *
+       * Serveren skriver dem med `?tema=` ved sidelasting, og det holder
+       * helt til du bytter tema etterpå: da står lenkene igjen med det
+       * gamle valget, og du fikk systemtemaet i den andre utgaven.
+       * Utgavevelgeren ligger dessuten utenfor området serveren patcher, så
+       * den blir stående til neste fulle sidelasting. Kapselen gjelder bare
+       * for sitt eget domene i drift, så lenka er det eneste som kan bære
+       * valget over.
+       */
+      const merkLenkene = (verdi) => {
+        for (const lenke of document.querySelectorAll(".utgavevelger__lenke, .velkomst__lenke")) {
+          const adresse = new URL(lenke.href)
+          if (verdi === "system") adresse.searchParams.delete("tema")
+          else adresse.searchParams.set("tema", verdi)
+          lenke.href = adresse.toString()
+        }
+      }
+
       const settTema = (verdi) => {
         // `SameSite=None` på https: i skallet står utgavene i hver sin ramme,
         // på hvert sitt domene, og en `Lax`-kapsel sendes ikke derfra.
@@ -197,6 +217,7 @@ fun side(
         document.cookie = "forstelinja-tema=" + verdi + "; Path=/; Max-Age=31536000; " + tvers
         if (verdi === "system") document.documentElement.removeAttribute("data-theme")
         else document.documentElement.setAttribute("data-theme", verdi)
+        merkLenkene(verdi)
       }
       const valgtTema =
         document.cookie.match(/(?:^|;\s*)forstelinja-tema=([^;]*)/)?.[1] ?? "system"

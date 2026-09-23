@@ -15,6 +15,9 @@ dist/
 # Skjermbilder prøven tar når noe stopper underveis.
 prover/*-stoppet.png
 
+# Arbeidsplaner og notater er interne, og repoet er offentlig.
+PLAN.md
+
 # macOS
 .DS_Store
 
