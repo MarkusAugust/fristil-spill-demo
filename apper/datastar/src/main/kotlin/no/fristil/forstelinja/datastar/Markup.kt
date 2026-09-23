@@ -189,7 +189,11 @@ fun side(
       // opp etterpå, og ingen lysglimt. Kapselen deles med de to andre
       // utgavene, så valget følger med når du bytter.
       const settTema = (verdi) => {
-        document.cookie = "forstelinja-tema=" + verdi + "; Path=/; Max-Age=31536000; SameSite=Lax"
+        // `SameSite=None` på https: i skallet står utgavene i hver sin ramme,
+        // på hvert sitt domene, og en `Lax`-kapsel sendes ikke derfra.
+        const tvers =
+          location.protocol === "https:" ? "SameSite=None; Secure" : "SameSite=Lax"
+        document.cookie = "forstelinja-tema=" + verdi + "; Path=/; Max-Age=31536000; " + tvers
         if (verdi === "system") document.documentElement.removeAttribute("data-theme")
         else document.documentElement.setAttribute("data-theme", verdi)
       }

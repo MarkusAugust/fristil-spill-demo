@@ -48,7 +48,11 @@ for (const knapp of document.querySelectorAll<HTMLInputElement>('input[name="tem
   knapp.checked = knapp.value === valgt
   knapp.addEventListener("change", () => {
     if (!knapp.checked) return
-    document.cookie = `forstelinja-tema=${knapp.value}; Path=/; Max-Age=${60 * 60 * 24 * 365}; SameSite=Lax`
+    // `SameSite=None` på https: i skallet står utgavene i hver sin ramme, på
+    // hvert sitt domene, og en `Lax`-kapsel sendes ikke derfra.
+    const tvers =
+      location.protocol === "https:" ? "SameSite=None; Secure" : "SameSite=Lax"
+    document.cookie = `forstelinja-tema=${knapp.value}; Path=/; Max-Age=${60 * 60 * 24 * 365}; ${tvers}`
     if (knapp.value === "system") document.documentElement.removeAttribute("data-theme")
     else document.documentElement.setAttribute("data-theme", knapp.value)
   })

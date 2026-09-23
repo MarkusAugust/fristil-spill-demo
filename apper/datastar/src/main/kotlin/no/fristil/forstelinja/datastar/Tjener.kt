@@ -113,8 +113,22 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
 
       // Kapsel og ikke minne i nettleseren: Astro-appen laster hele sider på
       // nytt, og alle tre skal oppføre seg likt.
+      // `SameSite=None` i drift, `Lax` lokalt. Skallet viser de tre utgavene
+      // i hver sin ramme, og i drift ligger de på hvert sitt domene. Da er
+      // kapselen en tredjepartskapsel, og `Lax` gjør at nettleseren aldri
+      // sender den: du kunne se spillet i rammen, men ikke melde deg på.
+      // `None` krever `Secure`, altså https, og det har vi bare i drift.
+      val https = call.request.headers["X-Forwarded-Proto"] == "https"
       call.response.cookies.append(
-        Cookie(KAPSEL, spiller.spillerId, path = "/", maxAge = 8 * 60 * 60, httpOnly = true)
+        Cookie(
+          KAPSEL,
+          spiller.spillerId,
+          path = "/",
+          maxAge = 8 * 60 * 60,
+          httpOnly = true,
+          secure = https,
+          extensions = mapOf("SameSite" to if (https) "None" else "Lax"),
+        )
       )
 
       // Og så en omdirigering, ikke en patch. Hendelsesstrømmen leser

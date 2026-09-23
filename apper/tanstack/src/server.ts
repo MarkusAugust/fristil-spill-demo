@@ -28,6 +28,24 @@ const BRETT_CSS: string = readFileSync(
   "utf8",
 )
 
+/**
+ * Hvordan kapselen skal merkes.
+ *
+ * `SameSite=Lax` er riktig når appen står alene, men skallet viser de tre
+ * utgavene i hver sin ramme, og i drift ligger de på hvert sitt domene. Da
+ * er kapselen en tredjepartskapsel, og `Lax` gjør at nettleseren aldri
+ * sender den: du kunne se spillet i rammen, men ikke melde deg på.
+ * `None` krever `Secure`, altså https, og det har vi bare i drift. Lokalt
+ * er alle tre på `localhost`, som er samme nettsted uansett portnummer, og
+ * der holder `Lax`.
+ */
+function kapselTvers(request: Request): string {
+  const https =
+    request.headers.get("x-forwarded-proto") === "https" ||
+    new URL(request.url).protocol === "https:"
+  return https ? "SameSite=None; Secure" : "SameSite=Lax"
+}
+
 function kapsel(request: Request, navn: string): string | null {
   const rad = request.headers.get("cookie")
   if (!rad) return null
@@ -130,7 +148,7 @@ export default {
         status: 303,
         headers: {
           location: "/",
-          "set-cookie": `${KAPSEL}=${spiller.spillerId}; Path=/; Max-Age=${8 * 60 * 60}; HttpOnly; SameSite=Lax`,
+          "set-cookie": `${KAPSEL}=${spiller.spillerId}; Path=/; Max-Age=${8 * 60 * 60}; HttpOnly; ${kapselTvers(request)}`,
         },
       })
     }
