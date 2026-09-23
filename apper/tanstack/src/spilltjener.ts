@@ -21,11 +21,28 @@ export async function tilstand(spillerId: string | null): Promise<Tilstand> {
   return (await svar.json()) as Tilstand
 }
 
-export async function bliMed(navn: string): Promise<{ spillerId: string; navn: string }> {
+/**
+ * Overskriften paritetsprøven melder seg på med.
+ *
+ * Prøven setter den på hver forespørsel fra nettleseren sin, og appserveren
+ * sender den videre til spilltjeneren. Poengene havner da aldri i den evige
+ * topplista, som er det eneste som overlever en omstart.
+ */
+export const PROVE_OVERSKRIFT = "x-fristil-prove"
+
+/** Om forespørselen kommer fra paritetsprøven. */
+export function erProve(request: Request): boolean {
+  return request.headers.get(PROVE_OVERSKRIFT) === "1"
+}
+
+export async function bliMed(
+  navn: string,
+  prove = false,
+): Promise<{ spillerId: string; navn: string }> {
   const svar = await fetch(`${ADRESSE}/api/bli-med`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ navn, stack: "tanstack" }),
+    body: JSON.stringify({ navn, stack: "tanstack", prove }),
   })
   if (!svar.ok) throw new Error(`Spilltjeneren svarte ${svar.status}`)
   return (await svar.json()) as { spillerId: string; navn: string }

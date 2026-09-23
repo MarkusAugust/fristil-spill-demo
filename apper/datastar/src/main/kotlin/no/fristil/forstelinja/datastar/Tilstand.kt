@@ -97,7 +97,13 @@ data class Tilstand(
  * hele poenget med demoen. Uten standardverdi må hvert kallsted si hva det
  * er, og verdien havner alltid på tråden.
  */
-@Serializable data class BliMedInn(val navn: String, val stack: String)
+@Serializable
+data class BliMedInn(
+  val navn: String,
+  val stack: String,
+  /** Paritetsprøven. Poengene havner da aldri i den evige topplista. */
+  val prove: Boolean = false,
+)
 
 @Serializable data class BliMedUt(val spillerId: String, val navn: String)
 

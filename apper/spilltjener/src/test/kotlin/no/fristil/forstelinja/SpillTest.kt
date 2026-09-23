@@ -370,6 +370,29 @@ class SpillTest {
   }
 
   @Test
+  fun `en prøvespiller havner aldri på den evige topplista`() = runTest {
+    // Paritetsprøven melder på en spiller i hver utgave og melder den av
+    // igjen. Tok vakta slutt før avmeldingen, sto «Prøve datastar» i den
+    // evige topplista, og den lista er det eneste som overlever en omstart.
+    val spill = nyttSpill()
+    val spiller = spill.bliMed("Prøve datastar", Stack.DATASTAR, prove = true)
+
+    repeat(RUNDER_PER_SPILL) {
+      val fasit = spill.sak.fasit
+      spill.svar(
+        spiller.id,
+        Svar(fasit.vedtak, fasit.hjemmel, spill.sak.soker.kommune, fasit.felle),
+      )
+      klokke.gaa(RUNDE_MS)
+      spill.tikk()
+      klokke.gaa(OPPGJOR_MS)
+      spill.tikk()
+    }
+
+    assertEquals(emptyList(), toppliste.topp(10).map { it.navn })
+  }
+
+  @Test
   fun `topplista viser det beste per navn, ikke hver omgang`() = runTest {
     // Uten grupperingen fylte den samme spilleren hele lista med sine egne
     // omganger, og «Markus» sto fem ganger på en liste som skal si hvem som

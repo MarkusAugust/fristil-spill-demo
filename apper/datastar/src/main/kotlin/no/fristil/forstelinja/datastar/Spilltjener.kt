@@ -59,11 +59,19 @@ class Spilltjener(private val adresse: String) {
       }
       .body()
 
-  suspend fun bliMed(navn: String): BliMedUt =
+  /**
+   * Melder en spiller på vakta.
+   *
+   * `prove` er paritetsprøven, som melder på en spiller i hver utgave.
+   * Poengene til en prøvespiller havner aldri i den evige topplista, som er
+   * det eneste som overlever en omstart. Uten det ble «Prøve datastar»
+   * stående der for alltid, hver gang en vakt tok slutt mens prøven kjørte.
+   */
+  suspend fun bliMed(navn: String, prove: Boolean = false): BliMedUt =
     klient
       .post("$adresse/api/bli-med") {
         contentType(ContentType.Application.Json)
-        setBody(BliMedInn(navn = navn, stack = "datastar"))
+        setBody(BliMedInn(navn = navn, stack = "datastar", prove = prove))
       }
       .body()
 

@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs"
 import { createStartHandler, defaultStreamHandler } from "@tanstack/react-start/server"
 
 import { KOMMUNER } from "./kommuner"
-import { bliMed, gaAv, pulsen, svarInn, tilstand } from "./spilltjener"
+import { bliMed, erProve, gaAv, pulsen, svarInn, tilstand } from "./spilltjener"
 import type { Skjermbilde } from "./tilstand"
 import { valider } from "./validering"
 
@@ -165,7 +165,7 @@ export default {
       const navn = String(skjema.get("navn") ?? "")
       let spiller: { spillerId: string }
       try {
-        spiller = await bliMed(navn)
+        spiller = await bliMed(navn, erProve(request))
       } catch {
         return new Response(null, { status: 303, headers: { location: "/" } })
       }

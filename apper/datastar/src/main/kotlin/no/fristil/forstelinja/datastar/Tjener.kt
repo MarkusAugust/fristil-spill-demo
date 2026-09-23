@@ -135,9 +135,13 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
 
     post("/bli-med") {
       val navn = call.receiveParameters()["navn"].orEmpty()
+      // Paritetsprøven setter denne overskriften på hver forespørsel fra
+      // nettleseren sin. Uten den ble «Prøve datastar» stående i den evige
+      // topplista hver gang en vakt tok slutt mens prøven kjørte.
+      val prove = call.request.headers["x-fristil-prove"] == "1"
       val spiller =
         try {
-          spilltjener.bliMed(navn)
+          spilltjener.bliMed(navn, prove)
         } catch (e: Exception) {
           call.respondText(venteside(), ContentType.Text.Html, HttpStatusCode.ServiceUnavailable)
           return@post

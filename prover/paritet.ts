@@ -30,7 +30,19 @@ const nettleser = await chromium.launch()
 
 for (const app of APPER) {
   const si = (melding: string) => funn.push(`${app.navn}: ${melding}`)
-  const kontekst = await nettleser.newContext()
+  /*
+   * Prøven melder seg på som en prøve, ikke som en saksbehandler.
+   *
+   * Overskriften følger hver forespørsel, også innsendingen av
+   * påmeldingsskjemaet, og appserveren sender den videre til spilltjeneren.
+   * Uten den ble «Prøve datastar» stående i den evige topplista: `/ga-av`
+   * tar spilleren av tavla, men tok vakta slutt mens prøven fortsatt sto der,
+   * var poengene alt lagret, og den lista er det eneste som overlever en
+   * omstart.
+   */
+  const kontekst = await nettleser.newContext({
+    extraHTTPHeaders: { "x-fristil-prove": "1" },
+  })
   const side = await kontekst.newPage()
 
   side.on("pageerror", (e) => si(`sidefeil: ${e.message}`))

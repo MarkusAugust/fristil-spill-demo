@@ -146,6 +146,16 @@ data class Spiller(
   var svar: Svar? = null,
   var sistePoeng: Int = 0,
   var forrigePlass: Int = 0,
+  /**
+   * En paritetsprøve, ikke en saksbehandler.
+   *
+   * Prøven melder på en spiller i hver utgave og melder den av igjen, men
+   * ender vakta mens den står der, lagres poengene i den evige topplista,
+   * og «Prøve datastar» blir stående der for alltid. Den evige topplista er
+   * det eneste som overlever en omstart, så en rad der kan ikke tas tilbake.
+   * Derfor står det på spilleren, ikke i en navnesjekk ved lagringen.
+   */
+  val prove: Boolean = false,
 )
 
 /** Klokka, slik at testene slipper å vente i ekte sekunder. */
@@ -196,9 +206,9 @@ class Spill(
 
   private fun trekkSaker(): List<Sak> = samling.saker.shuffled().take(RUNDER_PER_SPILL)
 
-  suspend fun bliMed(navn: String, stack: Stack): Spiller {
+  suspend fun bliMed(navn: String, stack: Stack, prove: Boolean = false): Spiller {
     val ren = navn.trim().take(24).ifBlank { "Anonym" }
-    val spiller = Spiller(id = UUID.randomUUID().toString(), navn = ren, stack = stack)
+    val spiller = Spiller(id = UUID.randomUUID().toString(), navn = ren, stack = stack, prove = prove)
     laas.withLock { spillere[spiller.id] = spiller }
     endringer.emit(Unit)
     return spiller
@@ -362,6 +372,7 @@ class Spill(
 
   private fun lagreToppliste() {
     for (spiller in spillere.values) {
+      if (spiller.prove) continue
       if (spiller.poeng > 0) toppliste.lagre(spiller.navn, spiller.poeng, spiller.stack)
     }
     evig = toppliste.topp(10)

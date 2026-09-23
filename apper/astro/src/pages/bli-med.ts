@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro"
 
 import { KAPSEL } from "../lib/fristil"
-import { bliMed } from "../lib/spilltjener"
+import { bliMed, erProve } from "../lib/spilltjener"
 
 export const prerender = false
 
@@ -29,7 +29,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
   const https = url.protocol === "https:"
 
   try {
-    const spiller = await bliMed(navn)
+    const spiller = await bliMed(navn, erProve(request))
     cookies.set(KAPSEL, spiller.spillerId, {
       path: "/",
       maxAge: 8 * 60 * 60,
