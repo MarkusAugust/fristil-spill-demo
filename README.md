@@ -14,6 +14,22 @@ TAVLE · runde 2 av 4
 
 Kari og Ola spiller sammen, i sanntid, fra to helt ulike stacker, og skjermene deres ser like ut. Det er hele påstanden til Fristil, demonstrert av folk som ikke tenker på den.
 
+## Prøv det
+
+| | Adresse |
+| --- | --- |
+| **Alle tre side om side** | https://forstelinja.up.railway.app |
+| TanStack Start og React | https://forstelinja-react.up.railway.app |
+| Datastar og Kotlin | https://forstelinja-kotlin.up.railway.app |
+| Astro | https://forstelinja-astro.up.railway.app |
+
+Åpne skallet og meld deg på i alle tre rammene, med hvert sitt navn. Da er du
+tre saksbehandlere på det samme brettet, og ser samme sak, samme frist og
+samme tavle i tre teknologier samtidig. Svar i én ramme, så skjer det i de to
+andre.
+
+Du kan også bytte utgave underveis, fra topplinja, og beholde navnet ditt.
+
 ## Delene
 
 ```
@@ -171,13 +187,18 @@ er den verdiløs.
 
 Fem tjenester i ett prosjekt, alle fra dette repoet:
 
-| Tjeneste | Offentlig | Volum | Dockerfile |
+| Tjeneste | Adresse | Volum | Dockerfile |
 | --- | --- | --- | --- |
-| `spilltjener` | nei | ja, til SQLite | `apper/spilltjener/Dockerfile` |
-| `datastar` | ja | nei | `apper/datastar/Dockerfile` |
-| `tanstack` | ja | nei | `apper/tanstack/Dockerfile` |
-| `astro` | ja | nei | `apper/astro/Dockerfile` |
-| `skall` | ja | nei | `apper/skall/Dockerfile` |
+| `spilltjener` | ingen, bare internt | ja, til SQLite | `apper/spilltjener/Dockerfile` |
+| `tanstack` | `forstelinja-react` | nei | `apper/tanstack/Dockerfile` |
+| `datastar` | `forstelinja-kotlin` | nei | `apper/datastar/Dockerfile` |
+| `astro` | `forstelinja-astro` | nei | `apper/astro/Dockerfile` |
+| `skall` | `forstelinja` | nei | `apper/skall/Dockerfile` |
+
+Domenene er døpt om fra det Railway fant på selv, med
+`railway domain update <gammel> --service <tjeneste> --domain <nytt>`.
+Variablene under peker på tjenestene og ikke på adressene, så de fulgte med
+uten at noe måtte rettes.
 
 **La «Root Directory» stå tom for alle fem.** Det er det motsatte av hva som
 er vanlig i et monorepo, og grunnen er `felles/`: sakene, kommunene og
@@ -228,10 +249,34 @@ IPv6-bare, så tjenesten må lytte på `::`. Det er standarden i Dockerfilen.
   på spilltjeneren holder, og en tjeneste med volum får litt nedetid ved
   utrulling. Det er uproblematisk her, siden en omstart uansett starter en ny
   omgang.
-- **Kapselen med spillerens id og temavalget** deles ikke mellom tjenestene på
-  Railway, slik den gjør lokalt: der er det tre ulike domener. Du blir altså
-  en ny saksbehandler når du bytter utgave, og temavalget følger ikke med.
-  Lokalt deler de tre kapselen, siden kapsler ikke bryr seg om portnummer.
+- **Kapslene er merket `SameSite=None; Secure` når siden kommer over https.**
+  Skallet viser de tre i hver sin ramme, og i drift ligger de på hvert sitt
+  domene, så kapselen er en tredjepartskapsel der. Med `Lax` sendte
+  nettleseren den aldri: du kunne se spillet i rammen, men ikke melde deg på.
+  Lokalt er alle tre på `localhost`, som er samme nettsted uansett
+  portnummer, og der er `Lax` det eneste som er lov over http.
+- **Billetten i adressen** er det som lar deg beholde navnet ditt når du
+  bytter utgave. En kapsel gjelder bare for sitt eget domene, så lenkene
+  bærer `?spiller=` og `?tema=`, og appen du kommer til veksler dem inn i
+  sine egne kapsler og fjerner dem fra adressen igjen.
+
+### Hva det koster
+
+Fem tjenester som står oppe hele døgnet, og en spilltjener som teller runder
+enten noen spiller eller ikke. Regningen er derfor nesten bare minne.
+
+Målt på Railway det første døgnet, og regnet ut fra prisene deres:
+
+| | |
+| --- | --- |
+| Minne, fem tjenester | om lag 0,5 GB til sammen |
+| Volum til topplista | 5 GB, og det er minstemålet |
+| Anslag per måned | fire til seks dollar |
+
+På Hobby-abonnementet ligger det i overkant av de fem dollarene som følger
+med. Vil du ned, er det ett sted å ta det: spilltjeneren tikker fire ganger i
+sekundet døgnet rundt, og kunne ventet til noen er påmeldt. Det er ikke gjort,
+fordi en demo som må vekkes før den viser noe er en dårligere demo.
 
 ## Velkomsthilsenen, og valget mellom de tre
 
@@ -242,12 +287,13 @@ skreddersydd til hvert sitt rammeverk. De er trygge på at du vil merke
 forskjellen.
 
 Det er hele demoen sagt som en vits, og hilsenen er samtidig valget: du
-plukker utgave der, og kan bytte når som helst fra topplinja. Lokalt deler de
-tre kapselen, siden kapsler ikke bryr seg om portnummer, så du beholder navnet
-ditt og plassen din på tavla når du bytter.
+plukker utgave der, og kan bytte når som helst fra topplinja. Du beholder
+navnet ditt og plassen din på tavla når du bytter. Lokalt fordi de tre deler
+kapselen, siden kapsler ikke bryr seg om portnummer, og i drift fordi lenka
+bærer med seg en billett i adressen.
 
 Valget hører altså hjemme i appen, og da tar du med deg dine egne øyne mellom
-utgavene. Skallet på 8084 er noe annet enn det: det er ikke en vei inn i
+utgavene. Skallet er noe annet enn det: det er ikke en vei inn i
 spillet, men én skjerm der du ser alle tre samtidig og kan sammenligne dem
 side om side. Det er den eneste måten å se påstanden til demoen på én gang.
 
@@ -413,4 +459,4 @@ oppdatert. Spilltjeneren sier nå fra om at fila er en inngang.
 - [x] Astro-appen, hele sider og én øy
 - [x] Bytte mellom utgavene, i velkomsthilsenen og i topplinja
 - [x] Skallet, som viser de tre side om side
-- [ ] Railway
+- [x] Railway, fem tjenester med Dockerfile fra rota
