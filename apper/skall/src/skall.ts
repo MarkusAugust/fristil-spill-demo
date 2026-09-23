@@ -10,6 +10,9 @@
  * alene, og det er poenget: rammene er ikke en spesialutgave av appene.
  */
 
+/** Versjonen av Fristil skallet henter tokens fra. Samme som appene bruker. */
+const FRISTIL = "0.8.0"
+
 const PORT = Number(process.env.PORT ?? 8084)
 const HOST = process.env.HOST ?? "::"
 
@@ -48,7 +51,7 @@ const SIDE = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Førstelinja · tre utgaver side om side</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fristil/designsystem@0.8.0/src/tokens/tokens.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fristil/designsystem@${FRISTIL}/src/tokens/tokens.css">
 <style>
   /* Skallet eier bare rammene rundt. Fargene og avstandene er Fristils egne
      tokens, slik at kanten rundt rammene ikke sier noe annet enn innholdet. */
