@@ -36,6 +36,9 @@ const forslag = fs.suggestion({
   error: Boolean(feilPa("kommune")),
   invalid: Boolean(feilPa("kommune")),
 })
+/* Sprettoppvinduet med hjemlene. Ett kall, tre attributtsett: verten,
+   knappen og panelet hører sammen og deler id. */
+const hjelp = fs.popover({ id: "hjemmelhjelp" })
 const feller = [
   ["nei", "Nei, saken er i orden"],
   ["fodselsdato", "Fødselsdatoen"],
@@ -111,15 +114,11 @@ const feller = [
       {feilPa("hjemmel") && <p {...fs.errorText()} id="hjemmel-feil">{feilPa("hjemmel")!.melding}</p>}
     </fs-field>
 
-    <fs-popover {...fs.popover({ id: "hjemmelhjelp" }).host} class="hjelpelenke" placement="bottom-start">
-      <button
-        {...fs.popover({ id: "hjemmelhjelp" }).trigger}
-        {...fs.button({ variant: "ghost" })}
-        type="button"
-      >
+    <fs-popover {...hjelp.host} class="hjelpelenke" placement="bottom-start">
+      <button {...hjelp.trigger} {...fs.button({ variant: "ghost" })} type="button">
         Hva betyr hjemlene?
       </button>
-      <div {...fs.popover({ id: "hjemmelhjelp" }).panel}>
+      <div {...hjelp.panel}>
         <ul {...fs.list()}>
           {tilstand.hjemler.map((h) => <li><strong>{h.kode}</strong> {h.tekst}</li>)}
         </ul>
