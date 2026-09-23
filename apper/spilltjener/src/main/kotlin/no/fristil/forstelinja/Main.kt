@@ -18,6 +18,10 @@ fun main(): Unit = runBlocking {
   val kommuner = lesKommuner()
   val toppliste = Toppliste()
   val spill = Spill(samling, toppliste, tider = Tider.fraMiljo(), kommuner = kommuner)
+  val varme = Varme()
+
+  // Foten i døra, så tjenesten ikke sovner rett etter at noen har spilt.
+  launch { varme.hold() }
 
   launch {
     while (true) {
@@ -32,6 +36,6 @@ fun main(): Unit = runBlocking {
 
   println("Førstelinja: spilltjeneren lytter på $vert:$port med ${samling.saker.size} saker")
 
-  embeddedServer(CIO, port = port, host = vert) { spillModul(spill) }
+  embeddedServer(CIO, port = port, host = vert) { spillModul(spill, varme) }
     .start(wait = true)
 }

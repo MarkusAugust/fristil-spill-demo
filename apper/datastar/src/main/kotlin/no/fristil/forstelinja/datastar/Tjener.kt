@@ -318,6 +318,11 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
         }
       }
 
+      // Én seer til. Oppstrømsforbindelsen åpnes her, første gang, og
+      // lukkes når den siste fanen er borte. Da kan tjenestene sove når
+      // ingen spiller.
+      spilltjener.abonner(this@datastarModul)
+
       try {
         send()
         spilltjener.puls.collect { send() }
@@ -331,6 +336,8 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
         // med en helt normal skjerm som aldri oppdaterer seg mer. Da hjelper
         // ingenting annet enn F5, og i et rom med ti skjermer dør alle
         // samtidig uten at noen ser det.
+      } finally {
+        spilltjener.avmeld(this@datastarModul)
       }
     }
   }

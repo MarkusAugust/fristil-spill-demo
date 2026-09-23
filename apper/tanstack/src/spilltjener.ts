@@ -50,21 +50,63 @@ export async function svarInn(
 type Lytter = () => void
 
 const lyttere = new Set<Lytter>()
-let lytterStartet = false
 
+/**
+ * Hvor lenge strømmen står åpen etter at den siste nettleseren er borte.
+ *
+ * Ikke null: en oppfriskning av siden er to hendelser, en avmelding og en
+ * påmelding, med et lite øyeblikk imellom. Uten pusterommet ville appen
+ * lukket og åpnet oppstrømsforbindelsen ved hver eneste oppfriskning.
+ */
+const PUSTEROM_MS = 60_000
+
+let stopp: AbortController | null = null
+let nedtelling: ReturnType<typeof setTimeout> | null = null
+
+/**
+ * Lytter på spilltjeneren, og kobler til igjen om forbindelsen ryker.
+ *
+ * Appen holder **én** forbindelse oppstrøms, uansett hvor mange som spiller
+ * her, og den åpnes først når noen faktisk ser på. Det siste er ikke bare
+ * ryddighet: Railway lar en tjeneste sove når den ikke har sendt utgående
+ * trafikk på fem til ti minutter, og en strøm som står åpen døgnet rundt er
+ * nettopp slik trafikk. Med dette sovner både appen og spilltjeneren når
+ * ingen spiller, og våkner på første forespørsel.
+ *
+ * Selve tilstanden er delvis personlig, «dine poeng, din plass», så hver
+ * nettleser henter sin egen etterpå. Strømmen sier altså *når* noe skjedde,
+ * ikke *hva* hver enkelt skal se.
+ */
 export function pulsen(lytter: Lytter): () => void {
   lyttere.add(lytter)
+  if (nedtelling) {
+    clearTimeout(nedtelling)
+    nedtelling = null
+  }
   startLytting()
-  return () => lyttere.delete(lytter)
+
+  return () => {
+    lyttere.delete(lytter)
+    if (lyttere.size > 0 || nedtelling) return
+    nedtelling = setTimeout(() => {
+      nedtelling = null
+      if (lyttere.size === 0) {
+        stopp?.abort()
+        stopp = null
+      }
+    }, PUSTEROM_MS)
+  }
 }
 
 function startLytting() {
-  if (lytterStartet) return
-  lytterStartet = true
+  if (stopp) return
+  const min = new AbortController()
+  stopp = min
+
   void (async () => {
-    for (;;) {
+    while (!min.signal.aborted) {
       try {
-        const svar = await fetch(`${ADRESSE}/api/hendelser`)
+        const svar = await fetch(`${ADRESSE}/api/hendelser`, { signal: min.signal })
         const leser = svar.body?.getReader()
         if (!leser) throw new Error("Ingen strøm")
         const dekoder = new TextDecoder()
@@ -80,8 +122,10 @@ function startLytting() {
           }
         }
       } catch (e) {
+        if (min.signal.aborted) break
         console.log(`Mistet spilltjeneren (${(e as Error).message}). Prøver igjen om to sekunder.`)
       }
+      if (min.signal.aborted) break
       // Et pulsslag også når forbindelsen ryker: da får hver åpen strøm
       // prøvd å hente tilstanden, kallet feiler, og nettleseren får beskjed.
       for (const l of lyttere) l()

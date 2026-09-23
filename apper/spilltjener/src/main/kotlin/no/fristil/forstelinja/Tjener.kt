@@ -39,7 +39,7 @@ val tjenerJson = Json {
   encodeDefaults = true
 }
 
-fun Application.spillModul(spill: Spill) {
+fun Application.spillModul(spill: Spill, varme: Varme = Varme()) {
   install(ContentNegotiation) { json(tjenerJson) }
   install(SSE)
   install(CORS) {
@@ -82,14 +82,22 @@ fun Application.spillModul(spill: Spill) {
      */
     sse("/api/hendelser") {
       val spillerId = call.request.queryParameters["spiller"]
-      send(ServerSentEvent(data = tjenerJson.encodeToString(spill.tilstand(spillerId)), event = "tilstand"))
-      spill.endringer.collect {
-        send(
-          ServerSentEvent(
-            data = tjenerJson.encodeToString(spill.tilstand(spillerId)),
-            event = "tilstand",
+      // Én app til som ser på. Varmen holder tjenesten våken en stund etter
+      // at den siste er borte, slik at en kaffepause ikke starter en ny
+      // omgang.
+      varme.abonner()
+      try {
+        send(ServerSentEvent(data = tjenerJson.encodeToString(spill.tilstand(spillerId)), event = "tilstand"))
+        spill.endringer.collect {
+          send(
+            ServerSentEvent(
+              data = tjenerJson.encodeToString(spill.tilstand(spillerId)),
+              event = "tilstand",
+            )
           )
-        )
+        }
+      } finally {
+        varme.avmeld()
       }
     }
   }

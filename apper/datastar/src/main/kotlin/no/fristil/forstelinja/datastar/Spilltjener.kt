@@ -10,9 +10,16 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.utils.io.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+
+/** Hvor lenge strømmen står åpen etter at den siste nettleseren er borte. */
+private const val PUSTEROM_MS = 60_000L
 
 /**
  * Klienten mot spilltjeneren.
@@ -63,13 +70,64 @@ class Spilltjener(private val adresse: String) {
   }
 
   /**
+   * Antallet nettlesere som ser på akkurat nå, og strømmen som følger dem.
+   *
+   * Oppstrømsforbindelsen åpnes først når noen faktisk ser på, og lukkes når
+   * den siste er borte. Det er ikke bare ryddighet: Railway lar en tjeneste
+   * sove når den ikke har sendt utgående trafikk på fem til ti minutter, og
+   * en strøm som står åpen døgnet rundt er nettopp slik trafikk. Med dette
+   * sovner både appen og spilltjeneren når ingen spiller.
+   *
+   * Pusterommet er der fordi en oppfriskning av siden er to hendelser, en
+   * avmelding og en påmelding, med et lite øyeblikk imellom.
+   */
+  private val seere = java.util.concurrent.atomic.AtomicInteger(0)
+  private var lytterJobb: Job? = null
+  private var nedtelling: Job? = null
+
+  /**
+   * Av- og påmelding må virke i en kansellert koroutine.
+   *
+   * Når nettleseren lukker fanen, blir strømmens koroutine kansellert, og
+   * `finally` kjører. Alt som suspenderer der kaster med en gang, så en
+   * `Mutex` gjorde at avmeldingen aldri skjedde: telleren ble stående over
+   * null, strømmen mot spilltjeneren ble aldri lukket, og ingen av
+   * tjenestene sovnet. Derfor vanlig `synchronized` og ingen suspensjon.
+   */
+  @Synchronized
+  fun abonner(scope: CoroutineScope) {
+    seere.incrementAndGet()
+    nedtelling?.cancel()
+    nedtelling = null
+    if (lytterJobb?.isActive != true) lytterJobb = scope.launch { lytt() }
+  }
+
+  @Synchronized
+  fun avmeld(scope: CoroutineScope) {
+    if (seere.decrementAndGet() > 0) return
+    nedtelling?.cancel()
+    nedtelling =
+      scope.launch {
+        delay(PUSTEROM_MS)
+        stoppHvisTom()
+      }
+  }
+
+  @Synchronized
+  private fun stoppHvisTom() {
+    if (seere.get() > 0) return
+    lytterJobb?.cancel()
+    lytterJobb = null
+  }
+
+  /**
    * Lytter på spilltjeneren, og kobler til igjen om forbindelsen ryker.
    *
    * SSE leses linje for linje framfor med en klientutvidelse. Formatet er
    * tre linjer og en blank, og en håndskrevet leser er lettere å feilsøke
    * enn et lag til.
    */
-  suspend fun lytt() {
+  private suspend fun lytt() {
     while (true) {
       try {
         klient.prepareGet("$adresse/api/hendelser").execute { svar ->
@@ -79,6 +137,9 @@ class Spilltjener(private val adresse: String) {
             if (linje.startsWith("data:")) puls.emit(Unit)
           }
         }
+      } catch (e: CancellationException) {
+        // Den siste nettleseren er borte, og strømmen skal lukkes.
+        throw e
       } catch (e: Exception) {
         println("Mistet spilltjeneren (${e.message}). Prøver igjen om to sekunder.")
       }

@@ -245,6 +245,8 @@ IPv6-bare, så tjenesten må lytte på `::`. Det er standarden i Dockerfilen.
 
 - **Runder og pauser** styres av `RUNDE_MS`, `OPPGJOR_MS` og `SLUTT_MS` på
   spilltjeneren. Standard er to minutter, 25 sekunder og 40 sekunder.
+- **`VARM_TIMER`** sier hvor lenge spilltjeneren holder seg våken etter at
+  den siste spilleren er borte. Standard er tre timer.
 - **Uten volum forsvinner den evige topplista** ved hver utrulling. Ett volum
   på spilltjeneren holder, og en tjeneste med volum får litt nedetid ved
   utrulling. Det er uproblematisk her, siden en omstart uansett starter en ny
@@ -260,23 +262,42 @@ IPv6-bare, så tjenesten må lytte på `::`. Det er standarden i Dockerfilen.
   bærer `?spiller=` og `?tema=`, og appen du kommer til veksler dem inn i
   sine egne kapsler og fjerner dem fra adressen igjen.
 
-### Hva det koster
+### Dvale, og hva det koster
 
-Fem tjenester som står oppe hele døgnet, og en spilltjener som teller runder
-enten noen spiller eller ikke. Regningen er derfor nesten bare minne.
+Railway lar en tjeneste sove når den ikke har sendt **utgående** trafikk på
+fem til ti minutter, og vekker den på første forespørsel, også fra det
+private nettet. Terskelen kan ikke stilles. En sovende tjeneste koster
+ingenting.
 
-Målt på Railway det første døgnet, og regnet ut fra prisene deres:
+Det krever at appene slipper taket når ingen ser på, og det gjør de:
+
+- **Strømmen oppstrøms åpnes først når en nettleser ser på**, og lukkes når
+  den siste er borte. Før sto den åpen døgnet rundt, og da sov ingenting.
+  Pusterommet er ett minutt, siden en oppfriskning av siden er en avmelding
+  og en påmelding med et øyeblikk imellom.
+- **Spilltjeneren holder varmen en stund etter siste spiller**, styrt av
+  `VARM_TIMER` (standard tre timer). Kommer du tilbake fra en kaffepause, er
+  det den samme omgangen, ikke en ny. `VARM_TIMER=0` slår det av, og da
+  sovner den så snart Railway vil.
+
+Varmen holdes av et navneoppslag hvert annet minutt. Det er en fot i døra, og
+det eneste `Varme.kt` gjør. Railway ser bare på utgående pakker, og et oppslag
+er den billigste pakken vi kan sende.
+
+**Slå på dvalen i grensesnittet:** Settings → Deploy → Serverless, på hver av
+de fem tjenestene. Det finnes ingen kommando for det i `railway`-verktøyet.
+
+Regningen er nesten bare minne:
 
 | | |
 | --- | --- |
-| Minne, fem tjenester | om lag 0,5 GB til sammen |
-| Volum til topplista | 5 GB, og det er minstemålet |
-| Anslag per måned | fire til seks dollar |
+| Minne, fem tjenester våkne | om lag 0,5 GB til sammen |
+| Volum til topplista | 5 GB, som er minstemålet |
+| Døgnet rundt, uten dvale | fire til seks dollar i måneden |
+| Med dvale, og et par timer spilling i uka | under én dollar i måneden |
 
-På Hobby-abonnementet ligger det i overkant av de fem dollarene som følger
-med. Vil du ned, er det ett sted å ta det: spilltjeneren tikker fire ganger i
-sekundet døgnet rundt, og kunne ventet til noen er påmeldt. Det er ikke gjort,
-fordi en demo som må vekkes før den viser noe er en dårligere demo.
+JVM-ene har fått et tak på minnet i Dockerfilene. Uten det tar en JVM en
+firedel av det containeren har, enten den trenger det eller ikke.
 
 ## Velkomsthilsenen, og valget mellom de tre
 

@@ -21,7 +21,8 @@ COPY felles felles
 
 # Sakene og kommunene ligger i bildet. Topplista gjør ikke det: den skal
 # overleve en utrulling, og hører derfor på et volum montert på /data.
-ENV SAKER_FIL=/app/felles/saker.json \
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=45 -XX:+UseSerialGC -Xss512k" \
+    SAKER_FIL=/app/felles/saker.json \
     KOMMUNER_FIL=/app/felles/kommuner.json \
     TOPPLISTE_FIL=/data/toppliste.db \
     HOST=:: \

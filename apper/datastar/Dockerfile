@@ -15,7 +15,8 @@ WORKDIR /app
 COPY --from=bygger /kilde/build/install/datastar-app datastar-app
 COPY felles felles
 
-ENV BRETT_CSS_FIL=/app/felles/brett.css \
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=45 -XX:+UseSerialGC -Xss512k" \
+    BRETT_CSS_FIL=/app/felles/brett.css \
     KOMMUNER_FIL=/app/felles/kommuner.json \
     HOST=:: \
     PORT=8081
