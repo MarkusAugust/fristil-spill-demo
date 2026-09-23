@@ -1,7 +1,24 @@
 import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router"
+import { createServerFn } from "@tanstack/react-start"
+import { getCookie } from "@tanstack/react-start/server"
 import { useEffect } from "react"
 
 import "../stil"
+import { KAPSEL_TEMA, type Tema, erTema } from "../tema"
+
+/**
+ * Temaet, hentet på serveren.
+ *
+ * Valget ligger i en kapsel og ikke i `localStorage`, og det er ikke en
+ * smakssak her. `<html>` rendres av React, så et attributt et skript setter
+ * før hydreringen er et avvik React melder fra om ved hvert eneste oppslag.
+ * Serveren må altså vite temaet for å kunne skrive det selv. Det fjerner
+ * samtidig lysglimtet: siden kommer ferdig i riktig tema.
+ */
+const hentTema = createServerFn({ method: "GET" }).handler(async (): Promise<Tema> => {
+  const valgt = getCookie(KAPSEL_TEMA)
+  return erTema(valgt) ? valgt : "system"
+})
 
 /**
  * Sideskallet.
@@ -12,6 +29,7 @@ import "../stil"
  * denne appen.
  */
 export const Route = createRootRoute({
+  loader: () => hentTema(),
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -19,19 +37,12 @@ export const Route = createRootRoute({
       { title: "Førstelinja · TanStack Start og React" },
     ],
     links: [{ rel: "stylesheet", href: "/brett.css" }],
-    scripts: [
-      {
-        // Temaet settes før siden tegnes, ellers blinker den lyst for den
-        // som har valgt mørkt. Samme skript som i Datastar-appen, og det er
-        // med vilje: valget skal overleve at du bytter utgave.
-        children: `try{var v=localStorage.getItem("forstelinja-tema");if(v==="light"||v==="dark"){document.documentElement.setAttribute("data-theme",v)}}catch(e){}`,
-      },
-    ],
   }),
   component: Skall,
 })
 
 function Skall() {
+  const tema = Route.useLoaderData()
   /*
    * Web-komponentene registreres i nettleseren, etter at HTML-en står der.
    *
@@ -53,7 +64,7 @@ function Skall() {
   }, [])
 
   return (
-    <html lang="nb">
+    <html lang="nb" data-theme={tema === "system" ? undefined : tema}>
       <head>
         <HeadContent />
       </head>

@@ -37,23 +37,20 @@ defineFsConnectionStatus()
 
 /* --- Temaet ------------------------------------------------------- */
 
+/*
+ * Valget ligger i en kapsel, ikke i `localStorage`, så serveren kan skrive
+ * `data-theme` selv når den tegner siden. Det fjerner lysglimtet, og valget
+ * følger med til de to andre utgavene.
+ */
+const valgt = document.cookie.match(/(?:^|;\s*)forstelinja-tema=([^;]*)/)?.[1] ?? "system"
+
 for (const knapp of document.querySelectorAll<HTMLInputElement>('input[name="tema"]')) {
-  let valgt = "system"
-  try {
-    valgt = localStorage.getItem("forstelinja-tema") ?? "system"
-  } catch {
-    // Lagring er slått av. Da gjelder maskinens eget valg.
-  }
   knapp.checked = knapp.value === valgt
   knapp.addEventListener("change", () => {
     if (!knapp.checked) return
+    document.cookie = `forstelinja-tema=${knapp.value}; Path=/; Max-Age=${60 * 60 * 24 * 365}; SameSite=Lax`
     if (knapp.value === "system") document.documentElement.removeAttribute("data-theme")
     else document.documentElement.setAttribute("data-theme", knapp.value)
-    try {
-      localStorage.setItem("forstelinja-tema", knapp.value)
-    } catch {
-      // Valget varer da bare denne økta.
-    }
   })
 }
 

@@ -2,6 +2,7 @@ import { fs } from "@fristil/designsystem/react"
 import { useEffect, useId, useRef, useState } from "react"
 
 import { APPNAVN, UTGAVER } from "./fristil"
+import { type Tema, settTema } from "./tema"
 import type { Feil, SakUt, Skjermbilde, TavleRad, Tilstand } from "./tilstand"
 
 /**
@@ -64,7 +65,7 @@ function tallord(n: number): string {
 /* Topplinja                                                           */
 /* ------------------------------------------------------------------ */
 
-export function Topplinje({ tilstand }: { tilstand: Tilstand }) {
+export function Topplinje({ tilstand, tema }: { tilstand: Tilstand; tema: Tema }) {
   const sisteRunde = tilstand.rundeNr >= tilstand.runderTotalt
   const fase =
     tilstand.fase === "runde"
@@ -131,7 +132,7 @@ export function Topplinje({ tilstand }: { tilstand: Tilstand }) {
         </div>
 
         <Utgavevelger />
-        <Temavelger />
+        <Temavelger tema={tema} />
       </div>
     </header>
   )
@@ -197,56 +198,36 @@ function Nedtelling({
 }
 
 /** Lyst, mørkt eller det maskinen sier. */
-function Temavelger() {
-  const [tema, settTema] = useState("system")
-  const forsteGang = useRef(true)
-
-  useEffect(() => {
-    try {
-      settTema(localStorage.getItem("forstelinja-tema") ?? "system")
-    } catch {
-      // Lagring er slått av. Da gjelder maskinens eget valg.
-    }
-  }, [])
+function Temavelger({ tema }: { tema: Tema }) {
+  const [valgt, settValgt] = useState<Tema>(tema)
 
   /*
-   * Skriver først når brukeren har valgt noe.
+   * Ingen effekt som setter temaet ved oppstart.
    *
-   * Skriptet i `<head>` har alt satt `data-theme` før siden ble tegnet.
-   * Gjorde denne effekten jobben sin med en gang, sto den med `system` fra
-   * serveren, tok attributtet bort, og den som hadde valgt mørkt fikk et
-   * lysglimt før tilstanden rakk å bli lest. Første kjøring hopper derfor
-   * over, og da er det bare et ekte valg som rører rota.
+   * Serveren har alt skrevet `data-theme` på rota, av kapselen, så siden
+   * kommer ferdig i riktig tema. Her er det bare brukerens valg som skal
+   * gjøre noe, og `settTema` skriver både kapselen og rota.
    */
-  useEffect(() => {
-    if (forsteGang.current) {
-      forsteGang.current = false
-      return
-    }
-    if (tema === "system") document.documentElement.removeAttribute("data-theme")
-    else document.documentElement.setAttribute("data-theme", tema)
-    try {
-      localStorage.setItem("forstelinja-tema", tema)
-    } catch {
-      // Valget varer da bare denne økta.
-    }
-  }, [tema])
-
   return (
     <fieldset {...fs.fieldset()} className="fs-toggle-group temavelger">
       <legend {...fs.srOnly()}>Fargetema</legend>
-      {[
-        ["light", "Lyst"],
-        ["system", "System"],
-        ["dark", "Mørkt"],
-      ].map(([verdi, tekst]) => (
+      {(
+        [
+          ["light", "Lyst"],
+          ["system", "System"],
+          ["dark", "Mørkt"],
+        ] as [Tema, string][]
+      ).map(([verdi, tekst]) => (
         <label className="fs-toggle-group__option" key={verdi}>
           <input
             type="radio"
             name="tema"
             value={verdi}
-            checked={tema === verdi}
-            onChange={() => settTema(verdi!)}
+            checked={valgt === verdi}
+            onChange={() => {
+              settValgt(verdi)
+              settTema(verdi)
+            }}
           />{" "}
           {tekst}
         </label>
@@ -1195,7 +1176,7 @@ function BliMed({ tilstand }: { tilstand: Tilstand }) {
 /* Hele skjermen                                                       */
 /* ------------------------------------------------------------------ */
 
-export function Skjerm({ forste }: { forste: Skjermbilde }) {
+export function Skjerm({ forste, tema }: { forste: Skjermbilde; tema: Tema }) {
   const [bilde, settBilde] = useState(forste)
   const [skjema, settSkjema] = useState<Skjema>(TOMT_SKJEMA)
   const [resultatApent, settResultatApent] = useState(false)
@@ -1284,7 +1265,7 @@ export function Skjerm({ forste }: { forste: Skjermbilde }) {
         online-text="Sambandet er tilbake"
       />
 
-      <Topplinje tilstand={tilstand} />
+      <Topplinje tilstand={tilstand} tema={tema} />
 
       <main className="brett">
         <div className="stamme">

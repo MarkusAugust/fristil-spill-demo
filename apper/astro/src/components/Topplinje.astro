@@ -10,6 +10,10 @@ interface Props {
 }
 
 const { tilstand } = Astro.props
+
+/* Temaet står i kapselen, og knappen som er merket skal si det samme. */
+const valgtTema = Astro.cookies.get("forstelinja-tema")?.value
+const tema = valgtTema === "light" || valgtTema === "dark" ? valgtTema : null
 const sisteRunde = tilstand.rundeNr >= tilstand.runderTotalt
 const fase =
   tilstand.fase === "runde"
@@ -111,13 +115,13 @@ const { class: _feltsettKlasse, ...feltsett } = fs.fieldset()
     <fieldset {...feltsett} class="fs-toggle-group temavelger">
       <legend {...fs.srOnly()}>Fargetema</legend>
       <label class="fs-toggle-group__option">
-        <input type="radio" name="tema" value="light" /> Lyst
+        <input type="radio" name="tema" value="light" checked={tema === "light"} /> Lyst
       </label>
       <label class="fs-toggle-group__option">
-        <input type="radio" name="tema" value="system" checked /> System
+        <input type="radio" name="tema" value="system" checked={tema === null} /> System
       </label>
       <label class="fs-toggle-group__option">
-        <input type="radio" name="tema" value="dark" /> Mørkt
+        <input type="radio" name="tema" value="dark" checked={tema === "dark"} /> Mørkt
       </label>
     </fieldset>
   </div>

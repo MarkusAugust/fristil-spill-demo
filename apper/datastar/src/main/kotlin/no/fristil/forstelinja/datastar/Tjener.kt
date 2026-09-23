@@ -95,7 +95,10 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
           return@get
         }
       val navn = tilstand.meg?.navn
-      call.respondText(side(tilstand, navn, kommuner), ContentType.Text.Html)
+      // Temaet er brukerens valg, og ligger i en kapsel så serveren kan
+      // skrive det inn i siden framfor å la et skript rette den etterpå.
+      val tema = call.request.cookies["forstelinja-tema"]
+      call.respondText(side(tilstand, navn, kommuner, tema), ContentType.Text.Html)
     }
 
     post("/bli-med") {

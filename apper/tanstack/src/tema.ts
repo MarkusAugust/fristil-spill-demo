@@ -1,0 +1,32 @@
+/**
+ * Fargetemaet, som brukeren velger og serveren må kjenne.
+ *
+ * Fristil følger `prefers-color-scheme` av seg selv, og `data-theme` på rota
+ * overstyrer. Valget lagres i en kapsel framfor i `localStorage`, fordi
+ * serveren skriver `<html>` og må kunne sette attributtet selv. Gjør den
+ * ikke det, melder React avvik ved hydreringen, og siden blinker lyst før
+ * skriptet rekker å rette den.
+ *
+ * Kapselen er ikke `httpOnly`: det er velgeren i siden som skriver den.
+ */
+export const KAPSEL_TEMA = "forstelinja-tema"
+
+export type Tema = "light" | "dark" | "system"
+
+export function erTema(verdi: string | undefined): verdi is Tema {
+  return verdi === "light" || verdi === "dark" || verdi === "system"
+}
+
+/** Leser valget i nettleseren. */
+export function lesTema(): Tema {
+  const treff = document.cookie.match(/(?:^|;\s*)forstelinja-tema=([^;]*)/)
+  const verdi = treff?.[1]
+  return erTema(verdi) ? verdi : "system"
+}
+
+/** Skriver valget, og setter det på rota med én gang. */
+export function settTema(tema: Tema): void {
+  document.cookie = `${KAPSEL_TEMA}=${tema}; Path=/; Max-Age=${60 * 60 * 24 * 365}; SameSite=Lax`
+  if (tema === "system") document.documentElement.removeAttribute("data-theme")
+  else document.documentElement.setAttribute("data-theme", tema)
+}

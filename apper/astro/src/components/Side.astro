@@ -34,30 +34,27 @@ interface Props {
 }
 
 const { tittel } = Astro.props
+
+/*
+ * Temaet kommer fra kapselen, ikke fra `localStorage`.
+ *
+ * Serveren skriver hele siden, så den kan skrive `data-theme` selv. Da er
+ * det ingenting å rette opp etterpå, og ingen lysglimt for den som har valgt
+ * mørkt. Kapselen deles med de to andre utgavene, så valget følger med når
+ * du bytter.
+ */
+const valgt = Astro.cookies.get("forstelinja-tema")?.value
+const tema = valgt === "light" || valgt === "dark" ? valgt : null
 ---
 
 <!doctype html>
-<html lang="nb">
+<html lang="nb" data-theme={tema}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{tittel}</title>
     <link rel="stylesheet" href="/brett.css" />
 
-    {/* Temaet settes før siden tegnes, ellers blinker den lyst for den som
-        har valgt mørkt. Egen blokk, og ikke sammen med øya: i en nettleser
-        som nekter lagring kaster `localStorage`, og da ville resten dødd
-        med den. */}
-    <script is:inline>
-      try {
-        var valgt = localStorage.getItem("forstelinja-tema")
-        if (valgt === "light" || valgt === "dark") {
-          document.documentElement.setAttribute("data-theme", valgt)
-        }
-      } catch (e) {
-        // Lagring er slått av. Da gjelder maskinens eget valg.
-      }
-    </script>
   </head>
   <body>
     <slot />

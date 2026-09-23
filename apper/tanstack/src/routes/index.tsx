@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start"
 import { getCookie } from "@tanstack/react-start/server"
 
 import { Skjerm } from "../brett"
+import { Route as rotRuta } from "./__root"
 import { KOMMUNER } from "../kommuner"
 import { tilstand } from "../spilltjener"
 import type { Skjermbilde } from "../tilstand"
@@ -31,7 +32,8 @@ export const Route = createFileRoute("/")({
 })
 
 function Side() {
-  return <Skjerm forste={Route.useLoaderData()} />
+  // Temaet kommer fra rotruta, som leser kapselen på serveren.
+  return <Skjerm forste={Route.useLoaderData()} tema={rotRuta.useLoaderData()} />
 }
 
 /**

@@ -113,13 +113,22 @@ fun velkomst(): String =
     .trimIndent()
 
 /** Hele siden, første gang. */
-fun side(tilstand: Tilstand, spillerNavn: String?, kommuner: List<String> = emptyList()): String {
+fun side(
+  tilstand: Tilstand,
+  spillerNavn: String?,
+  kommuner: List<String> = emptyList(),
+  tema: String? = null,
+): String {
   val stilark = STILARK.joinToString("\n    ") { """<link rel="stylesheet" href="$it">""" }
   val imports = KOMPONENTER.joinToString("\n      ") { (fil, fn) -> """import { $fn } from "$fil"; $fn();""" }
+  // Temaet kommer fra kapselen, så serveren kan skrive det selv. Da blinker
+  // ikke siden lyst for den som har valgt mørkt, og valget følger med til de
+  // to andre utgavene, som leser den samme kapselen.
+  val temaAttributt = if (tema == "light" || tema == "dark") """ data-theme="$tema"""" else ""
 
   return """
     <!doctype html>
-    <html lang="nb">
+    <html lang="nb"$temaAttributt>
     <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -128,20 +137,6 @@ fun side(tilstand: Tilstand, spillerNavn: String?, kommuner: List<String> = empt
     <link rel="stylesheet" href="/brett.css">
     <script type="module" src="$DATASTAR_CDN"></script>
 
-    <!-- Temaet settes før siden tegnes, ellers blinker den lyst for den som
-         har valgt mørkt. Egen blokk, og ikke sammen med nedtellingen: i en
-         nettleser som nekter lagring kaster `localStorage`, og da ville hele
-         den andre blokka dødd med den. -->
-    <script>
-      try {
-        var valgt = localStorage.getItem("forstelinja-tema")
-        if (valgt === "light" || valgt === "dark") {
-          document.documentElement.setAttribute("data-theme", valgt)
-        }
-      } catch (e) {
-        // Lagring er slått av. Da gjelder maskinens eget valg.
-      }
-    </script>
     <script type="module">
       $imports
     </script>
@@ -187,26 +182,19 @@ fun side(tilstand: Tilstand, spillerNavn: String?, kommuner: List<String> = empt
       // bud flyttet fristen, og de tre appene kommet i utakt.
       // Temavelgeren. Fristil bytter tema av seg selv etter
       // `prefers-color-scheme`, og `data-theme` på rota overstyrer. Ingen
-      // attributt betyr «det maskinen sier», som er standarden. Selve valget
-      // settes i `<head>`, før siden tegnes, ellers blinker den lyst for den
-      // som har valgt mørkt.
-      const lesTema = () => {
-        try {
-          return localStorage.getItem("forstelinja-tema") ?? "system"
-        } catch (e) {
-          return "system"
-        }
-      }
+      // attributt betyr «det maskinen sier», som er standarden.
+      //
+      // Valget ligger i en kapsel, ikke i `localStorage`, så serveren kan
+      // skrive attributtet når den tegner siden. Da er det ingenting å rette
+      // opp etterpå, og ingen lysglimt. Kapselen deles med de to andre
+      // utgavene, så valget følger med når du bytter.
       const settTema = (verdi) => {
+        document.cookie = "forstelinja-tema=" + verdi + "; Path=/; Max-Age=31536000; SameSite=Lax"
         if (verdi === "system") document.documentElement.removeAttribute("data-theme")
         else document.documentElement.setAttribute("data-theme", verdi)
-        try {
-          localStorage.setItem("forstelinja-tema", verdi)
-        } catch (e) {
-          // Valget varer da bare denne økta.
-        }
       }
-      const valgtTema = lesTema()
+      const valgtTema =
+        document.cookie.match(/(?:^|;\s*)forstelinja-tema=([^;]*)/)?.[1] ?? "system"
       for (const knapp of document.querySelectorAll('input[name="tema"]')) {
         knapp.checked = knapp.value === valgtTema
         knapp.addEventListener("change", () => settTema(knapp.value))
