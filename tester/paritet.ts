@@ -126,6 +126,44 @@ for (const app of APPER) {
     await side.getByRole("button", { name: "Begynn vakta" }).click()
     await side.locator("#tavle").waitFor({ timeout: 15000 })
 
+    /*
+     * Runden kan ta slutt når som helst, også midt i testen.
+     *
+     * Da legger kvitteringen seg som en modal over hele siden, og et klikk
+     * på temavelgeren under treffer den i stedet. Det er ikke en feil, det er
+     * spillet, så testen lukker den og går videre. Uten dette feilet testen
+     * tilfeldig med «click: Timeout», og en port som feiler tilfeldig blir
+     * ignorert.
+     */
+    const lukkKvittering = async () => {
+      const kvittering = side.locator("dialog.resultat[open]")
+      if ((await kvittering.count()) === 0) return
+      await kvittering
+        .getByRole("button", { name: "Lukk" })
+        .first()
+        .click()
+        .catch(() => {})
+      await kvittering.waitFor({ state: "detached", timeout: 5000 }).catch(() => {})
+    }
+
+    await lukkKvittering()
+
+    /*
+     * Vent på at appen er i gang, ikke bare på at markupen står der.
+     *
+     * Panelet bygges av `felles/panel.js`, og i React-utgaven fra en effekt,
+     * altså etter hydreringen. Knappen er dermed beskjeden om at skriptet har
+     * tatt over. Uten den traff klikket på temavelgeren av og til før
+     * hydreringen: radioknappen slo om i nettleseren, React tegnet den
+     * tilbake til «system», og ingen hendelse nådde appen. Testen meldte
+     * avvik på noe som virket et halvt sekund senere.
+     */
+    const panelknapp = side.getByRole("button", { name: "Hva skjedde?" })
+    await panelknapp
+      .first()
+      .waitFor({ timeout: 20_000 })
+      .catch(() => si("fant ingen knapp som åpner panelet"))
+
     // Temaet er brukerens valg, og skal overleve at siden lastes på nytt.
     // Selve radioknappen ligger under merkelappen, som i en ekte knapperad.
     await side.locator(".temavelger label", { hasText: "Mørkt" }).click()
@@ -146,7 +184,21 @@ for (const app of APPER) {
         undefined,
         { timeout: 10000 },
       )
-      .catch(() => si("temavelgeren satte ikke data-theme"))
+      .catch(async () =>
+        si(
+          `temavelgeren satte ikke data-theme (${JSON.stringify(
+            await side.evaluate(() => ({
+              tema: document.documentElement.dataset.theme ?? null,
+              modal: document.querySelector("dialog:modal")?.className ?? null,
+              valgt: (
+                document.querySelector(
+                  ".temavelger input:checked",
+                ) as HTMLInputElement | null
+              )?.value ?? null,
+            })),
+          )})`,
+        ),
+      )
     await side.reload({ waitUntil: "domcontentloaded" })
     await side.locator("#tavle").waitFor({ timeout: 15000 })
     await side
@@ -156,6 +208,13 @@ for (const app of APPER) {
         { timeout: 10000 },
       )
       .catch(() => si("temaet overlevde ikke en ny side"))
+
+    // Etter en ny lasting bygges panelet på nytt, og React gjør det fra en
+    // effekt igjen. Vent på det før resten av løpet.
+    await panelknapp
+      .first()
+      .waitFor({ timeout: 20_000 })
+      .catch(() => si("panelet kom ikke tilbake etter en ny lasting"))
 
     /*
      * Nedtellingen skal telle, ikke bare stå der.
@@ -209,6 +268,8 @@ for (const app of APPER) {
       .locator("#hjemmel")
       .waitFor({ timeout: 90_000 })
       .catch(() => si("ingen runde begynte på halvannet minutt"))
+
+    await lukkKvittering()
 
     if ((await side.locator("#hjemmel").count()) > 0) {
       // Forslagslista filtrerer selv, av komponenten, i alle tre appene.
@@ -276,11 +337,7 @@ for (const app of APPER) {
      * React bygger panelet fra en effekt etter en dynamisk import, så det
      * kommer et øyeblikk etter tavla. Vent på knappen, ikke på klokka.
      */
-    const panelknapp = side.getByRole("button", { name: "Hva skjedde?" })
-    await panelknapp
-      .first()
-      .waitFor({ timeout: 15000 })
-      .catch(() => si("fant ingen knapp som åpner panelet"))
+    await lukkKvittering()
 
     if ((await panelknapp.count()) > 0) {
       await panelknapp.first().click()
@@ -317,7 +374,7 @@ for (const app of APPER) {
       .split("\n")
       .map((l) => l.trim())
       .filter(Boolean)
-      .slice(0, 4)
+      .slice(0, 12)
       .join(" | ")
     si(`stoppet underveis: ${melding}`)
     await side.screenshot({ path: `${app.navn}-stoppet.png` }).catch(() => {})

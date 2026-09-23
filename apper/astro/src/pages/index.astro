@@ -57,6 +57,9 @@ if (billett) {
 }
 
 const spillerId = Astro.cookies.get(KAPSEL)?.value ?? null
+// Velkomsthilsenen lukkes i nettleseren, men siden kommer fra serveren ved
+// hver innsending. Uten kapselen dukket den opp igjen midt i påmeldingen.
+const harSettVelkomst = Astro.cookies.get("forstelinja-velkomst")?.value === "sett"
 
 let feil: Feil[] = []
 let svar = { vedtak: "", hjemmel: "", kommune: "", felle: "" }
@@ -123,7 +126,7 @@ try {
     </Side>
   ) : (
     <Side tittel={`Førstelinja · ${APPNAVN}`}>
-      {tilstand.meg === null && <Velkomst />}
+      {tilstand.meg === null && !harSettVelkomst && <Velkomst />}
 
       <fs-connection-status
         class="fs-connection-status"

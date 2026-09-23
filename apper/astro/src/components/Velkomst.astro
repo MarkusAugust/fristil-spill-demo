@@ -75,3 +75,23 @@ const { class: listeKlasse, ...liste } = fs.list({ variant: "plain" })
     </form>
   </dialog>
 </fs-dialog>
+
+<script is:inline>
+  /*
+   * Lukkingen må huskes, og den må huskes på serveren.
+   *
+   * Her kommer hele siden på nytt ved hver innsending, og ved hver ny runde.
+   * Uten dette dukket velkomsthilsenen opp igjen midt i påmeldingen, mens den
+   * i React-utgaven ble borte for godt, siden den bor i en tilstand siden
+   * aldri mister. Paritetstesten fant det: et klikk på «Begynn vakta» traff
+   * en dialog som hadde kommet tilbake og tok imot klikket i stedet.
+   *
+   * En kapsel, som temaet, og ikke `sessionStorage`: da vet serveren det før
+   * den tegner, og hilsenen blinker ikke forbi før et skript rekker å lukke
+   * den.
+   */
+  document.getElementById("velkomst")?.querySelector("dialog")
+    ?.addEventListener("close", function () {
+      document.cookie = "forstelinja-velkomst=sett; path=/; max-age=31536000; samesite=lax"
+    })
+</script>
