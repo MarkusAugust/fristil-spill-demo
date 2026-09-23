@@ -186,10 +186,18 @@ rotmappe per tjeneste, ser byggeren bare appmappa, og `felles/saker.json`
 finnes ikke. Dockerfilene bygger derfor fra rota og kopierer inn det de
 trenger.
 
-Hver tjeneste peker i stedet på sin egen `railway.json` under **Settings →
-Config as code**, for eksempel `apper/astro/railway.json`. Den setter
-byggeren til Dockerfile, hvilken Dockerfile det er, og `/helse` som
-helsesjekk.
+Hver tjeneste må derfor få vite hvilken Dockerfile som er dens. To veier,
+begge holder:
+
+- **Med skript.** `./railway-oppsett.sh` lager alle fem tjenestene, volumet
+  og domenene, og setter variablene. Krever `railway login` og `railway link`
+  først. Den setter `RAILWAY_DOCKERFILE_PATH` per tjeneste.
+- **I grensesnittet.** Sett **Settings → Config as code** til appens egen fil,
+  for eksempel `apper/astro/railway.json`. Den setter byggeren til Dockerfile,
+  hvilken Dockerfile det er, og `/helse` som helsesjekk.
+
+Den siste veien holder konfigurasjonen i git, og gir helsesjekken i tillegg.
+Den første er raskest når fem tjenester skal opp på én gang.
 
 ### Variabler
 
