@@ -500,13 +500,15 @@ fun blimed(tilstand: Tilstand? = null): String {
          uten JavaScript i det hele tatt. -->
     <form method="post" action="/bli-med">
       <!-- Bare struktur. Ingen id-er, ingen `for`, ingen
-           `aria-describedby`: komponenten setter koblingen i nettleseren, og
-           gjør det likt uansett hvilket språk serveren er skrevet i. -->
+           `aria-describedby`, og fra 0.9.0 heller ingen `data-preserve-attr`:
+           komponenten setter koblingen i nettleseren, ser at en patch har
+           revet den bort, og setter den tilbake. Malen slipper dermed å
+           kjenne til attributtene i det hele tatt, og den kan ikke gå stille
+           i stykker av at Fristil endrer hva komponenten setter. -->
       <fs-field>
-        <label class="fs-label" data-preserve-attr="${Bevar.KOBLING_LEDETEKST}">Navnet ditt</label>
-        <input class="fs-input" name="navn" type="text" required
-               data-preserve-attr="${Bevar.KOBLING_KONTROLL}">
-        <p class="fs-help-text" data-preserve-attr="${Bevar.KOBLING_HJELPETEKST}">Vises på tavla for alle.</p>
+        <label class="fs-label">Navnet ditt</label>
+        <input class="fs-input" name="navn" type="text" required>
+        <p class="fs-help-text">Vises på tavla for alle.</p>
       </fs-field>
 
       <button class="fs-button skjema__send" type="submit">Begynn vakta</button>

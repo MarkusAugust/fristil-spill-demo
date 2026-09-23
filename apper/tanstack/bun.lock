@@ -5,7 +5,7 @@
     "": {
       "name": "forstelinja-tanstack",
       "dependencies": {
-        "@fristil/designsystem": "0.8.3",
+        "@fristil/designsystem": "0.9.0",
         "@tanstack/react-router": "^1.170.0",
         "@tanstack/react-start": "^1.168.0",
         "react": "^19.2.0",
@@ -112,7 +112,7 @@
 
     "@esbuild/win32-x64": ["@esbuild/win32-x64@0.28.2", "", { "os": "win32", "cpu": "x64" }, "sha512-5ebpxr3nWMzrL/rnUI755Jkuee0bHL/Gq0WTF9lvcpv73wAp5eu8MfBUgWK9bhWvZjj7yX8etf/8tI8Ney695g=="],
 
-    "@fristil/designsystem": ["@fristil/designsystem@0.8.3", "", { "bin": { "fristil": "dist/cli.js" } }, "sha512-oBDsatiK7lnvspMRvr9s9R3QS+OwZQgjV/jWwtXHUCe5FCX4GLUS5lLnli5Kf+ExNuVcUPdgaOQYhadN9ZkP4g=="],
+    "@fristil/designsystem": ["@fristil/designsystem@0.9.0", "", { "bin": { "fristil": "dist/cli.js" } }, "sha512-ZR9+YaAxH+c+PtYuIGVejtSWppPmCi0pEzb1W3beiYRLIOck/e5DaS5mnlJZXg3vJdUFQIkBZR7VvEuAGAOxTQ=="],
 
     "@jridgewell/gen-mapping": ["@jridgewell/gen-mapping@0.3.13", "", { "dependencies": { "@jridgewell/sourcemap-codec": "^1.5.0", "@jridgewell/trace-mapping": "^0.3.24" } }, "sha512-2kkt/7niJ6MgEPxF0bYdQ6etZaA+fQvDcLKckhy1yIQOzaoKjBBjSj63/aLVjYE3qhRt5dvM+uUyfCg6UKCBbA=="],
 

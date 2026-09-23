@@ -75,6 +75,31 @@ for (const app of APPER) {
       .catch(() => si("velkomsthilsenen ble aldri en modal dialog"))
 
     await side.getByRole("button", { name: "Jeg merker nok forskjellen" }).click()
+
+    /*
+     * Feltet i påmeldingsskjemaet er koblet av komponenten, ikke av serveren.
+     *
+     * Serveren sender bare struktur her: en ledetekst, et felt og en
+     * hjelpetekst, uten id-er og uten `for`. `<fs-field>` lager koblingen i
+     * nettleseren. Fram til Fristil 0.9.0 måtte malen liste opp attributtene
+     * i `data-preserve-attr`, ellers rev morfingen dem bort. Nå reparerer
+     * komponenten seg selv, og da må koblingen faktisk stå her.
+     */
+    const kobling = await side.evaluate(() => {
+      const felt = document.querySelector("fs-field")
+      const ledetekst = felt?.querySelector("label")
+      const kontroll = felt?.querySelector("input")
+      if (!ledetekst || !kontroll) return "fant ikke feltet"
+      if (!kontroll.id) return "kontrollen fikk ingen id"
+      if (ledetekst.htmlFor !== kontroll.id) return "ledeteksten peker ikke på feltet"
+      for (const id of (kontroll.getAttribute("aria-describedby") ?? "").split(/\s+/).filter(Boolean)) {
+        if (!document.getElementById(id)) return `aria-describedby peker på #${id}, som ikke finnes`
+      }
+      if (!ledetekst.classList.contains("fs-label")) return "ledeteksten mangler fs-label"
+      return "ok"
+    })
+    if (kobling !== "ok") si(`påmeldingsfeltet: ${kobling}`)
+
     await side.getByLabel("Navnet ditt").fill(`Test ${app.navn}`)
     await side.getByRole("button", { name: "Begynn vakta" }).click()
     await side.locator("#tavle").waitFor({ timeout: 15000 })

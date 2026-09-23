@@ -75,17 +75,20 @@ class MarkupTest {
   }
 
   @Test
-  fun `et felt som bare sender struktur freder koblingen komponenten lager`() {
-    // Sender serveren et felt uten id-er, lager `<fs-field>` dem i
-    // nettleseren. Serveren skriver dem aldri, så morfingen river dem bort
-    // ved neste patch av samme område, og feltet mister koblingen mellom
-    // ledetekst, kontroll og hjelpetekst.
+  fun `feltet sender bare struktur, og ingen bevaringsliste`() {
+    // Serveren skriver verken id-er eller kobling, og fra Fristil 0.9.0
+    // heller ingen `data-preserve-attr`: komponenten ser at en patch har
+    // revet koblingen bort, og setter den tilbake. Kommer listene tilbake
+    // hit, er det et tegn på at noen har kopiert gammel dokumentasjon.
     val html = blimed()
 
     assertFalse(html.contains("""for="""), "ledeteksten skal ikke kobles av serveren")
-    assertTrue(html.contains("""data-preserve-attr="${Bevar.KOBLING_LEDETEKST}""""))
-    assertTrue(html.contains("""data-preserve-attr="${Bevar.KOBLING_KONTROLL}""""))
-    assertTrue(html.contains("""data-preserve-attr="${Bevar.KOBLING_HJELPETEKST}""""))
+
+    val felt = html.substringAfter("<fs-field>").substringBefore("</fs-field>")
+    assertFalse(
+      felt.contains("data-preserve-attr"),
+      "feltet trenger ingen bevaringsliste, komponenten reparerer seg selv",
+    )
   }
 
   @Test

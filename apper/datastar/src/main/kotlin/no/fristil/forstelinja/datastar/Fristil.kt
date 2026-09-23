@@ -1,51 +1,27 @@
 package no.fristil.forstelinja.datastar
 
 /**
- * Kontrakten Fristil krever av en server som ikke kan kalle `fs.field()`.
+ * Tilstanden Fristil krever at malen freder.
  *
  * Denne appen er skrevet i Kotlin. Den kan altså ikke kalle byggefunksjonene
- * i pakken, og må i stedet skrive klassene og koblingen selv, og la
- * `<fs-field>` gjøre resten i nettleseren.
+ * i pakken, og må i stedet skrive klassene selv, og la web-komponentene gjøre
+ * resten i nettleseren.
  *
- * Fordi serveren sender det samme området på nytt ved hver patch, må malen i
- * tillegg skrive `data-preserve-attr` med navnene på alt komponenten setter.
- * Lista leses fra serverens node, per element, så komponenten kan ikke
- * beskytte seg selv: uten listene river morfingen bort koblingen ved første
- * oppdatering.
+ * Feltet står ikke her lenger. Fram til 0.9.0 måtte malen liste opp hvert
+ * attributt `<fs-field>` satte, i `data-preserve-attr`, ellers rev morfingen
+ * koblingen bort ved første patch. Komponenten ser nå selv at den er borte og
+ * setter den tilbake, så de tre listene er slettet. Ingen kompilator så på
+ * dem, og hadde Fristil endret hva komponenten satte, ville denne appen gått
+ * stille i stykker.
  *
- * Verdiene er hentet fra @fristil/designsystem 0.7.0, ikke skrevet
- * av hukommelsen.
+ * Det som står igjen er brukerens egen tilstand. Den kan ikke repareres:
+ * komponenten har ingen kilde å regne den ut fra, og en reparasjon ville
+ * kjempet mot en server som med vilje endret noe.
+ *
+ * Verdiene er hentet fra @fristil/designsystem 0.9.0, ikke skrevet av
+ * hukommelsen.
  */
 object Bevar {
-  /**
-   * Hele lista Fristil oppgir, for markup ingen rår over.
-   *
-   * Den er med for fullstendighetens skyld. Denne appen bruker den ikke:
-   * `aria-invalid` og `data-state` er serverens, og fredet vi dem, kunne
-   * serveren aldri meldt et felt som ugyldig. Morfingen ville nektet å sette
-   * dem.
-   */
-  const val LEDETEKST = "class for data-required data-optional aria-disabled"
-  const val KONTROLL = "id aria-describedby aria-invalid data-state disabled aria-disabled"
-  const val HJELPETEKST = "id"
-  const val FEILMELDING = "id hidden"
-
-  /**
-   * Det `<fs-field>` fyller inn når serveren bare sender struktur.
-   *
-   * Sender serveren et felt uten id-er, lager komponenten dem i nettleseren.
-   * Serveren skriver dem aldri, så morfingen river dem bort ved neste patch
-   * av samme område, og feltet mister koblingen mellom ledetekst, kontroll
-   * og hjelpetekst. Det skjer her hver gang et skjema sendes inn med feil,
-   * og hver gang runden skifter.
-   *
-   * Smalere enn listene over med vilje: bare det komponenten legger til, og
-   * ingenting serveren selv skriver.
-   */
-  const val KOBLING_LEDETEKST = "class for"
-  const val KOBLING_KONTROLL = "id aria-describedby"
-  const val KOBLING_HJELPETEKST = "id"
-
   const val SPRETTOPP_VERT = "open"
   const val SPRETTOPP_KNAPP = "aria-expanded"
   const val SPRETTOPP_PANEL = "style"
@@ -117,7 +93,7 @@ val UTGAVER =
   )
 
 /** Versjonen av designsystemet siden henter fra CDN. */
-const val FRISTIL_VERSJON = "0.8.3"
+const val FRISTIL_VERSJON = "0.9.0"
 
 private const val CDN = "https://cdn.jsdelivr.net/npm/@fristil/designsystem@$FRISTIL_VERSJON"
 
