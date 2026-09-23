@@ -1,7 +1,7 @@
 ---
 import { fs } from "@fristil/designsystem"
 
-import { APPNAVN, UTGAVER } from "../lib/fristil"
+import { APPNAVN, UTGAVER, lenkeTilUtgave } from "../lib/fristil"
 
 /*
  * Velkomsthilsenen, som forklarer hvorfor det finnes tre utgaver.
@@ -9,6 +9,9 @@ import { APPNAVN, UTGAVER } from "../lib/fristil"
  * Den vises bare før du har meldt deg på, og serveren sender den åpen.
  * `<fs-dialog>` kaller `showModal()` når den har fått markupen.
  */
+const valgtTema = Astro.cookies.get("forstelinja-tema")?.value
+const tema = valgtTema === "light" || valgtTema === "dark" ? valgtTema : null
+
 const boks = fs.dialog({ titleId: "velkomst-tittel", open: true })
 const { class: dialogKlasse, ...dialog } = boks.dialog
 const { class: overskriftKlasse, ...overskrift } = fs.heading({ size: "xs" })
@@ -49,7 +52,7 @@ const { class: listeKlasse, ...liste } = fs.list({ variant: "plain" })
               </li>
             ) : (
               <li>
-                <a class="velkomst__lenke" href={utgave.adresse}>
+                <a class="velkomst__lenke" href={lenkeTilUtgave(utgave.adresse, null, tema)}>
                   <strong>{utgave.navn}</strong>
                   <span class="velkomst__om">{utgave.rammeverk}</span>
                 </a>

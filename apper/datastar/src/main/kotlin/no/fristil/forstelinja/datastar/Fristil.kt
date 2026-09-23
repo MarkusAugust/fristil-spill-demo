@@ -76,6 +76,27 @@ const val APPNAVN = "Datastar"
  */
 data class Utgave(val navn: String, val rammeverk: String, val adresse: String)
 
+/**
+ * Lenka til en annen utgave, med det du er og hva du har valgt.
+ *
+ * I drift ligger de tre utgavene på hvert sitt domene, og en kapsel gjelder
+ * bare for sitt eget. Uten dette mistet du navnet ditt og plassen på tavla i
+ * det du byttet, og måtte melde deg på som en ny saksbehandler. Id-en er
+ * altså en billett som følger med i adressen, og den appen du kommer til
+ * bytter den inn i sin egen kapsel og fjerner den fra adressen igjen.
+ *
+ * Billetten er i praksis nøkkelen til spilleren, og den som får lenka blir
+ * deg. I et spill er det greit. I noe som betyr noe ville dette vært en
+ * kortlevd engangsbillett fra spilltjeneren i stedet.
+ */
+fun lenkeTilUtgave(adresse: String, spillerId: String?, tema: String?): String {
+  val deler = buildList {
+    if (spillerId != null) add("spiller=${java.net.URLEncoder.encode(spillerId, "UTF-8")}")
+    if (tema == "light" || tema == "dark") add("tema=$tema")
+  }
+  return if (deler.isEmpty()) adresse else "$adresse?${deler.joinToString("&")}"
+}
+
 val UTGAVER =
   listOf(
     Utgave(

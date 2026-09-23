@@ -22,6 +22,9 @@ const start = createStartHandler(defaultStreamHandler)
 /** Navnet på kapselen som sier hvem som sitter der. */
 const KAPSEL = "spiller"
 
+/** Og den som bærer fargetemaet. */
+const KAPSEL_TEMA = "forstelinja-tema"
+
 /** Stilarket alle tre appene serverer, lest fra `felles/`. */
 const BRETT_CSS: string = readFileSync(
   process.env.BRETT_CSS_FIL ?? "../../felles/brett.css",
@@ -123,6 +126,31 @@ export default {
     const url = new URL(request.url)
 
     if (url.pathname === "/helse") return new Response("ok")
+
+    /*
+     * Billetten fra en annen utgave.
+     *
+     * I drift ligger de tre på hvert sitt domene, og en kapsel gjelder bare
+     * for sitt eget. Bytter du utgave, kommer du hit med `?spiller=` i
+     * adressen, og her veksles den inn i vår egen kapsel. Så en
+     * omdirigering, slik at billetten ikke blir stående i adressefeltet og i
+     * historikken.
+     */
+    const billett = url.pathname === "/" ? url.searchParams.get("spiller") : null
+    if (billett) {
+      const tema = url.searchParams.get("tema")
+      const kapsler = [
+        `${KAPSEL}=${billett}; Path=/; Max-Age=${8 * 60 * 60}; HttpOnly; ${kapselTvers(request)}`,
+      ]
+      if (tema === "light" || tema === "dark") {
+        kapsler.push(
+          `${KAPSEL_TEMA}=${tema}; Path=/; Max-Age=${60 * 60 * 24 * 365}; ${kapselTvers(request)}`,
+        )
+      }
+      const hoder = new Headers({ location: "/" })
+      for (const k of kapsler) hoder.append("set-cookie", k)
+      return new Response(null, { status: 303, headers: hoder })
+    }
 
     if (url.pathname === "/brett.css") {
       return new Response(BRETT_CSS, { headers: { "content-type": "text/css" } })

@@ -1,7 +1,7 @@
 import { fs } from "@fristil/designsystem/react"
 import { useEffect, useId, useRef, useState } from "react"
 
-import { APPNAVN, UTGAVER } from "./fristil"
+import { APPNAVN, UTGAVER, lenkeTilUtgave } from "./fristil"
 import { type Tema, settTema } from "./tema"
 import type { Feil, SakUt, Skjermbilde, TavleRad, Tilstand } from "./tilstand"
 
@@ -65,7 +65,15 @@ function tallord(n: number): string {
 /* Topplinja                                                           */
 /* ------------------------------------------------------------------ */
 
-export function Topplinje({ tilstand, tema }: { tilstand: Tilstand; tema: Tema }) {
+export function Topplinje({
+  tilstand,
+  tema,
+  spillerId,
+}: {
+  tilstand: Tilstand
+  tema: Tema
+  spillerId: string | null
+}) {
   const sisteRunde = tilstand.rundeNr >= tilstand.runderTotalt
   const fase =
     tilstand.fase === "runde"
@@ -131,7 +139,7 @@ export function Topplinje({ tilstand, tema }: { tilstand: Tilstand; tema: Tema }
           )}
         </div>
 
-        <Utgavevelger />
+        <Utgavevelger spillerId={spillerId} tema={tema} />
         <Temavelger tema={tema} />
       </div>
     </header>
@@ -236,8 +244,8 @@ function Temavelger({ tema }: { tema: Tema }) {
   )
 }
 
-/** Bytt utgave underveis. */
-function Utgavevelger() {
+/** Bytt utgave underveis, uten å miste hvem du er. */
+function Utgavevelger({ spillerId, tema }: { spillerId: string | null; tema: Tema }) {
   return (
     <nav className="utgavevelger" aria-label="Utgave">
       {UTGAVER.map((utgave) =>
@@ -246,7 +254,11 @@ function Utgavevelger() {
             {utgave.navn}
           </span>
         ) : (
-          <a className="utgavevelger__lenke" href={utgave.adresse} key={utgave.navn}>
+          <a
+            className="utgavevelger__lenke"
+            href={lenkeTilUtgave(utgave.adresse, spillerId, tema === "system" ? null : tema)}
+            key={utgave.navn}
+          >
             {utgave.navn}
           </a>
         ),
@@ -1176,7 +1188,15 @@ function BliMed({ tilstand }: { tilstand: Tilstand }) {
 /* Hele skjermen                                                       */
 /* ------------------------------------------------------------------ */
 
-export function Skjerm({ forste, tema }: { forste: Skjermbilde; tema: Tema }) {
+export function Skjerm({
+  forste,
+  tema,
+  spillerId,
+}: {
+  forste: Skjermbilde
+  tema: Tema
+  spillerId: string | null
+}) {
   const [bilde, settBilde] = useState(forste)
   const [skjema, settSkjema] = useState<Skjema>(TOMT_SKJEMA)
   const [resultatApent, settResultatApent] = useState(false)
@@ -1277,7 +1297,7 @@ export function Skjerm({ forste, tema }: { forste: Skjermbilde; tema: Tema }) {
         online-text="Sambandet er tilbake"
       />
 
-      <Topplinje tilstand={tilstand} tema={tema} />
+      <Topplinje tilstand={tilstand} tema={tema} spillerId={spillerId} />
 
       <main className="brett">
         <div className="stamme">

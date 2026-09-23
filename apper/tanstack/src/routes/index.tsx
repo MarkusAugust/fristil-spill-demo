@@ -19,9 +19,16 @@ export const KAPSEL = "spiller"
  * kjørt.
  */
 const hentSkjermbilde = createServerFn({ method: "GET" }).handler(
-  async (): Promise<Skjermbilde> => {
+  async (): Promise<Skjermbilde & { spillerId: string | null }> => {
     const spillerId = getCookie(KAPSEL) ?? null
-    return { tilstand: await tilstand(spillerId), kommuner: KOMMUNER, feil: [] }
+    return {
+      tilstand: await tilstand(spillerId),
+      kommuner: KOMMUNER,
+      feil: [],
+      // Id-en følger med ned, fordi lenkene til de to andre utgavene bærer
+      // den videre. Uten den mister du navnet ditt i det du bytter.
+      spillerId,
+    }
   },
 )
 
@@ -33,7 +40,8 @@ export const Route = createFileRoute("/")({
 
 function Side() {
   // Temaet kommer fra rotruta, som leser kapselen på serveren.
-  return <Skjerm forste={Route.useLoaderData()} tema={rotRuta.useLoaderData()} />
+  const data = Route.useLoaderData()
+  return <Skjerm forste={data} tema={rotRuta.useLoaderData()} spillerId={data.spillerId} />
 }
 
 /**

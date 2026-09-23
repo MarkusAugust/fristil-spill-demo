@@ -84,6 +84,38 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
     }
 
     get("/") {
+      /*
+       * Billetten fra en annen utgave.
+       *
+       * I drift ligger de tre på hvert sitt domene, og en kapsel gjelder
+       * bare for sitt eget. Bytter du utgave, kommer du derfor hit med
+       * `?spiller=` i adressen, og her veksles den inn i vår egen kapsel.
+       * Deretter en omdirigering, så billetten ikke blir stående i
+       * adressefeltet og i historikken.
+       */
+      val billett = call.request.queryParameters["spiller"]
+      if (billett != null) {
+        val https = call.request.headers["X-Forwarded-Proto"] == "https"
+        call.response.cookies.append(
+          Cookie(
+            KAPSEL,
+            billett,
+            path = "/",
+            maxAge = 8 * 60 * 60,
+            httpOnly = true,
+            secure = https,
+            extensions = mapOf("SameSite" to if (https) "None" else "Lax"),
+          )
+        )
+        call.request.queryParameters["tema"]?.takeIf { it == "light" || it == "dark" }?.let {
+          call.response.cookies.append(
+            Cookie("forstelinja-tema", it, path = "/", maxAge = 60 * 60 * 24 * 365)
+          )
+        }
+        call.respondRedirect("/")
+        return@get
+      }
+
       val spillerId = call.request.cookies[KAPSEL]
       val tilstand =
         try {
@@ -98,7 +130,7 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
       // Temaet er brukerens valg, og ligger i en kapsel så serveren kan
       // skrive det inn i siden framfor å la et skript rette den etterpå.
       val tema = call.request.cookies["forstelinja-tema"]
-      call.respondText(side(tilstand, navn, kommuner, tema), ContentType.Text.Html)
+      call.respondText(side(tilstand, navn, kommuner, tema, spillerId), ContentType.Text.Html)
     }
 
     post("/bli-med") {

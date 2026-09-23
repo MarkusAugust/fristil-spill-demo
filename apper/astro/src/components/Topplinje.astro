@@ -1,7 +1,7 @@
 ---
 import { fs } from "@fristil/designsystem"
 
-import { APPNAVN, UTGAVER } from "../lib/fristil"
+import { APPNAVN, KAPSEL, UTGAVER, lenkeTilUtgave } from "../lib/fristil"
 import { initialer } from "../lib/tekst"
 import type { Tilstand } from "../lib/tilstand"
 
@@ -14,6 +14,9 @@ const { tilstand } = Astro.props
 /* Temaet står i kapselen, og knappen som er merket skal si det samme. */
 const valgtTema = Astro.cookies.get("forstelinja-tema")?.value
 const tema = valgtTema === "light" || valgtTema === "dark" ? valgtTema : null
+
+/* Billetten som lar deg beholde navnet ditt når du bytter utgave. */
+const spillerId = Astro.cookies.get(KAPSEL)?.value ?? null
 const sisteRunde = tilstand.rundeNr >= tilstand.runderTotalt
 const fase =
   tilstand.fase === "runde"
@@ -103,7 +106,7 @@ const { class: _feltsettKlasse, ...feltsett } = fs.fieldset()
           utgave.navn === APPNAVN ? (
             <span class="utgavevelger__her" aria-current="page">{utgave.navn}</span>
           ) : (
-            <a class="utgavevelger__lenke" href={utgave.adresse}>{utgave.navn}</a>
+            <a class="utgavevelger__lenke" href={lenkeTilUtgave(utgave.adresse, spillerId, tema)}>{utgave.navn}</a>
           ),
         )
       }

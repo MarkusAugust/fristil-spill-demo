@@ -28,14 +28,27 @@ class Toppliste(sti: String = System.getenv("TOPPLISTE_FIL") ?: "toppliste.db") 
           .trimIndent()
       )
       it.executeUpdate("CREATE INDEX IF NOT EXISTS resultat_poeng ON resultat (poeng DESC)")
+      // Rader lagret før navnene ble ryddet. Uten dette står «Kari» og
+      // «Kari » som to spillere i lista for alltid.
+      it.executeUpdate("UPDATE resultat SET navn = trim(navn) WHERE navn <> trim(navn)")
     }
   }
+
+  /**
+   * Rydder navnet før det lagres.
+   *
+   * «Markus» og «Markus  » er den samme saksbehandleren, og en toppliste som
+   * viser begge sier ingenting om hvem som er best. Mellomrom i endene og
+   * doble mellomrom inni forsvinner her, én gang, framfor at hver avlesning
+   * må ta høyde for dem.
+   */
+  private fun ryddet(navn: String): String = navn.trim().replace(Regex("\\s+"), " ")
 
   fun lagre(navn: String, poeng: Int, stack: Stack) {
     forbindelse
       .prepareStatement("INSERT INTO resultat (navn, poeng, stack, nar) VALUES (?, ?, ?, ?)")
       .use {
-        it.setString(1, navn)
+        it.setString(1, ryddet(navn))
         it.setInt(2, poeng)
         it.setString(3, stack.name)
         it.setLong(4, System.currentTimeMillis())
@@ -49,6 +62,10 @@ class Toppliste(sti: String = System.getenv("TOPPLISTE_FIL") ?: "toppliste.db") 
    * Uten grupperingen fylte den samme spilleren hele lista med sine egne
    * omganger, og en toppliste der det står «Markus» fem ganger sier ingenting
    * om hvem som er best.
+   *
+   * Sammenligningen er uten hensyn til store og små bokstaver, for «Markus»
+   * og «markus» er den samme personen som skrev navnet sitt i hui og hast.
+   * Raden med flest poeng bestemmer hvordan navnet staves i lista.
    */
   fun topp(antall: Int): List<ToppEntry> =
     forbindelse
@@ -58,7 +75,7 @@ class Toppliste(sti: String = System.getenv("TOPPLISTE_FIL") ?: "toppliste.db") 
         FROM resultat
         WHERE id IN (
           SELECT id FROM resultat r2
-          WHERE r2.navn = resultat.navn
+          WHERE lower(r2.navn) = lower(resultat.navn)
           ORDER BY poeng DESC, nar ASC
           LIMIT 1
         )

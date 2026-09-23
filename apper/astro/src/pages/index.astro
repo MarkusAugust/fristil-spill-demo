@@ -26,6 +26,36 @@ export const prerender = false
  * Er det i orden, sendes det til spilltjeneren, og siden som tegnes har
  * kvitteringen. Ingen av delene trenger JavaScript.
  */
+/*
+ * Billetten fra en annen utgave.
+ *
+ * I drift ligger de tre på hvert sitt domene, og en kapsel gjelder bare for
+ * sitt eget. Bytter du utgave, kommer du hit med `?spiller=` i adressen, og
+ * her veksles den inn i vår egen kapsel. Så en omdirigering, slik at
+ * billetten ikke blir stående i adressefeltet og i historikken.
+ */
+const billett = Astro.url.searchParams.get("spiller")
+if (billett) {
+  const https = Astro.url.protocol === "https:"
+  Astro.cookies.set(KAPSEL, billett, {
+    path: "/",
+    maxAge: 8 * 60 * 60,
+    httpOnly: true,
+    sameSite: https ? "none" : "lax",
+    secure: https,
+  })
+  const temaBillett = Astro.url.searchParams.get("tema")
+  if (temaBillett === "light" || temaBillett === "dark") {
+    Astro.cookies.set("forstelinja-tema", temaBillett, {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: https ? "none" : "lax",
+      secure: https,
+    })
+  }
+  return Astro.redirect("/", 303)
+}
+
 const spillerId = Astro.cookies.get(KAPSEL)?.value ?? null
 
 let feil: Feil[] = []

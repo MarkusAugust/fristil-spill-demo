@@ -50,7 +50,7 @@ fun venteside(): String =
  * hilsenen spratt opp igjen hvert par minutt for den som sitter og leser
  * innmeldingsskjemaet.
  */
-fun velkomst(): String =
+fun velkomst(tema: String? = null): String =
   """
   <fs-dialog id="velkomst" open>
     <dialog class="fs-dialog velkomst" aria-labelledby="velkomst-tittel"
@@ -87,7 +87,7 @@ fun velkomst(): String =
             else
               """
               <li>
-                <a class="velkomst__lenke" href="${utgave.adresse}">
+                <a class="velkomst__lenke" href="${lenkeTilUtgave(utgave.adresse, null, tema)}">
                   <strong>${utgave.navn}</strong>
                   <span class="velkomst__om">${utgave.rammeverk}</span>
                 </a>
@@ -118,6 +118,7 @@ fun side(
   spillerNavn: String?,
   kommuner: List<String> = emptyList(),
   tema: String? = null,
+  spillerId: String? = null,
 ): String {
   val stilark = STILARK.joinToString("\n    ") { """<link rel="stylesheet" href="$it">""" }
   val imports = KOMPONENTER.joinToString("\n      ") { (fil, fn) -> """import { $fn } from "$fil"; $fn();""" }
@@ -155,7 +156,7 @@ fun side(
       online-text="Sambandet er tilbake"
       data-ignore-morph></fs-connection-status>
 
-    ${if (spillerNavn == null) velkomst() else ""}
+    ${if (spillerNavn == null) velkomst(tema) else ""}
 
     <!-- Merket serveren skriver når sambandet ryker. Det er skjult, og
          finnes bare for at skriptet skal ha noe å lytte på: en komponent
@@ -165,7 +166,7 @@ fun side(
     <header class="topplinje">
       <div class="topplinje__innhold stamme">
         ${topp(tilstand)}
-        ${utgavevelger()}
+        ${utgavevelger(spillerId, tema)}
         ${temavelger()}
       </div>
     </header>
@@ -372,14 +373,14 @@ private fun initialer(navn: String): String =
  * Står utenfor det serveren patcher, som temavelgeren. Lenker og ikke
  * knapper: det er tre adresser, og en lenke er det HTML har for det.
  */
-fun utgavevelger(): String =
+fun utgavevelger(spillerId: String? = null, tema: String? = null): String =
   """
   <nav class="utgavevelger" aria-label="Utgave">
     ${UTGAVER.joinToString("\n") { utgave ->
       if (utgave.navn == APPNAVN)
         """<span class="utgavevelger__her" aria-current="page">${utgave.navn}</span>"""
       else
-        """<a class="utgavevelger__lenke" href="${utgave.adresse}">${utgave.navn}</a>"""
+        """<a class="utgavevelger__lenke" href="${lenkeTilUtgave(utgave.adresse, spillerId, tema)}">${utgave.navn}</a>"""
     }}
   </nav>
   """
