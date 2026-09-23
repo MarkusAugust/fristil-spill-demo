@@ -164,7 +164,7 @@ cd apper/spilltjener && ./gradlew test && ./gradlew installDist
 | `SAKER_FIL` | `../../felles/saker.json` | |
 | `KOMMUNER_FIL` | `../../felles/kommuner.json` | |
 | `TOPPLISTE_FIL` | `toppliste.db` | på Railway: et volum |
-| `VARM_TIMER` | `0` | timer tjenesten holder seg våken etter siste spiller |
+| `VARM_TIMER` | `0` | timer tjenesten holder seg våken etter siste spiller. Står på `3` i Railway |
 | `RUNDE_MS` | `120000` | lengre runder når noen skal snakke over spillet |
 | `OPPGJOR_MS` | `25000` | |
 | `SLUTT_MS` | `40000` | |
@@ -288,12 +288,11 @@ Det krever at appene slipper taket når ingen ser på, og det gjør de:
   den siste er borte. Før sto den åpen døgnet rundt, og da sov ingenting.
   Pusterommet er ett minutt, siden en oppfriskning av siden er en avmelding
   og en påmelding med et øyeblikk imellom.
-- **Spilltjeneren kan holde varmen en stund etter siste spiller**, styrt av
-  `VARM_TIMER`. Standarden er 0, altså av, og da sovner den så snart Railway
-  vil. Sett `VARM_TIMER=3` i Railway før en demonstrasjon: da er det den samme
-  omgangen når du kommer tilbake fra en kaffepause, og ikke en ny. Det koster
-  litt, siden en våken tjeneste er en tjeneste som brukes, så den hører til
-  demodagen og ikke til hverdagen.
+- **Spilltjeneren holder varmen en stund etter siste spiller**, styrt av
+  `VARM_TIMER`. Standarden i koden er 0, altså av, og på en utviklermaskin skal
+  ingenting slå opp navn i bakgrunnen hvert annet minutt. I Railway står den på
+  3, så en omgang overlever en kaffepause. Det koster litt, siden en våken
+  tjeneste er en tjeneste som brukes.
 
 Varmen holdes av et navneoppslag hvert annet minutt. Det er en fot i døra, og
 det eneste `Varme.kt` gjør. Railway ser bare på utgående pakker, og et oppslag
