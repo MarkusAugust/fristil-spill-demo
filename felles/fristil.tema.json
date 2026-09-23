@@ -1,0 +1,15 @@
+{
+  "_om": "Oppskriften på Førstelinjas tema. Kjør: bun tema. Fargene står med vilje ikke her, se README.",
+  "typografi": {
+    "fontFamily": "Helvetica, Arial, sans-serif",
+    "weights": { "regular": 400, "medium": 500, "semibold": 600, "bold": 700 },
+    "lineHeights": { "default": 1.666, "heading": 1.333, "article": 1.666 }
+  },
+  "form": {
+    "buttonRadius": "2.75rem",
+    "fieldRadius": "0.25rem",
+    "surfaceRadius": "0.25rem",
+    "buttonBorderWidth": "3px",
+    "buttonFontWeight": 700
+  }
+}

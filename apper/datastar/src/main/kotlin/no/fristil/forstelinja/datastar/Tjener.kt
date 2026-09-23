@@ -79,6 +79,10 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
   routing {
     get("/helse") { call.respondText("ok") }
 
+    get("/tema.css") {
+      call.respondText(TEMA_CSS, ContentType.Text.CSS)
+    }
+
     get("/brett.css") {
       call.respondText(BRETT_CSS, ContentType.Text.CSS)
     }

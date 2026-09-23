@@ -45,7 +45,12 @@ export const Route = createRootRoute({
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Førstelinja · TanStack Start og React" },
     ],
-    links: [{ rel: "stylesheet", href: "/brett.css" }],
+    /* Temaet står før brett.css: de ligger i samme lag, og der vinner den
+       siste. Fristils egne stilark importeres i stil.ts, altså før begge. */
+    links: [
+      { rel: "stylesheet", href: "/tema.css" },
+      { rel: "stylesheet", href: "/brett.css" },
+    ],
     /*
      * Avlyttingen panelet leser fra, som et vanlig skript i `<head>`.
      *

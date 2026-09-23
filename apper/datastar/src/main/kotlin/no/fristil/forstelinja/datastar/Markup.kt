@@ -135,6 +135,9 @@ fun side(
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Førstelinja · Datastar og Kotlin</title>
     $stilark
+    <!-- Temaet står etter komponentene og før brett.css: det ligger i det
+         samme laget som dem, og der vinner den siste. -->
+    <link rel="stylesheet" href="/tema.css">
     <link rel="stylesheet" href="/brett.css">
     <!-- Avlyttingen, som må kjøre før Datastars bundle under. Et vanlig
          skript kjører mens dokumentet parses, et modulskript først etterpå,

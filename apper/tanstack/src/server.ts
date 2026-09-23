@@ -31,6 +31,17 @@ const BRETT_CSS: string = readFileSync(
   "utf8",
 )
 
+/**
+ * Temaet, generert av Fristil av `felles/fristil.tema.json`.
+ *
+ * Det setter skrift og form, og lar fargene stå: Fristils egen palett er
+ * allerede Skatteetatens, med de samme verdiene.
+ */
+const TEMA_CSS: string = readFileSync(
+  process.env.TEMA_CSS_FIL ?? "../../felles/tema.css",
+  "utf8",
+)
+
 /** Panelet, samme fil som de to andre appene serverer. */
 const PANEL_JS: string = readFileSync(
   process.env.PANEL_JS_FIL ?? "../../felles/panel.js",
@@ -168,6 +179,10 @@ export default {
       const hoder = new Headers({ location: "/" })
       for (const k of kapsler) hoder.append("set-cookie", k)
       return new Response(null, { status: 303, headers: hoder })
+    }
+
+    if (url.pathname === "/tema.css") {
+      return new Response(TEMA_CSS, { headers: { "content-type": "text/css" } })
     }
 
     if (url.pathname === "/brett.css") {

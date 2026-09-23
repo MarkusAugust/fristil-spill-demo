@@ -12,6 +12,19 @@ import java.io.File
  * Den leses én gang ved oppstart. Endrer du CSS-en, start appen på nytt; det
  * er det samme som for sakene.
  */
+/**
+ * Temaet, generert av Fristil av `felles/fristil.tema.json`.
+ *
+ * Det setter skrift og form, og lar fargene stå: Fristils egen palett er
+ * allerede Skatteetatens, med de samme verdiene.
+ */
+val TEMA_CSS: String by lazy {
+  val sti = System.getenv("TEMA_CSS_FIL") ?: "../../felles/tema.css"
+  val fil = File(sti)
+  require(fil.exists()) { "Fant ingen tema.css på «$sti». Sett TEMA_CSS_FIL." }
+  fil.readText()
+}
+
 val BRETT_CSS: String by lazy {
   val sti = System.getenv("BRETT_CSS_FIL") ?: "../../felles/brett.css"
   val fil = File(sti)

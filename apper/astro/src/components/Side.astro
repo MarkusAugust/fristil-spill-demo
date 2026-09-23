@@ -53,6 +53,9 @@ const tema = valgt === "light" || valgt === "dark" ? valgt : null
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{tittel}</title>
+    <!-- Temaet står før brett.css: de ligger i samme lag, og der vinner den
+         siste. Fristils egne stilark importeres i stil.ts, altså før begge. -->
+    <link rel="stylesheet" href="/tema.css" />
     <link rel="stylesheet" href="/brett.css" />
 
     <!-- Avlyttingen panelet leser fra. Den skal stå her og ikke nederst: et

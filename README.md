@@ -12,7 +12,7 @@ TAVLE · runde 2 av 4
   3.  Ingrid    21 p    ● Astro
 ```
 
-Kari og Ola spiller sammen, i sanntid, fra to helt ulike stacker, og skjermene deres ser like ut. Det er hele påstanden til Fristil, demonstrert av folk som ikke tenker på den.
+Kari og Ola spiller sammen, i sanntid, fra to helt ulike teknologier, og skjermene deres ser like ut. Det er hele påstanden til Fristil, demonstrert av folk som ikke tenker på den.
 
 ## Prøv det
 
@@ -112,7 +112,7 @@ Fristen sendes som et **absolutt tidspunkt**, ikke «30 sekunder igjen». Hver k
 
 ## Sakene
 
-`felles/saker.json` er delt mellom alle fire delene, og er JSON og ikke TypeScript nettopp derfor: Kotlin og JavaScript leser den samme fila, og ingen av dem eier den. Små bokstaver i verdiene av samme grunn.
+`felles/saker.json` eies av spilltjeneren, som er den eneste som leser den. Kommunene, stilarket og panelskriptet i `felles/` leses derimot av alle tre appene, og `kommuner.json` er JSON og ikke TypeScript nettopp derfor: Kotlin og JavaScript leser den samme fila, og ingen av dem eier den. Små bokstaver i verdiene av samme grunn.
 
 Arbeidet er ekte saksbehandling. Vitsen er saken:
 
@@ -128,7 +128,7 @@ Den krever også at fellene er ekte. Sier fasiten at fødselsdatoen er feil, ska
 ./kjor.sh
 ```
 
-Skriptet bygger og starter alle fire tjenestene, og stopper dem med Ctrl+C.
+Skriptet bygger og starter alle fem tjenestene, spilltjeneren medregnet, og stopper dem med Ctrl+C.
 Da kjører de tre utgavene på hver sin adresse:
 
 | Adresse | Utgave |
@@ -162,16 +162,20 @@ cd apper/spilltjener && ./gradlew test && ./gradlew installDist
 | `PORT` | `8080` | |
 | `HOST` | `::` | Railways private nett er IPv6 |
 | `SAKER_FIL` | `../../felles/saker.json` | |
+| `KOMMUNER_FIL` | `../../felles/kommuner.json` | |
 | `TOPPLISTE_FIL` | `toppliste.db` | på Railway: et volum |
+| `VARM_TIMER` | `0` | timer tjenesten holder seg våken etter siste spiller |
 | `RUNDE_MS` | `120000` | lengre runder når noen skal snakke over spillet |
 | `OPPGJOR_MS` | `25000` | |
 | `SLUTT_MS` | `40000` | |
 
-## Testen som sier om påstanden holder
+## Testene som sier om påstanden holder
 
 ```bash
 ./kjor.sh rask
-cd tester && bun install && bun run paritet
+cd tester && bun install
+bun run paritet   # at de tre utgavene oppfører seg likt
+bun run panel     # at panelet forteller sant om hva som kom over ledningen
 ```
 
 `tester/paritet.ts` kjører det samme løpet i alle tre utgavene: melder seg
@@ -184,6 +188,13 @@ de gjør det samme.
 Den venter på at en runde er i gang framfor å hoppe over skjemaet når den
 lander midt i et oppgjør. En test som feiler tilfeldig blir ignorert, og da
 er den verdiløs.
+
+`tester/panel.ts` krever at «Med hva» i panelet viser det utgaven faktisk
+sender: HTML over hendelsesstrømmen i Datastar, JSON i de to andre, med
+hendelsesnavn og størrelse. Den finnes fordi en feil her ikke ser ut som en
+feil. Ruta sa «Ingenting har kommet over ledningen ennå», og det er en fullt
+troverdig setning, mens tre ekte feil levde i den samtidig. Se
+[Panelet](#panelet-som-viser-hva-som-skjedde).
 
 ## Railway
 
@@ -248,7 +259,7 @@ IPv6-bare, så tjenesten må lytte på `::`. Det er standarden i Dockerfilen.
 - **Runder og pauser** styres av `RUNDE_MS`, `OPPGJOR_MS` og `SLUTT_MS` på
   spilltjeneren. Standard er to minutter, 25 sekunder og 40 sekunder.
 - **`VARM_TIMER`** sier hvor lenge spilltjeneren holder seg våken etter at
-  den siste spilleren er borte. Standard er tre timer.
+  den siste spilleren er borte. Standard er 0, altså av.
 - **Uten volum forsvinner den evige topplista** ved hver utrulling. Ett volum
   på spilltjeneren holder, og en tjeneste med volum får litt nedetid ved
   utrulling. Det er uproblematisk her, siden en omstart uansett starter en ny
@@ -277,10 +288,12 @@ Det krever at appene slipper taket når ingen ser på, og det gjør de:
   den siste er borte. Før sto den åpen døgnet rundt, og da sov ingenting.
   Pusterommet er ett minutt, siden en oppfriskning av siden er en avmelding
   og en påmelding med et øyeblikk imellom.
-- **Spilltjeneren holder varmen en stund etter siste spiller**, styrt av
-  `VARM_TIMER` (standard tre timer). Kommer du tilbake fra en kaffepause, er
-  det den samme omgangen, ikke en ny. `VARM_TIMER=0` slår det av, og da
-  sovner den så snart Railway vil.
+- **Spilltjeneren kan holde varmen en stund etter siste spiller**, styrt av
+  `VARM_TIMER`. Standarden er 0, altså av, og da sovner den så snart Railway
+  vil. Sett `VARM_TIMER=3` i Railway før en demonstrasjon: da er det den samme
+  omgangen når du kommer tilbake fra en kaffepause, og ikke en ny. Det koster
+  litt, siden en våken tjeneste er en tjeneste som brukes, så den hører til
+  demodagen og ikke til hverdagen.
 
 Varmen holdes av et navneoppslag hvert annet minutt. Det er en fot i døra, og
 det eneste `Varme.kt` gjør. Railway ser bare på utgående pakker, og et oppslag
@@ -322,7 +335,7 @@ side om side. Det er den eneste måten å se påstanden til demoen på én gang.
 
 ## Datastar-appen
 
-Kotlin med Ktor. Den kan ikke kalle `fs.field()`, så den skriver klassene selv og lar `<fs-field>` gjøre koblingen i nettleseren. Fordi serveren sender det samme området på nytt ved hver patch, står `data-preserve-attr` på det komponenten lager, med verdiene hentet fra pakken selv.
+Kotlin med Ktor. Den kan ikke kalle `fs.field()`, så den skriver klassene selv og lar `<fs-field>` gjøre koblingen i nettleseren. Serveren sender det samme området på nytt ved hver patch, og komponenten setter selv tilbake det morfingen river bort.
 
 Den henter Fristil **fra CDN, uten npm**. Det er sporet «Uten byggverktøy» i Fristils egen dokumentasjon, og denne appen er beviset på at det virker fra en JVM.
 
@@ -357,8 +370,9 @@ Tre ting kostet tid, og alle tre ble rettet i designsystemet:
   framfor attributter på egendefinerte elementer, og `el.open = ""` er usant,
   så dialogen åpnet seg ikke. Byggefunksjonene sender nå `true`.
 - **En id som lages av seg selv, overlever ikke hydrering.** `fs.field()`
-  lager en når den ikke får en, og serveren og nettleseren lager da hver sin.
-  Id-en kommer nå fra Reacts `useId()`, og det står i dokumentasjonen.
+  lagde en når den ikke fikk en, og serveren og nettleseren lagde da hver sin.
+  `id` er påkrevd siden Fristil 0.11.0, og her kommer den fra Reacts
+  `useId()`.
 
 ## Astro-appen
 
@@ -377,8 +391,10 @@ gått fra hverandre første gang noen la til en kolonne.
 
 Kommunefeltet er verdt å se på: `<fs-suggestion>` filtrerer lista og tar
 piltastene helt selv. Serveren sender alle kommunene, og appen har ikke en
-eneste linje kode for feltet. I React-utgaven må appen filtrere selv, for der
-er det React som eier DOM-en.
+eneste linje kode for feltet. I React-utgaven rendrer appen bare treffene, og
+da står `prefiltered` på elementet, som slår av komponentens eget filter.
+Attributtet het `server-filtered` fram til Fristil 0.11.0, og navnet var
+misvisende: det handler om hva du filtrerte på, ikke om hvem som gjorde det.
 
 To ting kostet tid:
 
@@ -389,6 +405,65 @@ To ting kostet tid:
 - **Kommunelista ligger under en nøkkel i fila**, ikke i rota. Appen leste den
   som en liste, og feilen kom først når noen skulle fylle ut skjemaet. Nå sier
   den fra ved oppstart i stedet.
+
+## Temaet
+
+Spillet kjører i Skatteetatens stil og tone, og det er ikke gjort ved å kopiere
+designsystemet deres. Det er gjort med Fristils egen temagenerator, av en
+oppskrift som ligger i repoet:
+
+```bash
+cd tester && bun run tema     # leser felles/fristil.tema.json, skriver felles/tema.css
+```
+
+Oppskriften setter **skrift og form, og lar fargene stå**. Grunnen er verdt å
+vite: Fristils innebygde palett *er* Skatteetatens. Alle 36 palettvariablene
+deres finnes i Fristil med nøyaktig samme verdi, og 14 av 15 semantiske
+fargetokens likeså. Å kjøre fargene deres gjennom generatoren ville derfor
+flyttet dem bort fra der de skal være, siden skalaene regnes om i OKLCH fra
+merkefargen: `#1362ae` kommer ut som `#1e6ab7`.
+
+Den ene semantiske fargen som avviker, avviker med vilje. Skatteetatens
+`--semantic-warning-foreground` er `#9f7509`, som gir 4,18:1 mot hvit og 3,63:1
+mot deres egen advarselsflate. Kravet for vanlig tekst er 4,5:1. Fristils
+`#896508` gir 5,35:1 og 4,64:1.
+
+| Hva temaet setter | Verdi | Hvorfor |
+| --- | --- | --- |
+| Skrift | `Helvetica, Arial, sans-serif` | stakken Skatteetaten selv oppgir for skjerm |
+| Knappehjørner | `2.75rem` | knappene deres er kapsler |
+| Felthjørner | `0.25rem` | feltene deres er nesten rette |
+| Flatehjørner | `0.25rem` | kort og dialoger følger feltene |
+| Knapperamme | `3px` | rammen deres er tykk |
+| Knappevekt | `700` | knappeteksten deres er fet |
+
+`felles/tema.css` er generert. Rediger `felles/fristil.tema.json` og kjør
+kommandoen på nytt.
+
+Temaet lastes som `/tema.css` i alle tre appene, etter Fristils egne stilark og
+før `brett.css`. De ligger i det samme laget, og der vinner den siste.
+
+## Panelet som viser hva som skjedde
+
+Knappen nede til høyre åpner panelet, og det er der demoen faktisk blir
+synlig. De tre skjermene ser like ut, og det er poenget, så forskjellen må
+vises et annet sted: hvilken del av siden som ble byttet ut, hvilken teknikk
+som gjorde det, og hva som kom over ledningen.
+
+| Utgave | Med hva |
+| --- | --- |
+| Datastar | `SSE · datastar-patch-elements · HTML · 17,2 kB` |
+| TanStack Start | `SSE · tilstand · JSON · 2,9 kB` |
+| Astro | `SSE · puls · JSON · 788 B`, og `Helsidelasting · HTML · 14,7 kB` ved innsending |
+
+Panelet spør ingen av appene. Det leser trafikken selv, og formatet kjennes
+igjen på innholdet framfor på hva noen påstår.
+
+Avlyttingen ligger i `felles/panel-avlytt.js`, som lastes som et **vanlig
+skript først i `<head>`**, mens selve panelet er en modul som lastes nederst.
+Delingen er ikke pynt. Et modulskript kjører først når dokumentet er parset,
+og både Datastars bundle og Astros øy åpner strømmen sin i det de kjører. La
+avlyttingen i modulen, og den kom for sent i to av tre utgaver.
 
 ## Komponentene i bruk
 
@@ -435,22 +510,22 @@ Dette er alt serveren sender for innmeldingsfeltet:
 
 ```html
 <fs-field>
-  <label class="fs-label" data-preserve-attr="class for">Navnet ditt</label>
-  <input class="fs-input" name="navn" type="text" required
-         data-preserve-attr="id aria-describedby">
-  <p class="fs-help-text" data-preserve-attr="id">Vises på tavla for alle.</p>
+  <label class="fs-label">Navnet ditt</label>
+  <input class="fs-input" name="navn" type="text" required>
+  <p class="fs-help-text">Vises på tavla for alle.</p>
 </fs-field>
 ```
 
 Ingen id-er, ingen `for`, ingen `aria-describedby`. Komponenten setter det i
 nettleseren, og gjør det likt uansett hvilket språk serveren er skrevet i.
 
-Bevaringslistene må stå der fordi serveren sender det samme området på nytt.
-Serveren skriver aldri disse attributtene, så uten listene river morfingen
-dem bort ved neste patch, og feltet mister koblingen mellom ledetekst,
-kontroll og hjelpetekst. Listene er smalere enn den Fristil oppgir:
-`aria-invalid` og `data-state` er serverens, og fredet vi dem, kunne serveren
-aldri meldt feltet som ugyldig.
+Serveren sender det samme området på nytt ved hver patch, og morfingen river
+da bort attributter som ikke står i det serveren sendte. Komponenten setter
+dem tilbake selv, så malen slipper å kjenne dem. Fram til Fristil 0.10.0 måtte
+hvert attributt stå i `data-preserve-attr` i malen, altså ni navn en Go- eller
+Kotlin-mal måtte skrive av fra dokumentasjonen. Vil serveren eie tilstanden
+selv, står `server-controlled` på verten, og da reparerer komponenten
+ingenting.
 
 Det var fristende å skrive en Kotlin-utgave av `fs.field()` som regnet ut
 det samme. Det ville brutt med hele poenget: skulle hver server skrive
@@ -458,17 +533,21 @@ Fristils regler på nytt, ville Fristil vært et JavaScript-designsystem med
 en manuell reserve for alle andre. Den utgaven er slettet igjen.
 
 Unntaket er elementer noe annet må peke på. Feiloppsummeringen lenker til
-`#hjemmel` og `#felle`, så de to feltene får id fra serveren, og da skriver
-den hele koblingen selv. Da har komponenten ingenting å legge til, og
+feltet som feilet, så vedtaket, hjemmelen, kommunen og fella får id fra
+serveren, og da skriver den hele koblingen selv. Da har komponenten ingenting å legge til, og
 morfingen ingenting å ta bort. Regelen er: navngi det bare når noe skal finne
 det, og skriv da resten òg.
 
 ### To ting som kostet tid her
 
-**`data-preserve-attr` betyr «ikke rør», og det gjelder begge veier.** Et
-felt fredet `aria-invalid`, og da kunne serveren aldri melde feltet som
-ugyldig: morfingen nektet å sette verdien den selv hadde sendt. En liste skal
-bare inneholde det komponenten lager.
+**Fredning er ikke det samme som reparasjon.** Da feltet fredet `aria-invalid`
+med `data-preserve-attr`, kunne serveren aldri melde feltet som ugyldig:
+morfingen nektet å sette verdien den selv hadde sendt. Det var den erfaringen
+som gjorde at Fristil sluttet å frede og begynte å reparere. Appens egen
+klokke bruker fortsatt attributtet, for `style` og `data-rister` skrives av et
+skript i siden og finnes ikke i det serveren sender. Det er Datastars egen
+mekanisme for det klienten har skrevet, og har ingenting med Fristils
+komponenter å gjøre.
 
 **Gradle kjenner ikke `felles/` som en inngang.** Endret du en sak og kjørte
 testene, kunne du få grønt på gammelt grunnlag fordi oppgaven regnes som
@@ -483,3 +562,5 @@ oppdatert. Spilltjeneren sier nå fra om at fila er en inngang.
 - [x] Bytte mellom utgavene, i velkomsthilsenen og i topplinja
 - [x] Skallet, som viser de tre side om side
 - [x] Railway, fem tjenester med Dockerfile fra rota
+- [x] Panelet som viser hva som ble oppdatert, hvordan, og med hva
+- [x] Paritetstesten og paneltesten, som begge kjøres mot de tre appene

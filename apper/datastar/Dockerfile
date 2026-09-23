@@ -17,6 +17,7 @@ COPY felles felles
 
 ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=45 -XX:+UseSerialGC -Xss512k" \
     BRETT_CSS_FIL=/app/felles/brett.css \
+    TEMA_CSS_FIL=/app/felles/tema.css \
     PANEL_JS_FIL=/app/felles/panel.js \
     PANEL_AVLYTT_JS_FIL=/app/felles/panel-avlytt.js \
     KOMMUNER_FIL=/app/felles/kommuner.json \

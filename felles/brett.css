@@ -17,14 +17,17 @@
 
 body {
   margin: 0;
-  /* Fristil arver skrift med vilje, så appen må si hvilken. Uten dette
-     er det nettleserens egen, som er en serif. */
-  font-family:
+  /* Skriften kommer fra temaet, som setter `--font-family-base`. Reserven er
+     her fordi Fristil arver skrift med vilje: uten et tema er det
+     nettleserens egen, og den er en serif. */
+  font-family: var(
+    --font-family-base,
     system-ui,
     -apple-system,
     "Segoe UI",
     Roboto,
-    sans-serif;
+    sans-serif
+  );
   color: var(--semantic-page-foreground);
   /* Flaten er sideflaten med et snev av tekstfargen i seg, slik at hvite
      kort løfter seg fra den. I mørkt tema snus det under. */
