@@ -62,16 +62,16 @@ class Spilltjener(private val adresse: String) {
   /**
    * Melder en spiller på vakta.
    *
-   * `prove` er paritetsprøven, som melder på en spiller i hver utgave.
-   * Poengene til en prøvespiller havner aldri i den evige topplista, som er
-   * det eneste som overlever en omstart. Uten det ble «Prøve datastar»
-   * stående der for alltid, hver gang en vakt tok slutt mens prøven kjørte.
+   * `prove` er paritetstesten, som melder på en spiller i hver utgave.
+   * Poengene til en testspiller havner aldri i den evige topplista, som er
+   * det eneste som overlever en omstart. Uten det ble «Test datastar»
+   * stående der for alltid, hver gang en vakt tok slutt mens testen kjørte.
    */
-  suspend fun bliMed(navn: String, prove: Boolean = false): BliMedUt =
+  suspend fun bliMed(navn: String, erTest: Boolean = false): BliMedUt =
     klient
       .post("$adresse/api/bli-med") {
         contentType(ContentType.Application.Json)
-        setBody(BliMedInn(navn = navn, stack = "datastar", prove = prove))
+        setBody(BliMedInn(navn = navn, stack = "datastar", erTest = erTest))
       }
       .body()
 
@@ -79,9 +79,9 @@ class Spilltjener(private val adresse: String) {
    * Melder en spiller av vakta.
    *
    * En ekte spiller trenger den ikke: lukker du fanen, er du borte etter tre
-   * runder uten svar. Den finnes fordi paritetsprøven melder på en spiller i
-   * hver utgave, og en prøve som lar tre «Prøve …» stå igjen på tavla
-   * skitner til det den skal prøve.
+   * runder uten svar. Den finnes fordi paritetstesten melder på en spiller i
+   * hver utgave, og en test som lar tre «Test …» stå igjen på tavla
+   * skitner til det den skal teste.
    */
   suspend fun gaAv(spillerId: String) {
     klient.post("$adresse/api/ga-av") {

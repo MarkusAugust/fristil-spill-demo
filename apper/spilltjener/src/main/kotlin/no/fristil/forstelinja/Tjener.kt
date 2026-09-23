@@ -30,8 +30,8 @@ import kotlinx.serialization.json.Json
 data class BliMedInn(
   val navn: String,
   val stack: Stack = Stack.UKJENT,
-  /** Paritetsprøven melder seg på slik. Poengene havner da aldri i den evige topplista. */
-  val prove: Boolean = false,
+  /** Paritetstesten melder seg på slik. Poengene havner da aldri i den evige topplista. */
+  val erTest: Boolean = false,
 )
 
 @Serializable data class BliMedUt(val spillerId: String, val navn: String)
@@ -61,7 +61,7 @@ fun Application.spillModul(spill: Spill, varme: Varme = Varme()) {
 
     post("/api/bli-med") {
       val inn = call.receive<BliMedInn>()
-      val spiller = spill.bliMed(inn.navn, inn.stack, inn.prove)
+      val spiller = spill.bliMed(inn.navn, inn.stack, inn.erTest)
       call.respond(BliMedUt(spillerId = spiller.id, navn = spiller.navn))
     }
 

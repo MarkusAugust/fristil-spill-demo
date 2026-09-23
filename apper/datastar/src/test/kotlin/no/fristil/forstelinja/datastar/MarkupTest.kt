@@ -13,7 +13,7 @@ import kotlin.test.assertTrue
  * området på nytt ved hver patch, må `data-preserve-attr` stå på hvert
  * element komponenten rører.
  *
- * Uten disse prøvene kan en bevaringsliste forsvinne i en redigering, og
+ * Uten disse testene kan en bevaringsliste forsvinne i en redigering, og
  * feilen ville først vist seg som et skjema som mister koblingen sin etter
  * første oppdatering, hos noen andre, senere.
  */
@@ -65,7 +65,7 @@ class MarkupTest {
     // meldt feltet som ugyldig: morfingen ville nektet å sette dem.
     val lister = Regex("""data-preserve-attr="([^"]*)"""").findAll(html).map { it.groupValues[1] }.toList()
 
-    // Uten denne ville prøven meldt grønt om hver eneste liste forsvant.
+    // Uten denne ville testen meldt grønt om hver eneste liste forsvant.
     assertTrue(lister.size >= 8, "fant bare ${lister.size} bevaringslister")
 
     for (liste in lister) {
@@ -179,7 +179,7 @@ class MarkupTest {
 
   @Test
   fun `fasiten står ikke i markupen mens runden pågår`() {
-    // Spilltjeneren sender ikke fasiten i en runde, men prøven skal si noe
+    // Spilltjeneren sender ikke fasiten i en runde, men testen skal si noe
     // om markupen: får den en fasit likevel, skal ingenting av den lekke ut
     // mens fasen er «runde».
     val medFasit =
@@ -214,9 +214,9 @@ class MarkupTest {
       )
 
     // `\bopen\b` duger ikke: `data-preserve-attr="open"` inneholder ordet,
-    // og prøven ville meldt grønt uansett. Det vi er ute etter er et bart
+    // og testen ville meldt grønt uansett. Det vi er ute etter er et bart
     // attributt, altså `open` med mellomrom foran og mellomrom eller `>`
-    // etter. Prøvd: uten dette fanget prøven ikke at attributtet ble fjernet.
+    // etter. Testet: uten dette fanget testen ikke at attributtet ble fjernet.
     val bartOpen = { tagg: String, html: String ->
       Regex("<$tagg\\b[^>]*\\sopen(\\s|>)").containsMatchIn(html)
     }
@@ -304,7 +304,7 @@ class MarkupTest {
     // stående med «… sekunder» mens toppen talte ned.
     // Oppgjøret tegner sakskortet en gang til ved siden av resultatdialogen,
     // og er det eneste stedet en dobbel id kunne oppstått. Uten en fasit
-    // returnerer `oppgjor()` tom streng, og prøven ville lest et tomt kort.
+    // returnerer `oppgjor()` tom streng, og testen ville lest et tomt kort.
     val medFasit =
       tilstand.copy(
         fasit = Fasit("avslatt", "§ 12-3", "fodselsdato"),
@@ -454,7 +454,7 @@ class MarkupTest {
 
     assertTrue(html.contains("Avvik registrert"), "overskriften skal si at det er et avvik")
     // Teksten brytes over flere linjer i malen, så mellomrom slås sammen
-    // før den leses. Ellers henger prøven på hvor linjeskiftet tilfeldigvis
+    // før den leses. Ellers henger testen på hvor linjeskiftet tilfeldigvis
     // står.
     val flat = html.replace(Regex("""\s+"""), " ")
     assertTrue(flat.contains("varslet til statsforvalteren"), "avviket skal ha en følge")
@@ -688,7 +688,7 @@ class MarkupTest {
     }
     assertTrue(html.contains("Du er her"), "utgaven du sitter i skal være merket")
     // Og på knappen, ikke bare et sted på siden: kommentaren ved siden av
-    // inneholder ordet, og prøven besto på den.
+    // inneholder ordet, og testen besto på den.
     assertTrue(
       html.contains("""<button class="fs-button" value="lukk" autofocus>"""),
       "fokus skal stå på knappen, ikke på en lenke til en annen utgave",
@@ -702,7 +702,7 @@ class MarkupTest {
     //
     // Selve dialogen, ikke ordet: skriptet i siden peker på
     // `.velkomst__lenke` når det skal bære temavalget videre, og et søk
-    // etter «velkomst» traff det. Da meldte prøven feil på noe som var helt
+    // etter «velkomst» traff det. Da meldte testen feil på noe som var helt
     // riktig.
     assertFalse(
       side(tilstand, "Kari").contains("<fs-dialog id=\"velkomst"),

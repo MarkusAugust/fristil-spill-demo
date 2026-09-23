@@ -101,8 +101,8 @@ data class Tilstand(
 data class BliMedInn(
   val navn: String,
   val stack: String,
-  /** Paritetsprøven. Poengene havner da aldri i den evige topplista. */
-  val prove: Boolean = false,
+  /** Paritetstesten. Poengene havner da aldri i den evige topplista. */
+  val erTest: Boolean = false,
 )
 
 @Serializable data class BliMedUt(val spillerId: String, val navn: String)

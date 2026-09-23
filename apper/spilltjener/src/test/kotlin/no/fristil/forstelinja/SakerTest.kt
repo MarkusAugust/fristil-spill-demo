@@ -31,7 +31,7 @@ class SakerTest {
     val samling = lesSaker("../../felles/saker.json")
 
     // `Sakssamling.init` krever alt at det er minst like mange saker som
-    // runder, så en prøve på nøyaktig det kunne ikke feilet her. Det denne
+    // runder, så en test på nøyaktig det kunne ikke feilet her. Det denne
     // sier er noe annet: med bare fire saker ville hver omgang hatt de
     // samme fire, i stokket rekkefølge, og demoen blitt kjedelig å stå i.
     assertTrue(

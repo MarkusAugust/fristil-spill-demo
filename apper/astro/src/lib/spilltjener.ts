@@ -22,27 +22,27 @@ export async function tilstand(spillerId: string | null): Promise<Tilstand> {
 }
 
 /**
- * Overskriften paritetsprøven melder seg på med.
+ * Overskriften paritetstesten melder seg på med.
  *
- * Prøven setter den på hver forespørsel fra nettleseren sin, og appserveren
+ * Testen setter den på hver forespørsel fra nettleseren sin, og appserveren
  * sender den videre til spilltjeneren. Poengene havner da aldri i den evige
  * topplista, som er det eneste som overlever en omstart.
  */
-export const PROVE_OVERSKRIFT = "x-fristil-prove"
+export const TEST_OVERSKRIFT = "x-fristil-test"
 
-/** Om forespørselen kommer fra paritetsprøven. */
-export function erProve(request: Request): boolean {
-  return request.headers.get(PROVE_OVERSKRIFT) === "1"
+/** Om forespørselen kommer fra paritetstesten. */
+export function erTest(request: Request): boolean {
+  return request.headers.get(TEST_OVERSKRIFT) === "1"
 }
 
 export async function bliMed(
   navn: string,
-  prove = false,
+  erTest = false,
 ): Promise<{ spillerId: string; navn: string }> {
   const svar = await fetch(`${ADRESSE}/api/bli-med`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ navn, stack: "astro", prove }),
+    body: JSON.stringify({ navn, stack: "astro", erTest }),
   })
   if (!svar.ok) throw new Error(`Spilltjeneren svarte ${svar.status}`)
   return (await svar.json()) as { spillerId: string; navn: string }
@@ -52,9 +52,9 @@ export async function bliMed(
  * Melder en spiller av vakta.
  *
  * En ekte spiller trenger den ikke: lukker du fanen, er du borte etter tre
- * runder uten svar. Den finnes fordi paritetsprøven melder på en spiller i
- * hver utgave, og en prøve som lar tre «Prøve …» stå igjen på tavla skitner
- * til det den skal prøve.
+ * runder uten svar. Den finnes fordi paritetstesten melder på en spiller i
+ * hver utgave, og en test som lar tre «Test …» stå igjen på tavla skitner
+ * til det den skal teste.
  */
 export async function gaAv(spillerId: string): Promise<void> {
   await fetch(`${ADRESSE}/api/ga-av`, {

@@ -370,12 +370,12 @@ class SpillTest {
   }
 
   @Test
-  fun `en prøvespiller havner aldri på den evige topplista`() = runTest {
-    // Paritetsprøven melder på en spiller i hver utgave og melder den av
-    // igjen. Tok vakta slutt før avmeldingen, sto «Prøve datastar» i den
+  fun `en testspiller havner aldri på den evige topplista`() = runTest {
+    // Paritetstesten melder på en spiller i hver utgave og melder den av
+    // igjen. Tok vakta slutt før avmeldingen, sto «Test datastar» i den
     // evige topplista, og den lista er det eneste som overlever en omstart.
     val spill = nyttSpill()
-    val spiller = spill.bliMed("Prøve datastar", Stack.DATASTAR, prove = true)
+    val spiller = spill.bliMed("Test datastar", Stack.DATASTAR, erTest = true)
 
     repeat(RUNDER_PER_SPILL) {
       val fasit = spill.sak.fasit

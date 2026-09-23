@@ -3,19 +3,19 @@ import { chromium } from "playwright"
 /**
  * At de tre utgavene oppfører seg likt.
  *
- * Dette er hele påstanden til demoen, og den eneste prøven som kan si om den
+ * Dette er hele påstanden til demoen, og den eneste testen som kan si om den
  * holder. Den kjører det samme løpet i hver app: melde seg på, fylle ut
  * vedtaket, se kvitteringen, og sjekke at komponentene gjør jobben sin.
  *
- * Prøven vet ingenting om hvordan appene er bygget, og skal ikke vite det.
+ * Testen vet ingenting om hvordan appene er bygget, og skal ikke vite det.
  * Den ser bare på det brukeren ser: roller, ledetekster og synlige
- * elementer. En prøve som lette etter appens egne id-er ville sagt mer om
+ * elementer. En test som lette etter appens egne id-er ville sagt mer om
  * hvordan de er skrevet enn om de gjør det samme.
  *
  * Appene må kjøre først:
  *
  *     ./kjor.sh rask
- *     cd prover && bun install && bun run paritet
+ *     cd tester && bun install && bun run paritet
  */
 
 const APPER = [
@@ -31,17 +31,17 @@ const nettleser = await chromium.launch()
 for (const app of APPER) {
   const si = (melding: string) => funn.push(`${app.navn}: ${melding}`)
   /*
-   * Prøven melder seg på som en prøve, ikke som en saksbehandler.
+   * Testen melder seg på som en test, ikke som en saksbehandler.
    *
    * Overskriften følger hver forespørsel, også innsendingen av
    * påmeldingsskjemaet, og appserveren sender den videre til spilltjeneren.
-   * Uten den ble «Prøve datastar» stående i den evige topplista: `/ga-av`
-   * tar spilleren av tavla, men tok vakta slutt mens prøven fortsatt sto der,
+   * Uten den ble «Test datastar» stående i den evige topplista: `/ga-av`
+   * tar spilleren av tavla, men tok vakta slutt mens testen fortsatt sto der,
    * var poengene alt lagret, og den lista er det eneste som overlever en
    * omstart.
    */
   const kontekst = await nettleser.newContext({
-    extraHTTPHeaders: { "x-fristil-prove": "1" },
+    extraHTTPHeaders: { "x-fristil-test": "1" },
   })
   const side = await kontekst.newPage()
 
@@ -62,7 +62,7 @@ for (const app of APPER) {
      * Serveren sender dialogen med `open`, så den er synlig som en boks på
      * siden allerede før noe skript har kjørt. Det er med vilje: uten
      * JavaScript er innholdet ellers borte. Men det betyr at «synlig» kommer
-     * før komponenten har gjort den modal, og en prøve som venter på synlighet
+     * før komponenten har gjort den modal, og en test som venter på synlighet
      * tar bildet for tidlig. `:modal` er forskjellen på en ekte modal og en
      * boks: bare den første gjør resten av siden utilgjengelig.
      */
@@ -75,7 +75,7 @@ for (const app of APPER) {
       .catch(() => si("velkomsthilsenen ble aldri en modal dialog"))
 
     await side.getByRole("button", { name: "Jeg merker nok forskjellen" }).click()
-    await side.getByLabel("Navnet ditt").fill(`Prøve ${app.navn}`)
+    await side.getByLabel("Navnet ditt").fill(`Test ${app.navn}`)
     await side.getByRole("button", { name: "Begynn vakta" }).click()
     await side.locator("#tavle").waitFor({ timeout: 15000 })
 
@@ -101,8 +101,8 @@ for (const app of APPER) {
     /*
      * Vent på at en runde er i gang, ikke på klokka.
      *
-     * Prøven kan lande midt i et oppgjør, og da finnes ikke skjemaet. En
-     * prøve som bare hopper over skjemaet da, sier ingenting halve tiden.
+     * Testen kan lande midt i et oppgjør, og da finnes ikke skjemaet. En
+     * test som bare hopper over skjemaet da, sier ingenting halve tiden.
      * Appene henter en ny side eller tegner om av seg selv når runden
      * skifter, så det holder å vente på at feltet dukker opp.
      */
@@ -153,10 +153,10 @@ for (const app of APPER) {
   /*
    * Og så av vakt igjen.
    *
-   * Uten dette sto «Prøve datastar», «Prøve tanstack» og «Prøve astro» igjen
+   * Uten dette sto «Test datastar», «Test tanstack» og «Test astro» igjen
    * på tavla i seks minutter etter hver kjøring, og telte med i «tre av fire
-   * saksbehandlere har levert». En prøve som skitner til det den prøver er
-   * en dårlig prøve.
+   * saksbehandlere har levert». En test som skitner til det den tester er
+   * en dårlig test.
    */
   await side
     .evaluate(() => fetch("/ga-av", { method: "POST" }).then(() => undefined))

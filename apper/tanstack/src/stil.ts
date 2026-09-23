@@ -3,7 +3,7 @@
  *
  * Én import per fil, og ingen løkke: `import` er statisk, og en bunter kan
  * ikke følge en liste som settes sammen i kjøretid. Lista i `fristil.ts` er
- * den samme, og en prøve krever at de to holdes i takt.
+ * den samme, og en test krever at de to holdes i takt.
  */
 import "@fristil/designsystem/tokens.css"
 import "@fristil/designsystem/field.css"

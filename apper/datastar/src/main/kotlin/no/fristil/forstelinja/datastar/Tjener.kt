@@ -135,13 +135,13 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
 
     post("/bli-med") {
       val navn = call.receiveParameters()["navn"].orEmpty()
-      // Paritetsprøven setter denne overskriften på hver forespørsel fra
-      // nettleseren sin. Uten den ble «Prøve datastar» stående i den evige
-      // topplista hver gang en vakt tok slutt mens prøven kjørte.
-      val prove = call.request.headers["x-fristil-prove"] == "1"
+      // Paritetstesten setter denne overskriften på hver forespørsel fra
+      // nettleseren sin. Uten den ble «Test datastar» stående i den evige
+      // topplista hver gang en vakt tok slutt mens testen kjørte.
+      val erTest = call.request.headers["x-fristil-test"] == "1"
       val spiller =
         try {
-          spilltjener.bliMed(navn, prove)
+          spilltjener.bliMed(navn, erTest)
         } catch (e: Exception) {
           call.respondText(venteside(), ContentType.Text.Html, HttpStatusCode.ServiceUnavailable)
           return@post
@@ -176,7 +176,7 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
     /**
      * Går av vakt, og blir borte fra tavla med en gang.
      *
-     * Ingen knapp peker hit. Paritetsprøven bruker den for å rydde etter
+     * Ingen knapp peker hit. Paritetstesten bruker den for å rydde etter
      * seg, og det er det samme kallet en «gå av vakt»-knapp ville gjort.
      */
     post("/ga-av") {

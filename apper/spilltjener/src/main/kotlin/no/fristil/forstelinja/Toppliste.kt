@@ -31,10 +31,11 @@ class Toppliste(sti: String = System.getenv("TOPPLISTE_FIL") ?: "toppliste.db") 
       // Rader lagret før navnene ble ryddet. Uten dette står «Kari» og
       // «Kari » som to spillere i lista for alltid.
       it.executeUpdate("UPDATE resultat SET navn = trim(navn) WHERE navn <> trim(navn)")
-      // Rader fra paritetsprøven, lagret før prøvespillerne ble holdt utenfor.
+      // Rader fra paritetstesten, lagret før testspillerne ble holdt utenfor.
       // «Prøve datastar» sto på den evige topplista med fem poeng, og lista er
       // det eneste som overlever en omstart, så den forsvinner ikke av seg selv.
-      it.executeUpdate("DELETE FROM resultat WHERE navn LIKE 'Prøve %'")
+      // Begge navnene: testspilleren het «Prøve …» før den ble døpt om.
+      it.executeUpdate("DELETE FROM resultat WHERE navn LIKE 'Prøve %' OR navn LIKE 'Test %'")
     }
   }
 

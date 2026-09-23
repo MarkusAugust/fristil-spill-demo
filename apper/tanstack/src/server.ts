@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs"
 import { createStartHandler, defaultStreamHandler } from "@tanstack/react-start/server"
 
 import { KOMMUNER } from "./kommuner"
-import { bliMed, erProve, gaAv, pulsen, svarInn, tilstand } from "./spilltjener"
+import { bliMed, erTest, gaAv, pulsen, svarInn, tilstand } from "./spilltjener"
 import type { Skjermbilde } from "./tilstand"
 import { valider } from "./validering"
 
@@ -165,7 +165,7 @@ export default {
       const navn = String(skjema.get("navn") ?? "")
       let spiller: { spillerId: string }
       try {
-        spiller = await bliMed(navn, erProve(request))
+        spiller = await bliMed(navn, erTest(request))
       } catch {
         return new Response(null, { status: 303, headers: { location: "/" } })
       }
@@ -184,7 +184,7 @@ export default {
     /*
      * Går av vakt, og blir borte fra tavla med en gang.
      *
-     * Ingen knapp peker hit. Paritetsprøven bruker den for å rydde etter
+     * Ingen knapp peker hit. Paritetstesten bruker den for å rydde etter
      * seg, og det er det samme kallet en «gå av vakt»-knapp ville gjort.
      */
     if (url.pathname === "/ga-av" && request.method === "POST") {

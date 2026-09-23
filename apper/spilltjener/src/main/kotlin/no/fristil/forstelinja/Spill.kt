@@ -147,15 +147,15 @@ data class Spiller(
   var sistePoeng: Int = 0,
   var forrigePlass: Int = 0,
   /**
-   * En paritetsprøve, ikke en saksbehandler.
+   * En paritetstest, ikke en saksbehandler.
    *
-   * Prøven melder på en spiller i hver utgave og melder den av igjen, men
+   * Testen melder på en spiller i hver utgave og melder den av igjen, men
    * ender vakta mens den står der, lagres poengene i den evige topplista,
-   * og «Prøve datastar» blir stående der for alltid. Den evige topplista er
+   * og «Test datastar» blir stående der for alltid. Den evige topplista er
    * det eneste som overlever en omstart, så en rad der kan ikke tas tilbake.
    * Derfor står det på spilleren, ikke i en navnesjekk ved lagringen.
    */
-  val prove: Boolean = false,
+  val erTest: Boolean = false,
 )
 
 /** Klokka, slik at testene slipper å vente i ekte sekunder. */
@@ -206,9 +206,9 @@ class Spill(
 
   private fun trekkSaker(): List<Sak> = samling.saker.shuffled().take(RUNDER_PER_SPILL)
 
-  suspend fun bliMed(navn: String, stack: Stack, prove: Boolean = false): Spiller {
+  suspend fun bliMed(navn: String, stack: Stack, erTest: Boolean = false): Spiller {
     val ren = navn.trim().take(24).ifBlank { "Anonym" }
-    val spiller = Spiller(id = UUID.randomUUID().toString(), navn = ren, stack = stack, prove = prove)
+    val spiller = Spiller(id = UUID.randomUUID().toString(), navn = ren, stack = stack, erTest = erTest)
     laas.withLock { spillere[spiller.id] = spiller }
     endringer.emit(Unit)
     return spiller
@@ -218,9 +218,9 @@ class Spill(
    * Melder en spiller av vakta.
    *
    * En ekte spiller trenger den ikke: lukker du fanen, er du borte etter tre
-   * runder uten svar. Den finnes fordi paritetsprøven melder på en spiller i
-   * hver utgave, og en prøve som lar tre «Prøve …» stå igjen på tavla
-   * skitner til det den skal prøve. Det er det samme kallet en «gå av
+   * runder uten svar. Den finnes fordi paritetstesten melder på en spiller i
+   * hver utgave, og en test som lar tre «Test …» stå igjen på tavla
+   * skitner til det den skal teste. Det er det samme kallet en «gå av
    * vakt»-knapp ville gjort.
    */
   suspend fun gaAv(spillerId: String): Boolean {
@@ -372,7 +372,7 @@ class Spill(
 
   private fun lagreToppliste() {
     for (spiller in spillere.values) {
-      if (spiller.prove) continue
+      if (spiller.erTest) continue
       if (spiller.poeng > 0) toppliste.lagre(spiller.navn, spiller.poeng, spiller.stack)
     }
     evig = toppliste.topp(10)

@@ -63,7 +63,7 @@ class Varme(private val timer: Double = System.getenv("VARM_TIMER")?.toDoubleOrN
       // `Dispatchers.IO`, ikke tråden vi står på. `getByName` blokkerer, og
       // løkka kjører i den samme `runBlocking`-konteksten som tjeneren.
       // Uten dette sto hele spilltjeneren stille mens oppslaget pågikk, og
-      // paritetsprøven feilet tilfeldig i en annen app for hver kjøring.
+      // paritetstesten feilet tilfeldig i en annen app for hver kjøring.
       withContext(Dispatchers.IO) { runCatching { InetAddress.getByName("railway.com") } }
     }
   }
