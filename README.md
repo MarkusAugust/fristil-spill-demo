@@ -146,6 +146,24 @@ cd apper/spilltjener && ./gradlew test && ./gradlew installDist
 | `OPPGJOR_MS` | `25000` | |
 | `SLUTT_MS` | `40000` | |
 
+## Prøven som sier om påstanden holder
+
+```bash
+./kjor.sh rask
+cd prover && bun install && bun run paritet
+```
+
+`prover/paritet.ts` kjører det samme løpet i alle tre utgavene: melder seg
+på, fyller ut vedtaket, ser kvitteringen, og sjekker at komponentene gjør
+jobben sin. Den ser bare på det brukeren ser, altså roller, ledetekster og
+synlige elementer, og vet ingenting om hvordan appene er bygget. En prøve som
+lette etter appenes egne id-er ville sagt mer om hvordan de er skrevet enn om
+de gjør det samme.
+
+Den venter på at en runde er i gang framfor å hoppe over skjemaet når den
+lander midt i et oppgjør. En prøve som feiler tilfeldig blir ignorert, og da
+er den verdiløs.
+
 ## Railway
 
 Fem tjenester i ett prosjekt:

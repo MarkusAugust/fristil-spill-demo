@@ -1,0 +1,11 @@
+{
+  "name": "forstelinja-prover",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "paritet": "bun run paritet.ts"
+  },
+  "devDependencies": {
+    "playwright": "^1.60.0"
+  }
+}
