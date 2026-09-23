@@ -17,7 +17,9 @@ const { tilstand } = Astro.props
  * ellers vet serveren ikke hvem du er. Det virker dessuten uten JavaScript i
  * det hele tatt, og i denne appen er det ikke tilfeldig.
  */
-const felt = fs.field({ help: true })
+// Id-en er skrevet ut, ikke laget. Uten den sier Fristil fra i konsollen,
+// og advarselen står i byggeloggen hver gang appen bygges.
+const felt = fs.field({ id: "bli-med-navn", help: true })
 const sekunder = Math.round(tilstand.rundeLengdeMs / 1000)
 const tid =
   sekunder % 60 !== 0
