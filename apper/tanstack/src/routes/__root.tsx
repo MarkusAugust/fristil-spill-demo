@@ -1,3 +1,12 @@
+import {
+  defineFsConnectionStatus,
+  defineFsDialog,
+  defineFsErrorSummary,
+  defineFsField,
+  defineFsPopover,
+  defineFsSuggestion,
+  defineFsTabs,
+} from "@fristil/designsystem"
 import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router"
 import { createServerFn } from "@tanstack/react-start"
 import { getCookie } from "@tanstack/react-start/server"
@@ -48,19 +57,23 @@ function Skall() {
    *
    * Én kalle per komponent, og ikke en samlefunksjon: registreringen er det
    * eneste som drar koden inn i bunten, så en app som ikke bruker
-   * forslagsfeltet skal heller ikke sende det. Importen er dynamisk fordi
-   * `customElements` ikke finnes på serveren.
+   * forslagsfeltet skal heller ikke sende det.
+   *
+   * Importen er statisk, ikke dynamisk. Den kan være det: modulene i Fristil
+   * kan lastes på en server, og `defineFs*` gjør ingenting uten
+   * `customElements`. Med en dynamisk import var det et lite gap der siden
+   * sto med elementene, men uten oppførsel, og i drift rakk første melding
+   * fra hendelsesstrømmen å komme inn i det gapet: «reportSuccess is not a
+   * function». Lokalt var filene der med en gang, så det viste seg aldri.
    */
   useEffect(() => {
-    void import("@fristil/designsystem").then((fristil) => {
-      fristil.defineFsField()
-      fristil.defineFsTabs()
-      fristil.defineFsPopover()
-      fristil.defineFsSuggestion()
-      fristil.defineFsErrorSummary()
-      fristil.defineFsDialog()
-      fristil.defineFsConnectionStatus()
-    })
+    defineFsField()
+    defineFsTabs()
+    defineFsPopover()
+    defineFsSuggestion()
+    defineFsErrorSummary()
+    defineFsDialog()
+    defineFsConnectionStatus()
   }, [])
 
   return (

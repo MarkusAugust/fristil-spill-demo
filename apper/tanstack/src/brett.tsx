@@ -1200,10 +1200,21 @@ export function Skjerm({ forste, tema }: { forste: Skjermbilde; tema: Tema }) {
   useEffect(() => {
     const kilde = new EventSource("/hendelser")
 
-    const status = () =>
-      document.querySelector<HTMLElement & { reportFailure(): void; reportSuccess(): void }>(
-        "fs-connection-status",
-      )
+    /*
+     * Sambandslinja, men bare når den er oppgradert.
+     *
+     * Elementet står i HTML-en fra serveren lenge før komponenten er
+     * registrert, og da har det ingen metoder. Uten denne sjekken kastet
+     * første melding fra strømmen «reportSuccess is not a function», og
+     * hele skjermen sto igjen utegnet. Er komponenten ikke der ennå, er det
+     * heller ingen linje å melde noe til.
+     */
+    const status = () => {
+      const linje = document.querySelector<
+        HTMLElement & { reportFailure(): void; reportSuccess(): void }
+      >("fs-connection-status")
+      return typeof linje?.reportSuccess === "function" ? linje : null
+    }
 
     kilde.addEventListener("tilstand", (hendelse) => {
       const nytt = JSON.parse((hendelse as MessageEvent<string>).data) as Skjermbilde
@@ -1245,9 +1256,10 @@ export function Skjerm({ forste, tema }: { forste: Skjermbilde; tema: Tema }) {
     } catch {
       // Et vedtak som forsvinner i stillhet er det verste som kan skje her:
       // spilleren tror hun har levert, og runden går fra henne.
-      document
-        .querySelector<HTMLElement & { reportFailure(): void }>("fs-connection-status")
-        ?.reportFailure()
+      const linje = document.querySelector<HTMLElement & { reportFailure(): void }>(
+        "fs-connection-status",
+      )
+      if (typeof linje?.reportFailure === "function") linje.reportFailure()
     }
   }
 
