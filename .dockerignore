@@ -1,0 +1,13 @@
+# Alt som bygges på nytt inne i bildet. Uten dette sendes flere hundre
+# megabyte med node_modules og Gradle-cache til byggeren ved hver utrulling.
+**/node_modules
+**/dist
+**/build
+**/.gradle
+**/.kotlin
+**/.astro
+**/.vite
+**/*.db
+**/*.db-journal
+.git
+prover

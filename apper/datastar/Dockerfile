@@ -1,0 +1,23 @@
+# Datastar-appen, i Kotlin. Bygges fra rota: den serverer `felles/brett.css`
+# og leser kommunelista derfra.
+FROM eclipse-temurin:21-jdk AS bygger
+WORKDIR /kilde
+
+COPY apper/datastar/gradle gradle
+COPY apper/datastar/gradlew apper/datastar/settings.gradle.kts apper/datastar/build.gradle.kts ./
+RUN ./gradlew --no-daemon --quiet dependencies > /dev/null 2>&1 || true
+
+COPY apper/datastar/src src
+RUN ./gradlew --no-daemon --quiet installDist
+
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+COPY --from=bygger /kilde/build/install/datastar-app datastar-app
+COPY felles felles
+
+ENV BRETT_CSS_FIL=/app/felles/brett.css \
+    KOMMUNER_FIL=/app/felles/kommuner.json \
+    HOST=:: \
+    PORT=8081
+
+CMD ["/app/datastar-app/bin/datastar-app"]

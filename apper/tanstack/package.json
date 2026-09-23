@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite dev --port 8082",
     "build": "vite build",
-    "start": "bun run dist/server/server.js",
+    "start": "bun run serve.ts",
     "sjekk": "tsc --noEmit"
   },
   "dependencies": {

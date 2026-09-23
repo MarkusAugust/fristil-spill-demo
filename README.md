@@ -169,24 +169,61 @@ er den verdiløs.
 
 ## Railway
 
-Fem tjenester i ett prosjekt:
+Fem tjenester i ett prosjekt, alle fra dette repoet:
 
-| Tjeneste | Offentlig | Volum |
+| Tjeneste | Offentlig | Volum | Dockerfile |
+| --- | --- | --- | --- |
+| `spilltjener` | nei | ja, til SQLite | `apper/spilltjener/Dockerfile` |
+| `datastar` | ja | nei | `apper/datastar/Dockerfile` |
+| `tanstack` | ja | nei | `apper/tanstack/Dockerfile` |
+| `astro` | ja | nei | `apper/astro/Dockerfile` |
+| `skall` | ja | nei | `apper/skall/Dockerfile` |
+
+**La «Root Directory» stå tom for alle fem.** Det er det motsatte av hva som
+er vanlig i et monorepo, og grunnen er `felles/`: sakene, kommunene og
+stilarket ligger utenfor appene, og tre av dem leser filer derfra. Settes en
+rotmappe per tjeneste, ser byggeren bare appmappa, og `felles/saker.json`
+finnes ikke. Dockerfilene bygger derfor fra rota og kopierer inn det de
+trenger.
+
+Hver tjeneste peker i stedet på sin egen `railway.json` under **Settings →
+Config as code**, for eksempel `apper/astro/railway.json`. Den setter
+byggeren til Dockerfile, hvilken Dockerfile det er, og `/helse` som
+helsesjekk.
+
+### Variabler
+
+Dockerfilene setter stiene til `felles/` og en fornuftig `PORT` selv. Det som
+må settes i Railway er hvem som snakker med hvem:
+
+| Tjeneste | Variabel | Verdi |
 | --- | --- | --- |
-| `spilltjener` | nei | ja, til SQLite |
-| `tanstack` | ja | nei |
-| `datastar` | ja | nei |
-| `astro` | ja | nei |
-| `skall` | ja | nei |
+| alle tre appene | `SPILLTJENER` | `http://spilltjener.railway.internal:8080` |
+| alle tre appene og skallet | `DATASTAR_URL` | `https://${{datastar.RAILWAY_PUBLIC_DOMAIN}}` |
+| | `TANSTACK_URL` | `https://${{tanstack.RAILWAY_PUBLIC_DOMAIN}}` |
+| | `ASTRO_URL` | `https://${{astro.RAILWAY_PUBLIC_DOMAIN}}` |
+| `spilltjener` | `TOPPLISTE_FIL` | `/data/toppliste.db`, med volumet montert på `/data` |
 
-Appene når spilltjeneren på `spilltjener.railway.internal`, så den trenger aldri et offentlig domene.
+Adressene brukes i velkomsthilsenen, i topplinja og i skallets tre rammer.
+Uten dem peker lenkene på `localhost`, og du merker det først når noen
+klikker.
 
-To ting å passe på, notert før vi kom dit:
+Spilltjeneren skal ikke ha noe offentlig domene. Appene når den på
+`spilltjener.railway.internal`, og det private nettet til Railway er
+IPv6-bare, så tjenesten må lytte på `::`. Det er standarden i Dockerfilen.
 
-- **`felles/` og «root directory».** Setter man en root directory per tjeneste, henter Railway bare filer derfra, og da finnes ikke `felles/saker.json`. Tjenester som trenger den må settes opp som et delt monorepo, med byggkommandoer som kjører fra rota, eller få `SAKER_FIL` pekt et annet sted.
-- **Uten volum forsvinner topplista** ved hver utrulling. Ett volum per tjeneste, og en tjeneste med volum får litt nedetid ved utrulling. For spilltjeneren er det uproblematisk, siden en omstart uansett starter en ny omgang.
+### Det som er verdt å vite
 
-Og én ting som **ikke er etterprøvd ennå**: jeg mener Railways private nett er IPv6-bare, slik at tjenesten må lytte på `::` og ikke `0.0.0.0` for å være synlig internt. Standarden her er `::`, men det må bekreftes mot Railways egen dokumentasjon når vi setter opp.
+- **Runder og pauser** styres av `RUNDE_MS`, `OPPGJOR_MS` og `SLUTT_MS` på
+  spilltjeneren. Standard er to minutter, 25 sekunder og 40 sekunder.
+- **Uten volum forsvinner den evige topplista** ved hver utrulling. Ett volum
+  på spilltjeneren holder, og en tjeneste med volum får litt nedetid ved
+  utrulling. Det er uproblematisk her, siden en omstart uansett starter en ny
+  omgang.
+- **Kapselen med spillerens id og temavalget** deles ikke mellom tjenestene på
+  Railway, slik den gjør lokalt: der er det tre ulike domener. Du blir altså
+  en ny saksbehandler når du bytter utgave, og temavalget følger ikke med.
+  Lokalt deler de tre kapselen, siden kapsler ikke bryr seg om portnummer.
 
 ## Velkomsthilsenen, og valget mellom de tre
 
