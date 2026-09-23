@@ -200,6 +200,37 @@ class MarkupTest {
   }
 
   @Test
+  fun `en dialog som skal vises står åpen også uten JavaScript`() {
+    // `<dialog>` uten `open` er skjult. Sto attributtet bare på verten, var
+    // innholdet borte for den som ikke har JavaScript, og i React meldte
+    // hydreringen avvik. Denne appen skriver markupen for hånd, så den kan
+    // komme i utakt med byggefunksjonene i Fristil uten at noe sier fra.
+    val oppgjor =
+      tilstand.copy(
+        fase = "oppgjor",
+        fasit = Fasit("innvilget", "§ 4-1", null),
+        fasitKommune = "Bergen",
+        forklaring = "Søknaden er i orden.",
+      )
+
+    // `\bopen\b` duger ikke: `data-preserve-attr="open"` inneholder ordet,
+    // og prøven ville meldt grønt uansett. Det vi er ute etter er et bart
+    // attributt, altså `open` med mellomrom foran og mellomrom eller `>`
+    // etter. Prøvd: uten dette fanget prøven ikke at attributtet ble fjernet.
+    val bartOpen = { tagg: String, html: String ->
+      Regex("<$tagg\\b[^>]*\\sopen(\\s|>)").containsMatchIn(html)
+    }
+
+    for (html in listOf(velkomst(), resultatdialog(oppgjor))) {
+      assertEquals(
+        bartOpen("fs-dialog", html),
+        bartOpen("dialog", html),
+        "open skal stå begge steder eller ingen: $html",
+      )
+    }
+  }
+
+  @Test
   fun `patchen har Datastars format`() {
     val ut = patch("<div id=\"a\">en</div>\n<div id=\"b\">to</div>")
 

@@ -54,7 +54,7 @@ fun velkomst(): String =
   """
   <fs-dialog id="velkomst" open>
     <dialog class="fs-dialog velkomst" aria-labelledby="velkomst-tittel"
-            data-preserve-attr="open">
+            open data-preserve-attr="open">
       <div class="velkomst__topp">
         <h2 class="fs-dialog__title" id="velkomst-tittel">Velkommen til Førstelinja</h2>
       </div>
@@ -875,9 +875,11 @@ private fun besteIRunden(tilstand: Tilstand): String {
  * riktig, felt for felt. Det holder ikke å si «feil»: da vet du fortsatt ikke
  * hva du skulle ha svart, og neste runde blir like tilfeldig.
  *
- * `open` står på verten og er serverens beskjed. `data-preserve-attr="open"`
- * står på selve `<dialog>`, fordi det er nettleseren som setter det når
- * `showModal()` kalles.
+ * `open` står begge steder. På verten er det serverens beskjed til
+ * komponenten. På selve `<dialog>` er det reserven for den som ikke har
+ * JavaScript: uten attributtet er dialogen skjult, og innholdet finnes ikke.
+ * `data-preserve-attr="open"` står der fordi nettleseren setter det samme
+ * attributtet når `showModal()` kalles, og morfingen ellers river det bort.
  */
 fun resultatdialog(tilstand: Tilstand): String {
   val fasit = tilstand.fasit
@@ -997,7 +999,7 @@ fun resultatdialog(tilstand: Tilstand): String {
   return """
     <fs-dialog id="resultat" open>
       <dialog class="fs-dialog resultat" aria-labelledby="resultat-tittel"
-              data-utfall="$utfall" data-preserve-attr="open">
+              data-utfall="$utfall" open data-preserve-attr="open">
         <div class="resultat__topp">
           <h2 class="fs-dialog__title" id="resultat-tittel">${overskrift.trygg()}</h2>
           $innledning
