@@ -30,20 +30,29 @@ const nettleser = await chromium.launch()
 
 for (const app of APPER) {
   const si = (melding: string) => funn.push(`${app.navn}: ${melding}`)
+  const kontekst = await nettleser.newContext()
+  const side = await kontekst.newPage()
+
   /*
    * Testen melder seg på som en test, ikke som en saksbehandler.
    *
-   * Overskriften følger hver forespørsel, også innsendingen av
-   * påmeldingsskjemaet, og appserveren sender den videre til spilltjeneren.
-   * Uten den ble «Test datastar» stående i den evige topplista: `/ga-av`
+   * Uten dette ble «Test datastar» stående i den evige topplista: `/ga-av`
    * tar spilleren av tavla, men tok vakta slutt mens testen fortsatt sto der,
    * var poengene alt lagret, og den lista er det eneste som overlever en
    * omstart.
+   *
+   * En kapsel, og ikke en overskrift. To forsøk feilet før dette: en
+   * overskrift på hele konteksten fulgte også med til CDN-en, og en
+   * egendefinert overskrift gjør en forespørsel over domenegrensen til en som
+   * krever forhåndssjekk, så web-komponentene ble blokkert og Kotlin-utgaven
+   * ble felt for noe appen ikke gjør. Å sette overskriften bare på
+   * påmeldingen krevde at testen avskar selve navigeringen, og det ødela
+   * kapselhåndteringen i React-utgaven, som mistet temaet sitt. Kapselen går
+   * bare til appens eget domene og rører ingen av delene.
    */
-  const kontekst = await nettleser.newContext({
-    extraHTTPHeaders: { "x-fristil-test": "1" },
-  })
-  const side = await kontekst.newPage()
+  await kontekst.addCookies([
+    { name: "forstelinja-test", value: "1", url: app.url },
+  ])
 
   side.on("pageerror", (e) => si(`sidefeil: ${e.message}`))
   side.setDefaultTimeout(20_000)
@@ -107,14 +116,33 @@ for (const app of APPER) {
     // Temaet er brukerens valg, og skal overleve at siden lastes på nytt.
     // Selve radioknappen ligger under merkelappen, som i en ekte knapperad.
     await side.locator(".temavelger label", { hasText: "Mørkt" }).click()
-    if ((await side.evaluate(() => document.documentElement.dataset.theme)) !== "dark") {
-      si("temavelgeren satte ikke data-theme")
-    }
+
+    /*
+     * Vent på attributtet, ikke les det i samme åndedrag som klikket.
+     *
+     * De tre utgavene setter temaet på hver sin måte: Datastar får en patch
+     * fra serveren, Astro laster siden på nytt, og React oppdaterer i
+     * nettleseren etter at kapselen er skrevet. Avlesningen rett etter
+     * klikket traff derfor før React var ferdig, og testen meldte avvik på
+     * noe som virket et øyeblikk senere. En test som feiler tilfeldig blir
+     * ignorert.
+     */
+    await side
+      .waitForFunction(
+        () => document.documentElement.dataset.theme === "dark",
+        undefined,
+        { timeout: 10000 },
+      )
+      .catch(() => si("temavelgeren satte ikke data-theme"))
     await side.reload({ waitUntil: "domcontentloaded" })
     await side.locator("#tavle").waitFor({ timeout: 15000 })
-    if ((await side.evaluate(() => document.documentElement.dataset.theme)) !== "dark") {
-      si("temaet overlevde ikke en ny side")
-    }
+    await side
+      .waitForFunction(
+        () => document.documentElement.dataset.theme === "dark",
+        undefined,
+        { timeout: 10000 },
+      )
+      .catch(() => si("temaet overlevde ikke en ny side"))
 
     // Nedtellingen skal telle, ikke bare stå der.
     const forst = await side.locator(".nedtelling").first().textContent()

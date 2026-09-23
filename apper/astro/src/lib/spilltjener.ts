@@ -22,18 +22,24 @@ export async function tilstand(spillerId: string | null): Promise<Tilstand> {
 }
 
 /**
- * Overskriften paritetstesten melder seg på med.
+ * Kapselen paritetstesten melder seg på med.
  *
- * Testen setter den på hver forespørsel fra nettleseren sin, og appserveren
- * sender den videre til spilltjeneren. Poengene havner da aldri i den evige
- * topplista, som er det eneste som overlever en omstart.
+ * En kapsel og ikke en overskrift. Testen satte først `x-fristil-test` på
+ * hver forespørsel, og det brøt to ting: en egendefinert overskrift gjør en
+ * forespørsel over domenegrensen til en som krever forhåndssjekk, så
+ * hentingen av Fristil fra CDN ble blokkert, og satte testen den bare på
+ * påmeldingen, måtte den avskjære selve navigeringen, som igjen ødela
+ * kapselhåndteringen i React-utgaven. En kapsel er det samme mønsteret appen
+ * bruker for spilleren og for temaet, og koster ingen av delene.
  */
-export const TEST_OVERSKRIFT = "x-fristil-test"
+export const TEST_KAPSEL = "forstelinja-test"
 
 /** Om forespørselen kommer fra paritetstesten. */
 export function erTest(request: Request): boolean {
-  return request.headers.get(TEST_OVERSKRIFT) === "1"
+  const kapsler = request.headers.get("cookie") ?? ""
+  return kapsler.split(";").some((k) => k.trim() === `${TEST_KAPSEL}=1`)
 }
+
 
 export async function bliMed(
   navn: string,

@@ -135,10 +135,16 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
 
     post("/bli-med") {
       val navn = call.receiveParameters()["navn"].orEmpty()
-      // Paritetstesten setter denne overskriften på hver forespørsel fra
-      // nettleseren sin. Uten den ble «Test datastar» stående i den evige
-      // topplista hver gang en vakt tok slutt mens testen kjørte.
-      val erTest = call.request.headers["x-fristil-test"] == "1"
+      /*
+       * Paritetstesten melder seg på med en kapsel. Uten den ble «Test
+       * datastar» stående i den evige topplista hver gang en vakt tok slutt
+       * mens testen kjørte.
+       *
+       * En kapsel og ikke en overskrift: en egendefinert overskrift gjør en
+       * forespørsel over domenegrensen til en som krever forhåndssjekk, og da
+       * ble hentingen av Fristil fra CDN blokkert i nettleseren.
+       */
+      val erTest = call.request.cookies["forstelinja-test"] == "1"
       val spiller =
         try {
           spilltjener.bliMed(navn, erTest)
