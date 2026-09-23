@@ -49,14 +49,21 @@ if (Astro.request.method === "POST") {
   )
 
   if (feil.length === 0 && spillerId) {
-    await svarInn(spillerId, {
-      vedtak: svar.vedtak,
-      hjemmel: svar.hjemmel,
-      kommune: svar.kommune || null,
-      // «nei» er et svar: saken er i orden. Spilltjeneren kjenner bare
-      // feltnavn og `null`, så valget oversettes her.
-      felle: svar.felle === "nei" ? null : svar.felle,
-    })
+    try {
+      await svarInn(spillerId, {
+        vedtak: svar.vedtak,
+        hjemmel: svar.hjemmel,
+        kommune: svar.kommune || null,
+        // «nei» er et svar: saken er i orden. Spilltjeneren kjenner bare
+        // feltnavn og `null`, så valget oversettes her.
+        felle: svar.felle === "nei" ? null : svar.felle,
+      })
+    } catch {
+      // Spilltjeneren svarte ikke. Da skal ikke siden gi en stakksporing:
+      // vedtaket står fortsatt i skjemaet, og under kommer venteskjermen
+      // hvis tjeneren fortsatt er nede når tilstanden skal hentes.
+      feil = [{ felt: "v-innvilget", melding: "Vedtaket kom ikke fram. Prøv igjen." }]
+    }
   }
 }
 
@@ -65,7 +72,9 @@ try {
   tilstand = await hentTilstand(spillerId)
 } catch {
   // Spilltjeneren er nede, eller er ikke kommet opp ennå. En rå
-  // stakksporing sier ingenting til den som står og venter.
+  // stakksporing sier ingenting til den som står og venter, og 503 er det
+  // ærlige svaret: siden virker ikke, den venter på noen andre.
+  Astro.response.status = 503
 }
 ---
 
