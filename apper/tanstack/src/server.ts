@@ -38,6 +38,18 @@ const PANEL_JS: string = readFileSync(
 )
 
 /**
+ * Avlyttingen av ledningen, servert som et vanlig skript.
+ *
+ * React-utgaven åpner strømmen sin fra en effekt, altså etter hydreringen, og
+ * var den ene av de tre der panelet rakk å se den. De to andre gjorde det
+ * ikke, og siden panelet er felles, er avlyttingen det også.
+ */
+const PANEL_AVLYTT_JS: string = readFileSync(
+  process.env.PANEL_AVLYTT_JS_FIL ?? "../../felles/panel-avlytt.js",
+  "utf8",
+)
+
+/**
  * Hvordan kapselen skal merkes.
  *
  * `SameSite=Lax` er riktig når appen står alene, men skallet viser de tre
@@ -164,6 +176,12 @@ export default {
 
     if (url.pathname === "/panel.js") {
       return new Response(PANEL_JS, {
+        headers: { "content-type": "text/javascript" },
+      })
+    }
+
+    if (url.pathname === "/panel-avlytt.js") {
+      return new Response(PANEL_AVLYTT_JS, {
         headers: { "content-type": "text/javascript" },
       })
     }

@@ -55,6 +55,11 @@ const tema = valgt === "light" || valgt === "dark" ? valgt : null
     <title>{tittel}</title>
     <link rel="stylesheet" href="/brett.css" />
 
+    <!-- Avlyttingen panelet leser fra. Den skal stå her og ikke nederst: et
+         vanlig skript kjører mens dokumentet parses, mens øya under, som
+         åpner hendelsesstrømmen, er et modulskript som kjører etterpå. -->
+    <script is:inline src="/panel-avlytt.js"></script>
+
   </head>
   <body>
     <slot />

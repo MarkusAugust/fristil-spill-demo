@@ -20,16 +20,22 @@
  * Resten finner panelet ut selv, og det er med vilje: at det samme skriptet
  * ser tre ulike ting skje er sterkere enn tre apper som forteller hver sin
  * historie.
+ *
+ * Avlyttingen av ledningen ligger **ikke** her, men i `felles/panel-avlytt.js`,
+ * som må lastes som et vanlig skript først i `<head>`. Forklaringen står i den
+ * fila, og den er verdt å lese: to av tre apper åpner strømmen sin før et
+ * modulskript i det hele tatt har rukket å kjøre.
  */
 
 /** Hvor mange oppdateringer som huskes. Nok til å bla litt tilbake. */
 const HUSKES = 12
 
 /**
- * Områdene det er verdt å si fra om, innerst først.
+ * Områdene det er verdt å si fra om, mest spesifikke først.
  *
- * `closest` går oppover, så den første velgeren som treffer en forfar vinner.
- * Står `#brett` før `#sak`, heter alt «brettet».
+ * Rekkefølgen brukes to steder: `closest` går oppover og tar det første
+ * treffet, og en pakke med mange endringer navngis etter den laveste
+ * plasseringen i denne lista. Se `omradeFor`.
  */
 const OMRADER = [
   ["#sak", "saken"],
@@ -41,6 +47,9 @@ const OMRADER = [
   ["#brett", "brettet"],
   ["#topp", "topplinja"],
 ]
+
+/** Navnet en endring får når den ikke traff noe av det over. */
+const HELE_SIDEN = "siden"
 
 /**
  * Endringer panelet ikke skal si fra om.
@@ -62,14 +71,21 @@ const STOY = [".nedtelling", "[data-nedtelling]", "fs-connection-status"]
  */
 const MINNE = "forstelinja-panel"
 
+let teller = 0
+
 const tilstand = {
   teknikk: "",
   forklaring: "",
   hendelser: [],
   /** Om panelet står åpent. Huskes, se `MINNE`. */
   apen: false,
-  /** Siste nyttelast fra ledningen, satt av lytterne under. */
-  sisteNyttelast: null,
+  /** Hendelsen brukeren har valgt i loggen, eller `null` for den nyeste. */
+  valgt: null,
+}
+
+/** Avlyttingen, lagt på plass av `panel-avlytt.js` før alt annet. */
+function ledningen() {
+  return window.forstelinjaLedning ?? null
 }
 
 /** Elementet en endring hører til. En tekstendring peker på en tekstnode. */
@@ -77,19 +93,51 @@ function elementFor(node) {
   return node instanceof Element ? node : (node?.parentElement ?? null)
 }
 
-function navnPa(node) {
+/**
+ * Hvilket område en node hører til, som plassering i `OMRADER`.
+ *
+ * Gir `OMRADER.length` når ingenting traff, slik at «siden» alltid taper mot
+ * et navngitt område når en pakke med endringer skal navngis.
+ */
+function omradeFor(node) {
   const element = elementFor(node)
-  if (!element) return "siden"
-  for (const [velger, navn] of OMRADER) {
-    if (element.closest(velger)) return navn
+  if (!element) return OMRADER.length
+  for (let i = 0; i < OMRADER.length; i += 1) {
+    if (element.closest(OMRADER[i][0])) return i
   }
-  return "siden"
+  return OMRADER.length
+}
+
+function navnPaPlass(plass) {
+  return OMRADER[plass]?.[1] ?? HELE_SIDEN
 }
 
 /** Om endringen er noe annet enn en oppdatering. Se `STOY`. */
 function erStoy(node) {
   const element = elementFor(node)
   return Boolean(element) && STOY.some((velger) => element.closest(velger))
+}
+
+const tall = new Intl.NumberFormat("no-NO", { maximumFractionDigits: 1 })
+
+function bytes(antall) {
+  if (!antall) return ""
+  return antall < 1024 ? `${antall} B` : `${tall.format(antall / 1024)} kB`
+}
+
+/**
+ * Merkelappen over nyttelasten: hvordan det kom, og hva det var.
+ *
+ * Det er denne linja som svarer på spørsmålet panelet stiller. «SSE ·
+ * datastar-patch-elements · HTML · 3,4 kB» og «SSE · tilstand · JSON · 1,2 kB»
+ * er hele forskjellen mellom de to utgavene, sagt med det som faktisk gikk
+ * over ledningen.
+ */
+function merkelapp(last) {
+  if (!last) return ""
+  return [last.transport, last.hendelse, last.format, bytes(last.bytes)]
+    .filter(Boolean)
+    .join(" · ")
 }
 
 /**
@@ -101,9 +149,20 @@ function erStoy(node) {
  */
 function sidelast() {
   const [navigering] = performance.getEntriesByType("navigation")
-  const bytes = navigering?.transferSize
-  if (!bytes) return "Hele dokumentet."
-  return `Hele dokumentet, ${Math.max(1, Math.round(bytes / 1024))} kB over ledningen.`
+  const antall = navigering?.transferSize ?? 0
+  return {
+    transport: "Helsidelasting",
+    hendelse: null,
+    format: "HTML",
+    bytes: antall,
+    tekst:
+      "Serveren sendte hele dokumentet på nytt, og nettleseren bygget siden fra bunnen.\n" +
+      (antall
+        ? `${bytes(antall)} over ledningen, komprimering medregnet.`
+        : "Størrelsen er ikke tilgjengelig i denne nettleseren."),
+    url: location.pathname,
+    nar: Date.now(),
+  }
 }
 
 function husk() {
@@ -132,24 +191,23 @@ function hentMinne() {
 
     tilstand.apen = Boolean(lagret.apen)
     tilstand.hendelser = lagret.hendelser.slice(0, HUSKES)
+    for (const hendelse of tilstand.hendelser) {
+      teller = Math.max(teller, hendelse.id ?? 0)
+    }
     if (tilstand.hendelser.length > 0) {
+      teller += 1
       tilstand.hendelser.unshift({
+        id: teller,
         omrade: "hele siden ble lastet på nytt",
         nar: Date.now(),
         antall: 1,
-        nyttelast: sidelast(),
+        last: sidelast(),
       })
       tilstand.hendelser.length = Math.min(tilstand.hendelser.length, HUSKES)
     }
   } catch {
     // Ødelagt eller utilgjengelig minne. Panelet begynner på nytt.
   }
-}
-
-function kort(tekst, tegn = 600) {
-  if (typeof tekst !== "string") return ""
-  const ren = tekst.trim()
-  return ren.length > tegn ? `${ren.slice(0, tegn)}\n…` : ren
 }
 
 /**
@@ -192,20 +250,32 @@ function egenMarkering(post) {
   return for_.size === na.size && [...for_].every((klasse) => na.has(klasse))
 }
 
-function noter(node) {
-  const omrade = navnPa(node)
+/**
+ * Noterer én pakke med endringer.
+ *
+ * `plass` er det mest spesifikke området i pakken, ikke området til den
+ * første endringen. Forskjellen er ikke teoretisk: en streifendring på
+ * `<body>` kom først i pakken og gjorde at hundre endringer inne i saken sto
+ * oppført som «siden».
+ */
+function noter(plass, node, antallEndringer) {
+  const omrade = navnPaPlass(plass)
   const forrige = tilstand.hendelser[0]
+  const siste = ledningen()?.siste ?? null
 
-  // Én patch gir mange mutasjoner. De som hører sammen slås sammen, ellers
-  // fylles lista av tjue linjer som sier det samme.
+  // Flere pakker rett etter hverandre hører til den samme oppdateringen. De
+  // slås sammen, ellers fylles lista av tjue linjer som sier det samme.
   if (forrige && forrige.omrade === omrade && Date.now() - forrige.nar < 400) {
-    forrige.antall += 1
+    forrige.antall += antallEndringer
+    if (siste && siste !== forrige.last) forrige.last = siste
   } else {
+    teller += 1
     tilstand.hendelser.unshift({
+      id: teller,
       omrade,
       nar: Date.now(),
-      antall: 1,
-      nyttelast: tilstand.sisteNyttelast,
+      antall: antallEndringer,
+      last: siste,
     })
     tilstand.hendelser.length = Math.min(tilstand.hendelser.length, HUSKES)
   }
@@ -214,92 +284,6 @@ function noter(node) {
   husk()
   tegn()
 }
-
-/**
- * Trafikken appen selv henter, lest med.
- *
- * De tre appene henter det samme på tre måter: Datastar med `fetch` og en
- * lesestrøm, React og Astro med `EventSource`. Panelet legger seg utenpå
- * begge, så «med hva» blir det som faktisk kom over ledningen, ikke noe appen
- * forteller oss. Det er den ærlige versjonen: står det HTML her i én app og
- * JSON i en annen, er det fordi det er slik.
- */
-function lyttPaLedningen() {
-  const EchoSource = window.EventSource
-  if (EchoSource) {
-    window.EventSource = function (url, valg) {
-      const strom = new EchoSource(url, valg)
-      strom.addEventListener("message", (e) => {
-        tilstand.sisteNyttelast = kort(e.data)
-      })
-      // Datastar og andre sender navngitte hendelser. `message` ser dem ikke.
-      const opprinnelig = strom.addEventListener.bind(strom)
-      strom.addEventListener = (navn, lytter, valg2) => {
-        if (navn === "message") return opprinnelig(navn, lytter, valg2)
-        return opprinnelig(
-          navn,
-          (e) => {
-            if (typeof e.data === "string") tilstand.sisteNyttelast = kort(e.data)
-            lytter(e)
-          },
-          valg2,
-        )
-      }
-      return strom
-    }
-    window.EventSource.prototype = EchoSource.prototype
-  }
-
-  const opprinneligFetch = window.fetch
-  window.fetch = async (...argumenter) => {
-    const svar = await opprinneligFetch(...argumenter)
-    const type = svar.headers.get("content-type") ?? ""
-    if (!type.includes("text/event-stream") || !svar.body) return svar
-
-    // Strømmen deles i to: én til appen, én hit. Uten delingen ville
-    // panelet spist bytene appen venter på.
-    const [tilAppen, tilPanelet] = svar.body.tee()
-    void (async () => {
-      const leser = tilPanelet.pipeThrough(new TextDecoderStream()).getReader()
-      let rest = ""
-      for (;;) {
-        const { done, value } = await leser.read()
-        if (done) break
-        rest += value
-        const biter = rest.split("\n\n")
-        rest = biter.pop() ?? ""
-        for (const bit of biter) {
-          const data = bit
-            .split("\n")
-            .filter((linje) => linje.startsWith("data:"))
-            .map((linje) => linje.slice(5).trimStart())
-            .join("\n")
-          if (data) tilstand.sisteNyttelast = kort(data)
-        }
-      }
-    })()
-
-    return new Response(tilAppen, {
-      status: svar.status,
-      statusText: svar.statusText,
-      headers: svar.headers,
-    })
-  }
-}
-
-/*
- * Ledningen avlyttes i det modulen lastes, ikke når panelet bygges.
- *
- * Appen kobler seg opp med en gang, og i React skjer det fra en effekt, altså
- * før panelet rekker å bli bygget. Ventet vi på `DOMContentLoaded`, sto «Med
- * hva» tom i alle tre utgavene: strømmen var alt åpnet, og en innpakning av
- * `EventSource` etterpå ser ingenting.
- *
- * Derfor laster React-utgaven modulen fra en skripttagg og kaller
- * `startPanel` fra en effekt: det første gir avlyttingen tidlig nok, det
- * andre gir panelet en vert React ikke kaster bort.
- */
-lyttPaLedningen()
 
 /**
  * Panelets egen markup. Fristils klasser, ingen egne farger.
@@ -318,18 +302,19 @@ function byggPanel() {
     <button type="button" class="fs-button panelknapp" aria-expanded="false"
             aria-controls="panel">Hva skjedde?</button>
     <section id="panel" class="fs-card panel" hidden aria-label="Hva skjedde">
-      <div class="panel__del">
+      <div class="panel__del panel__del--hva">
+        <h2 class="fs-heading panel__tittel" data-size="xs">Med hva</h2>
+        <p class="panel__merkelapp" hidden></p>
+        <pre class="panel__nyttelast" tabindex="0"></pre>
+      </div>
+      <div class="panel__del panel__del--logg">
         <h2 class="fs-heading panel__tittel" data-size="xs">Hva som ble oppdatert</h2>
         <ol class="fs-list panel__logg" data-variant="plain"></ol>
       </div>
-      <div class="panel__del">
+      <div class="panel__del panel__del--hvordan">
         <h2 class="fs-heading panel__tittel" data-size="xs">Hvordan</h2>
         <p class="fs-paragraph panel__teknikk"></p>
         <p class="fs-paragraph panel__forklaring" data-size="small"></p>
-      </div>
-      <div class="panel__del panel__del--bred">
-        <h2 class="fs-heading panel__tittel" data-size="xs">Med hva</h2>
-        <pre class="panel__nyttelast" tabindex="0"></pre>
       </div>
     </section>`
   if (!vert.isConnected) document.body.append(vert)
@@ -350,35 +335,74 @@ function byggPanel() {
     husk()
   })
 
+  // Klikk i loggen velger hvilken oppdatering nyttelasten hører til. Uten
+  // dette kunne man bare se den siste, og en demo handler like ofte om den
+  // forrige.
+  panel.querySelector(".panel__logg").addEventListener("click", (e) => {
+    const linje = e.target.closest?.("[data-hendelse]")
+    if (!linje) return
+    const id = Number(linje.dataset.hendelse)
+    tilstand.valgt = tilstand.valgt === id ? null : id
+    tegn()
+  })
+
   return vert
 }
 
 let vertselement = null
 
+/** Hendelsen nyttelasten vises for: den valgte, ellers den nyeste som har en. */
+function vist() {
+  if (tilstand.valgt !== null) {
+    const valgt = tilstand.hendelser.find((h) => h.id === tilstand.valgt)
+    if (valgt) return valgt
+  }
+  return tilstand.hendelser.find((h) => h.last) ?? null
+}
+
 function tegn() {
   if (!vertselement) return
+
+  const valgt = vist()
 
   const logg = vertselement.querySelector(".panel__logg")
   logg.replaceChildren(
     ...tilstand.hendelser.map((h) => {
       const linje = document.createElement("li")
       linje.className = "panel__linje"
-      const klokke = new Date(h.nar).toLocaleTimeString("no-NO")
+      linje.dataset.hendelse = String(h.id)
+      if (h.last) linje.setAttribute("aria-current", h === valgt ? "true" : "false")
+
+      const hode = document.createElement("span")
+      hode.className = "panel__nar"
       const antall = h.antall > 1 ? ` · ${h.antall} endringer` : ""
-      linje.textContent = `${klokke} · ${h.omrade}${antall}`
+      hode.textContent = `${new Date(h.nar).toLocaleTimeString("no-NO")} · ${h.omrade}${antall}`
+      linje.append(hode)
+
+      if (h.last) {
+        const lapp = document.createElement("span")
+        lapp.className = "panel__linjelapp"
+        lapp.textContent = merkelapp(h.last)
+        linje.append(lapp)
+      }
       return linje
     }),
   )
 
-  /*
-   * Den nyeste nyttelasten, ikke nyttelasten til den nyeste hendelsen. En
-   * patch gir gjerne flere endringer, og bare den første av dem har noe over
-   * ledningen knyttet til seg. Leste vi bare hendelse null, sto det
-   * «ingenting har kommet» rett etter en patch som nettopp hadde kommet.
-   */
+  const lapp = vertselement.querySelector(".panel__merkelapp")
   const nyttelast = vertselement.querySelector(".panel__nyttelast")
-  const tekst = tilstand.hendelser.find((h) => h.nyttelast)?.nyttelast ?? ""
-  nyttelast.textContent = tekst || "Ingenting har kommet over ledningen ennå."
+
+  if (valgt?.last) {
+    lapp.textContent = merkelapp(valgt.last)
+    lapp.hidden = false
+    nyttelast.textContent = valgt.last.tekst
+    return
+  }
+
+  lapp.hidden = true
+  nyttelast.textContent = ledningen()
+    ? "Ingenting har kommet over ledningen ennå."
+    : "Avlyttingen er ikke lastet. «/panel-avlytt.js» skal stå først i <head>."
 }
 
 /**
@@ -394,6 +418,18 @@ export function startPanel({ teknikk, forklaring }) {
   tilstand.teknikk = teknikk
   tilstand.forklaring = forklaring
 
+  /*
+   * Panelet skal si fra når avlyttingen mangler, framfor å påstå at ingenting
+   * kom. Det var nettopp den stille varianten som gjorde at to av tre apper
+   * sto og løy om sin egen trafikk.
+   */
+  if (!ledningen()) {
+    console.warn(
+      "Panelet: /panel-avlytt.js er ikke lastet, så «Med hva» kan ikke vise noe. " +
+        "Skriptet skal stå først i <head>.",
+    )
+  }
+
   const start = () => {
     hentMinne()
     vertselement = byggPanel()
@@ -408,6 +444,10 @@ export function startPanel({ teknikk, forklaring }) {
      * tekst.
      */
     const observator = new MutationObserver((poster) => {
+      let beste = OMRADER.length
+      let node = null
+      let antall = 0
+
       for (const post of poster) {
         // Panelet skal ikke se seg selv, verken der det tegner eller der det
         // lyser opp.
@@ -416,9 +456,16 @@ export function startPanel({ teknikk, forklaring }) {
         if (mal.parentElement?.closest?.(".panelvert")) continue
         if (egenMarkering(post)) continue
         if (erStoy(mal)) continue
-        noter(mal)
-        break
+
+        antall += 1
+        const plass = omradeFor(mal)
+        if (node === null || plass < beste) {
+          beste = plass
+          node = mal
+        }
       }
+
+      if (antall > 0) noter(beste, node, antall)
 
       // `noter` lyste nettopp opp et element, og den endringen står alt i
       // køen. `egenMarkering` fanger den, men å kaste den her sparer en

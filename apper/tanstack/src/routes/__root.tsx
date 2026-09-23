@@ -46,6 +46,15 @@ export const Route = createRootRoute({
       { title: "Førstelinja · TanStack Start og React" },
     ],
     links: [{ rel: "stylesheet", href: "/brett.css" }],
+    /*
+     * Avlyttingen panelet leser fra, som et vanlig skript i `<head>`.
+     *
+     * Her er den ikke strengt nødvendig: React åpner strømmen fra en effekt,
+     * altså etter hydreringen, så en modul i `<body>` rakk det så vidt. I de
+     * to andre appene gjorde den ikke det, og et panel som virker av
+     * tilfeldige grunner i én av tre utgaver er ikke et panel man kan tro på.
+     */
+    scripts: [{ src: "/panel-avlytt.js" }],
   }),
   component: Skall,
 })
@@ -117,15 +126,6 @@ function Skall() {
         {/* Verten til panelet. React rendrer den tomme boksen, `panel.js`
             fyller den ut. Se kommentaren over effekten. */}
         <div className="panelvert" />
-        {/* Modulen lastes her, før hydreringen, fordi den legger seg utenpå
-            `EventSource` i det den evalueres. Venter vi til effekten, er
-            strømmen alt åpnet, og «Med hva» står tom. Panelet bygges likevel
-            først i effekten. */}
-        <script
-          type="module"
-          // biome-ignore lint/security/noDangerouslySetInnerHtml: egen konstant, ikke inndata
-          dangerouslySetInnerHTML={{ __html: 'import "/panel.js"' }}
-        />
       </body>
     </html>
   )

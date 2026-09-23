@@ -87,6 +87,10 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
       call.respondText(PANEL_JS, ContentType.Text.JavaScript)
     }
 
+    get("/panel-avlytt.js") {
+      call.respondText(PANEL_AVLYTT_JS, ContentType.Text.JavaScript)
+    }
+
     get("/") {
       /*
        * Billetten fra en annen utgave.

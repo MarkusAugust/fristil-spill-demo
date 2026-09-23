@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "paritet": "bun run paritet.ts"
+    "paritet": "bun run paritet.ts",
+    "panel": "bun run panel.ts"
   },
   "devDependencies": {
     "playwright": "^1.60.0"

@@ -31,3 +31,18 @@ val PANEL_JS: String by lazy {
   require(fil.exists()) { "Fant ingen panel.js på «$sti». Sett PANEL_JS_FIL." }
   fil.readText()
 }
+
+/**
+ * Avlyttingen av ledningen, som må kjøre før alt annet.
+ *
+ * Den er skilt ut fra panelet fordi rekkefølgen er avgjørende: Datastars
+ * bundle åpner hendelsesstrømmen i det modulen kjører, og et modulskript
+ * kjører etter at dokumentet er parset. Panelet la seg derfor utenpå `fetch`
+ * for sent, og så aldri den strømmen som bærer hele oppdateringen.
+ */
+val PANEL_AVLYTT_JS: String by lazy {
+  val sti = System.getenv("PANEL_AVLYTT_JS_FIL") ?: "../../felles/panel-avlytt.js"
+  val fil = File(sti)
+  require(fil.exists()) { "Fant ingen panel-avlytt.js på «$sti». Sett PANEL_AVLYTT_JS_FIL." }
+  fil.readText()
+}

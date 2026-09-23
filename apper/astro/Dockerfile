@@ -23,6 +23,7 @@ COPY felles felles
 
 ENV BRETT_CSS_FIL=/app/felles/brett.css \
     PANEL_JS_FIL=/app/felles/panel.js \
+    PANEL_AVLYTT_JS_FIL=/app/felles/panel-avlytt.js \
     KOMMUNER_FIL=/app/felles/kommuner.json \
     HOST=:: \
     PORT=8083
