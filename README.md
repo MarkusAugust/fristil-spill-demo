@@ -39,6 +39,9 @@ Spilltjeneren eier reglene og tilstanden, og sender **bare JSON**. De tre appene
 | Datastar | ferdige HTML-biter | på serveren |
 | Astro | en ny side, og JSON til én liten øy | på serveren |
 
+Skallet er en fjerde, liten tjeneste som bare viser de tre i hver sin ramme
+på én skjerm. Den snakker ikke med spilltjeneren og vet ikke hva en sak er.
+
 Spilltjeneren er med vilje ikke den samme prosessen som Datastar-appen. Ellers ville de to andre vært klienter av Datastar-appen, og sammenligningen blitt skjev.
 
 ## Omgangen
