@@ -752,6 +752,14 @@ body:has(.fs-connection-status__bar) .topplinje {
 @media (max-width: 560px) {
   .kort { padding: var(--size-4); }
 
+  /*
+   * Avataren i tavla er pynt, og den tar plassen fra navnet. På 375 piksler
+   * ble «Mobil astro (deg)» brutt over tre linjer, med initialene ved siden
+   * av. Den er `aria-hidden`, så ingen mister noe på at den skjules her.
+   */
+  .tavle__navn .fs-avatar { display: none; }
+  .tavle__navn { gap: 0; }
+
   .resultat__rad {
     grid-template-columns: minmax(0, 1fr) auto;
   }
