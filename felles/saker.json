@@ -6,8 +6,16 @@
       "tekst": "Alminnelig søknadsbehandling"
     },
     {
+      "kode": "§ 6-4",
+      "tekst": "Inhabilitet"
+    },
+    {
       "kode": "§ 8-2",
       "tekst": "Dyrehold i borettslag"
+    },
+    {
+      "kode": "§ 9-1",
+      "tekst": "Støy fra virksomhet i boligområde"
     },
     {
       "kode": "§ 12-3",
@@ -20,6 +28,10 @@
     {
       "kode": "§ 21-2",
       "tekst": "Navn som kan være til ulempe"
+    },
+    {
+      "kode": "§ 33-1",
+      "tekst": "Tvangsmulkt"
     }
   ],
   "saker": [
@@ -166,6 +178,276 @@
         "felle": null
       },
       "forklaring": "Navnet er uendret, og dermed lovlig. Søknaden koster ingenting å innvilge."
+    },
+    {
+      "id": "2024/1456",
+      "tittel": "Søknad om fritak fra eiendomsskatt fordi huset er en båt",
+      "sammendrag": "Huset står på land. Søker viser til at det ble bygget av en båtbygger, og at det knirker likt.",
+      "tekst": "Jeg søker om fritak fra eiendomsskatt for Sjøgata 12. Huset er i prinsippet en båt: det ble bygget av en båtbygger i 1954, og det knirker likt i uvær. At det står på land er en teknikalitet jeg ikke kan lastes for.",
+      "soker": {
+        "navn": "Kjell Kjøl",
+        "fodselsdato": "07.09.2031",
+        "kommune": "Kristiansund",
+        "epost": "kjell@example.no"
+      },
+      "fasit": {
+        "vedtak": "avslatt",
+        "hjemmel": "§ 12-3",
+        "felle": "fodselsdato"
+      },
+      "forklaring": "Fødselsdatoen ligger fram i tid, og saken kan ikke behandles før søkeren er født. Skroget er et eget spørsmål."
+    },
+    {
+      "id": "2024/2088",
+      "tittel": "Søknad om parkeringstillatelse for en bil som ikke er levert",
+      "sammendrag": "Bilen kommer i august. Søker ville «være i forkant, for en gang».",
+      "tekst": "Jeg søker om parkeringstillatelse i Gamlevegen 4. Bilen leveres i august, men jeg ville være i forkant, for en gang. Vedlagt følger et bilde fra forhandlerens nettside og registreringsnummeret jeg håper å få.",
+      "soker": {
+        "navn": "Turid Felg",
+        "fodselsdato": "29.02.1975",
+        "kommune": "Ullensaker",
+        "epost": "turid@example.no"
+      },
+      "fasit": {
+        "vedtak": "avslatt",
+        "hjemmel": "§ 12-3",
+        "felle": "fodselsdato"
+      },
+      "forklaring": "1975 var ikke et skuddår, så 29. februar finnes ikke. Bilen finnes heller ikke ennå, men det er datoen som stopper saken."
+    },
+    {
+      "id": "2024/3542",
+      "tittel": "Søknad om å sette opp bom over egen innkjørsel, med bemanning",
+      "sammendrag": "Bommen skal betjenes av søkeren selv, i det tidsrommet han er hjemme.",
+      "tekst": "Jeg søker om å sette opp en bom over innkjørselen min. Den skal betjenes av meg, i det tidsrommet jeg er hjemme. Utenfor det tidsrommet står den nede. Naboene har ikke uttalt seg, men de vet om det.",
+      "soker": {
+        "navn": "Arne Sperre",
+        "fodselsdato": "14.03.1966",
+        "kommune": "Ringerike",
+        "epost": "arne@example"
+      },
+      "fasit": {
+        "vedtak": "avslatt",
+        "hjemmel": "§ 12-3",
+        "felle": "epost"
+      },
+      "forklaring": "E-postadressen mangler toppdomene, så vedtaket kan ikke leveres noe sted. Bommen rekker vi ikke å ta stilling til."
+    },
+    {
+      "id": "2024/1120",
+      "tittel": "Klage på avslag om hyttetomt, levert 41 minutter for sent",
+      "sammendrag": "Søker viser til at klokka i resepsjonen går fort, noe han har sagt fra om i flere år.",
+      "tekst": "Klagen skulle vært levert klokka 15.00. Jeg leverte 15.41, fordi klokka i resepsjonen går fort, noe jeg har sagt fra om i flere år. Jeg mener klagen er levert i tide, og at kommunen bør stille klokka.",
+      "soker": {
+        "navn": "Bjarne Klokkhaug",
+        "fodselsdato": "23.01.1959",
+        "kommune": "Gjøvik",
+        "epost": "bjarne@example.no"
+      },
+      "fasit": {
+        "vedtak": "avslatt",
+        "hjemmel": "§ 19-7",
+        "felle": null
+      },
+      "forklaring": "Fristen løper etter kalenderen, ikke etter resepsjonen. Klokka er meldt inn."
+    },
+    {
+      "id": "2024/0673",
+      "tittel": "Søknad om navneendring til «Kommunen»",
+      "sammendrag": "Søker opplyser at det vil gjøre e-postene hans mer effektive, særlig de han sender til kommunen.",
+      "tekst": "Jeg søker om å endre etternavn til Kommunen. Det vil gjøre e-postene mine mer effektive, særlig de jeg sender til kommunen. Jeg ser ikke problemet, siden det allerede finnes folk som heter Borg.",
+      "soker": {
+        "navn": "Petter Aas",
+        "fodselsdato": "30.06.1984",
+        "kommune": "Moss",
+        "epost": "petter@example.no"
+      },
+      "fasit": {
+        "vedtak": "avslatt",
+        "hjemmel": "§ 21-2",
+        "felle": null
+      },
+      "forklaring": "Navnet kan forveksles med et forvaltningsorgan, og søkeren skriver selv at det er poenget."
+    },
+    {
+      "id": "2024/4001",
+      "tittel": "Søknad om bruksendring, levert av kommunens egen byggesaksbehandler",
+      "sammendrag": "Søker kjenner saken godt, og har derfor behandlet den ferdig selv. Vedtaket er innvilget.",
+      "tekst": "Jeg søker om å gjøre om boden til soverom. Jeg jobber selv med byggesaker her, og har fylt ut både søknaden og vedtaket for å spare tid. Vedtaket er innvilget. Vedlagt følger min egen underskrift, to steder.",
+      "soker": {
+        "navn": "Hanne Lund",
+        "fodselsdato": "17.11.1990",
+        "kommune": "Larvik",
+        "epost": "hanne@example.no"
+      },
+      "fasit": {
+        "vedtak": "avslatt",
+        "hjemmel": "§ 6-4",
+        "felle": null
+      },
+      "forklaring": "Ingen kan behandle sin egen sak. Søknaden kan behandles, men ikke av søkeren, og ikke med vedtaket utfylt på forhånd."
+    },
+    {
+      "id": "2024/0795",
+      "tittel": "Søknad om tillatelse til å arrangere stillekonsert",
+      "sammendrag": "Ingen instrumenter, ingen lyd, inntil førti tilhørere. Søker søker for ordens skyld.",
+      "tekst": "Vi søker om tillatelse til å arrangere stillekonsert i parken. Det blir ingen instrumenter og ingen lyd, og vi regner med førti tilhørere. Vi søker for ordens skyld, siden vi ikke fant noe skjema for det motsatte.",
+      "soker": {
+        "navn": "Stillekoret",
+        "fodselsdato": "05.05.1996",
+        "kommune": "Trondheim",
+        "epost": "kontakt@example.no"
+      },
+      "fasit": {
+        "vedtak": "innvilget",
+        "hjemmel": "§ 4-1",
+        "felle": null
+      },
+      "forklaring": "Ingenting i søknaden krever tillatelse, men søknaden er komplett, og et avslag ville vært vanskeligere å begrunne enn en innvilgelse."
+    },
+    {
+      "id": "2024/3118",
+      "tittel": "Søknad om å holde bikuber på taket av et forsikringsselskap",
+      "sammendrag": "Selskapet har forsikret kubene hos seg selv.",
+      "tekst": "Vi søker om å sette opp fire bikuber på taket i Storgata 1. Kubene er forsikret hos oss, altså hos selskapet selv, og vi har vurdert risikoen som liten. Honningen går til kantina.",
+      "soker": {
+        "navn": "Bjørkely Forsikring",
+        "fodselsdato": "12.08.1971",
+        "kommune": "Sandnes",
+        "epost": "drift@example.no"
+      },
+      "fasit": {
+        "vedtak": "innvilget",
+        "hjemmel": "§ 4-1",
+        "felle": null
+      },
+      "forklaring": "Bier i eget tak er ikke dyrehold i borettslag. § 8-2 ligger nær, og treffer ikke."
+    },
+    {
+      "id": "2024/0312",
+      "tittel": "Søknad om å flytte postkassa 40 centimeter nærmere vegen",
+      "sammendrag": "Søknaden er på fire sider. Flyttingen er på 40 centimeter.",
+      "tekst": "Jeg søker om å flytte postkassa 40 centimeter nærmere vegen, slik at posten slipper å gå ut av bilen. Vedlagt følger målebrev, fotografi tatt fra to kanter, og en uttalelse fra postbudet, som er positiv.",
+      "soker": {
+        "navn": "Gunvor Berge",
+        "fodselsdato": "09.02.1948",
+        "kommune": "Steinkjer",
+        "epost": "gunvor@example.no"
+      },
+      "fasit": {
+        "vedtak": "innvilget",
+        "hjemmel": "§ 4-1",
+        "felle": null
+      },
+      "forklaring": "Flyttingen er innenfor det som er tillatt uten søknad. Søknaden er likevel i orden, og postbudet har uttalt seg."
+    },
+    {
+      "id": "2024/2604",
+      "tittel": "Søknad om navneendring fra «Larsen» til «Larssen»",
+      "sammendrag": "Søker har skrevet det med to s-er i tjue år, og ber om at det offentlige tar seg inn.",
+      "tekst": "Jeg søker om å endre etternavn fra Larsen til Larssen. Jeg har skrevet det med to s-er siden 2004, og det står slik på både postkassa og pokalen. Jeg ber om at det offentlige tar seg inn.",
+      "soker": {
+        "navn": "Roar Larsen",
+        "fodselsdato": "26.10.1963",
+        "kommune": "Narvik",
+        "epost": "roar@example.no"
+      },
+      "fasit": {
+        "vedtak": "innvilget",
+        "hjemmel": "§ 4-1",
+        "felle": null
+      },
+      "forklaring": "Navnet er ikke til ulempe for noen, og søkeren har brukt det lenger enn registeret har."
+    },
+    {
+      "id": "2024/5033",
+      "tittel": "Søknad om å holde én katt i borettslag",
+      "sammendrag": "Katten er fjorten år og har ikke vært utenfor siden 2019. Styret har uttalt seg i tolv punkter.",
+      "tekst": "Jeg søker om å holde katten min i Utsikten 7. Hun er fjorten år og har ikke vært utenfor leiligheten siden 2019. Styret har uttalt seg i tolv punkter, hvorav ni handler om en annen katt.",
+      "soker": {
+        "navn": "Ingrid Malm",
+        "fodselsdato": "04.04.1957",
+        "kommune": "Drammen",
+        "epost": "ingrid@example.no"
+      },
+      "fasit": {
+        "vedtak": "innvilget",
+        "hjemmel": "§ 8-2",
+        "felle": null
+      },
+      "forklaring": "Vilkårene for dyrehold i borettslag er oppfylt. De ni punktene om en annen katt hører til en annen sak."
+    },
+    {
+      "id": "2024/4218",
+      "tittel": "Søknad om skjenkebevilling for et lokale som ennå ikke har vegger",
+      "sammendrag": "Veggene kommer i mai. Bevillingen er søkt om fra juni.",
+      "tekst": "Vi søker om skjenkebevilling for Brygga 9 fra juni. Lokalet har ikke vegger ennå, men de kommer i mai. Vedlagt følger tegninger av veggene og et bilde av stedet der de skal stå.",
+      "soker": {
+        "navn": "Brygga Drift",
+        "fodselsdato": "27.06.1988",
+        "kommune": "Stavanger",
+        "epost": "bevilling@example.no"
+      },
+      "fasit": {
+        "vedtak": "innvilget",
+        "hjemmel": "§ 4-1",
+        "felle": null
+      },
+      "forklaring": "Bevillingen gjelder fra juni, og lokalet har vegger fra mai. Rekkefølgen er søkerens problem, ikke vårt."
+    },
+    {
+      "id": "2024/0940",
+      "tittel": "Søknad om at gata skal hete det samme i begge ender",
+      "sammendrag": "Skiltet i sør sier Idrettsvegen, skiltet i nord sier Idrettsveien, og posten har innrettet seg etter det skiltet som står nærmest.",
+      "tekst": "Vi i velforeningen søker om at gata heter det samme i begge ender. Skiltet i sør sier Idrettsvegen og skiltet i nord sier Idrettsveien, og posten har innrettet seg etter det skiltet som står nærmest. Vi har ingen preferanse, så lenge det blir én av dem.",
+      "soker": {
+        "navn": "Idrettsveien velforening",
+        "fodselsdato": "02.02.1994",
+        "kommune": "Hamar",
+        "epost": "velforeningen@example.no"
+      },
+      "fasit": {
+        "vedtak": "innvilget",
+        "hjemmel": "§ 4-1",
+        "felle": null
+      },
+      "forklaring": "Søknaden er i orden. Gata kan bare hete én ting, og fra nå gjør den det."
+    },
+    {
+      "id": "2024/2385",
+      "tittel": "Søknad om å la en hekk stå tolv centimeter inn på kommunal grunn",
+      "sammendrag": "Søker tilbyr å klippe hele strekningen, også de sytti metrene kommunen eier.",
+      "tekst": "Hekken min står tolv centimeter inn på kommunens grunn. Jeg søker om å la den stå, og tilbyr å klippe hele strekningen, også de sytti metrene som er deres. Jeg har klippet dem i elleve år uansett.",
+      "soker": {
+        "navn": "Halvor Ligustrum",
+        "fodselsdato": "15.08.1962",
+        "kommune": "Porsgrunn",
+        "epost": "halvor@example.no"
+      },
+      "fasit": {
+        "vedtak": "innvilget",
+        "hjemmel": "§ 4-1",
+        "felle": null
+      },
+      "forklaring": "Tolv centimeter er innenfor det som kan dispenseres fra, og tilbudet gjør ikke saken dårligere."
+    },
+    {
+      "id": "2024/1673",
+      "tittel": "Klage på avslag om gravetillatelse, levert med to dager til gode",
+      "sammendrag": "Klagen er på halvannen side, med kart, tidsplan og uttalelse fra rørleggeren. Ingenting er skrevet på rim.",
+      "tekst": "Jeg klager på avslaget om gravetillatelse i Nedre gate. Vedlagt følger kart, tidsplan og uttalelse fra rørleggeren. Jeg har ikke skrevet noe på rim, og klagen er datert.",
+      "soker": {
+        "navn": "Åse Grøft",
+        "fodselsdato": "11.10.1979",
+        "kommune": "Bodø",
+        "epost": "ase@example.no"
+      },
+      "fasit": {
+        "vedtak": "innvilget",
+        "hjemmel": "§ 4-1",
+        "felle": null
+      },
+      "forklaring": "Klagen er levert i tide og er begrunnet. Det er ikke mer å si om den, og det er sjelden."
     }
   ]
 }

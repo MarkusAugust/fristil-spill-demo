@@ -120,6 +120,8 @@ Arbeidet er ekte saksbehandling. Vitsen er saken:
 
 `SakerTest` avviser en fasit som viser til en hjemmel som ikke finnes, to saker med samme id, en felle som ikke er et felt, og en forklaring som er for kort til å være en forklaring.
 
+Den krever også at fellene er ekte. Sier fasiten at fødselsdatoen er feil, skal datoen være umulig, ligge fram i tid eller gi en søker over 120 år, og sier den at e-posten er feil, skal adressen mangle krøllalfa eller toppdomene. Sier fasiten ingenting, skal begge være i orden. Uten det kunne en sak med «felle: null» hatt en umulig fødselsdato, og da ville ingen spiller fått full pott uten å vite hvorfor.
+
 ## Spille det lokalt
 
 ```bash
