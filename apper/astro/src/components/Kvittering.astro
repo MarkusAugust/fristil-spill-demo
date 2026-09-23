@@ -1,0 +1,63 @@
+---
+import { fs } from "@fristil/designsystem"
+
+import type { Tilstand } from "../lib/tilstand"
+
+interface Props {
+  tilstand: Tilstand
+}
+
+const { tilstand } = Astro.props
+
+/*
+ * Svaret er levert, og saksbehandleren får vite hvordan det gikk med én gang.
+ *
+ * Fasiten står ikke her. Den kommer når runden er over og alle har levert.
+ * Det som står her er bare om ditt eget svar traff, og det er trygt fordi et
+ * svar ikke kan gjøres om.
+ */
+const vurdering = tilstand.meg?.vurdering
+const poeng = vurdering?.poeng ?? 0
+const full = tilstand.poeng.fullPott
+const farge = poeng >= full ? "success" : poeng > 0 ? "info" : "warning"
+const overskrift = poeng >= full ? "Full pott" : poeng > 0 ? "Delvis truffet" : "Ingen uttelling"
+
+const linjer: [string, boolean, number][] = vurdering
+  ? [
+      ["Utfall", vurdering.vedtakRiktig, tilstand.poeng.vedtak],
+      ["Hjemmel", vurdering.hjemmelRiktig, tilstand.poeng.hjemmel],
+      ["Kommune", vurdering.kommuneRiktig, tilstand.poeng.kommune],
+      ["Feil i søknaden", vurdering.felleRiktig, tilstand.poeng.felle],
+    ]
+  : []
+
+const { class: kortKlasse, ...kort } = fs.card()
+const { class: listeKlasse, ...liste } = fs.list({ variant: "plain" })
+---
+
+<section {...kort} class={`${kortKlasse} kort vedtakskort`}>
+  <h2 {...fs.heading({ size: "s" })}>Vedtaket er fattet</h2>
+
+  <div {...fs.alert({ color: farge })}>
+    <p class="fs-alert__title">{overskrift}</p>
+    <p>Du fikk <strong>{poeng} av {full} poeng</strong> på denne saken.</p>
+  </div>
+
+  {
+    linjer.length > 0 && (
+      <ul {...liste} class={`${listeKlasse} kvittering`}>
+        {linjer.map(([navn, riktig, verdt]) => (
+          <li class="kvittering__linje" data-riktig={String(riktig)}>
+            <span class="kvittering__felt">{navn}</span>
+            <span class="kvittering__dom">{riktig ? "Riktig" : "Feil"}</span>
+            <span class="kvittering__verdt">{riktig ? `+${verdt}` : "0"}</span>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+
+  <p class="vedtakskort__ingress">
+    Fasiten og begrunnelsen kommer når runden er over, og alle har levert.
+  </p>
+</section>

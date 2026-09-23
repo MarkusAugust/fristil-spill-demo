@@ -1,0 +1,53 @@
+---
+import { fs } from "@fristil/designsystem"
+
+import { tavlekropp } from "../lib/tavle"
+import type { Tilstand } from "../lib/tilstand"
+
+interface Props {
+  tilstand: Tilstand
+}
+
+const { tilstand } = Astro.props
+
+/*
+ * Tavla. Den samme i alle tre appene, og det er hele poenget.
+ *
+ * I runden sier den fjerde kolonnen hvem som har levert; det er det du lurer
+ * på da. I oppgjøret sier den hvilken app hver spiller sitter i.
+ *
+ * Radene kommer fra `tavlerad()`, den samme funksjonen øya bruker når tavla
+ * har endret seg. Uten den ville markupen finnes to ganger.
+ */
+const oppgjor = tilstand.fase !== "runde"
+const paVakt = tilstand.tavle.length
+const levert = tilstand.tavle.filter((r) => r.harSvart).length
+const { class: tabellKlasse, ...tabell } = fs.table()
+---
+
+<h2 {...fs.heading({ size: "s" })}>På vakt nå</h2>
+
+{
+  !oppgjor && paVakt > 1 && (
+    <p class="vedtakskort__svart" data-alle={String(levert >= paVakt)} data-levert>
+      {levert >= paVakt
+        ? "Alle har levert. Oppgjøret kommer straks."
+        : `${levert} av ${paVakt} saksbehandlere har levert.`}
+    </p>
+  )
+}
+
+<div class={fs.table.scroll} tabindex="0">
+  <table {...tabell} class={`${tabellKlasse} tavle__tabell`}>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Navn</th>
+        <th>Poeng</th>
+        <th>{oppgjor ? "App" : "Status"}</th>
+      </tr>
+    </thead>
+    <tbody data-tavle set:html={tavlekropp(tilstand.tavle, oppgjor)} />
+  </table>
+</div>
+<p class="tavle__fot">Alle tre appene spiller på det samme brettet.</p>

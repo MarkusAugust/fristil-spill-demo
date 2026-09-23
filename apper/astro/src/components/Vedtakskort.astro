@@ -1,0 +1,168 @@
+---
+import { fs } from "@fristil/designsystem"
+
+import type { Feil, Tilstand } from "../lib/tilstand"
+
+interface Props {
+  tilstand: Tilstand
+  kommuner: string[]
+  feil: Feil[]
+  svar: { vedtak: string; hjemmel: string; kommune: string; felle: string }
+}
+
+const { tilstand, kommuner, feil, svar } = Astro.props
+const feilPa = (felt: string) => feil.find((f) => f.felt === felt)
+
+/*
+ * Skjemaet saksbehandleren fyller ut.
+ *
+ * Her er det en helt vanlig `<form method="post">`. Svaret er en ny side med
+ * kvittering, eller den samme siden med feiloppsummeringen øverst. Ingen av
+ * delene trenger JavaScript, og det er nettopp poenget med denne utgaven.
+ *
+ * Kommunefeltet er det eneste som blir bedre av skript: `<fs-suggestion>`
+ * filtrerer lista og tar piltastene. Serveren sender hele lista, og uten
+ * komponenten er feltet fortsatt et tekstfelt med en liste under.
+ */
+const { class: kortKlasse, ...kort } = fs.card()
+const tittel = fs.heading({ size: "s" })
+const boks = fs.errorSummary({ count: feil.length, id: "feilboks" })
+const { class: knappKlasse, ...knapp } = fs.button()
+const utfall = fs.fieldset({ state: feilPa("v-innvilget") ? "invalid" : undefined })
+const forslag = fs.suggestion({
+  id: "kommune",
+  count: kommuner.length,
+  help: true,
+  error: Boolean(feilPa("kommune")),
+  invalid: Boolean(feilPa("kommune")),
+})
+const feller = [
+  ["nei", "Nei, saken er i orden"],
+  ["fodselsdato", "Fødselsdatoen"],
+  ["kommune", "Kommunen"],
+  ["epost", "E-postadressen"],
+]
+---
+
+<section {...kort} class={`${kortKlasse} kort vedtakskort`}>
+  <h2 {...tittel}>Ditt vedtak</h2>
+  <p class="vedtakskort__ingress">
+    Fire spørsmål, {tilstand.poeng.fullPott} poeng. Du kan svare én gang.
+  </p>
+
+  <fs-error-summary {...boks.container}>
+    {
+      feil.length > 0 && (
+        <>
+          <h3 {...boks.title}>Du må rette {feil.length} feil</h3>
+          <ul {...fs.list()}>
+            {feil.map((f) => (
+              <li><a href={`#${f.felt}`}>{f.melding}</a></li>
+            ))}
+          </ul>
+        </>
+      )
+    }
+  </fs-error-summary>
+
+  <form class="skjema" method="post" action="/">
+    <fieldset {...utfall}>
+      <legend {...fs.legend()}>Utfall</legend>
+      {
+        [
+          ["innvilget", "Innvilget", "v-innvilget"],
+          ["avslatt", "Avslått", "v-avslatt"],
+        ].map(([verdi, tekst, id]) => (
+          <div class="fs-radio-row">
+            <input
+              {...fs.radio({ state: feilPa("v-innvilget") ? "invalid" : undefined })}
+              type="radio"
+              id={id}
+              name="vedtak"
+              value={verdi}
+              checked={svar.vedtak === verdi}
+            />
+            <label {...fs.label()} for={id}>{tekst}</label>
+          </div>
+        ))
+      }
+    </fieldset>
+
+    <fs-field>
+      <label {...fs.label()} for="hjemmel">Hjemmel</label>
+      <select
+        {...fs.select({
+          picker: "styled",
+          state: feilPa("hjemmel") ? "invalid" : undefined,
+        })}
+        id="hjemmel"
+        name="hjemmel"
+        aria-describedby={feilPa("hjemmel") ? "hjemmel-feil" : undefined}
+      >
+        <option value="" selected={svar.hjemmel === ""}>Velg hjemmel</option>
+        {
+          tilstand.hjemler.map((h) => (
+            <option value={h.kode} selected={svar.hjemmel === h.kode}>
+              {h.kode} {h.tekst}
+            </option>
+          ))
+        }
+      </select>
+      {feilPa("hjemmel") && <p {...fs.errorText()} id="hjemmel-feil">{feilPa("hjemmel")!.melding}</p>}
+    </fs-field>
+
+    <fs-popover {...fs.popover({ id: "hjemmelhjelp" }).host} class="hjelpelenke" placement="bottom-start">
+      <button
+        {...fs.popover({ id: "hjemmelhjelp" }).trigger}
+        {...fs.button({ variant: "ghost" })}
+        type="button"
+      >
+        Hva betyr hjemlene?
+      </button>
+      <div {...fs.popover({ id: "hjemmelhjelp" }).panel}>
+        <ul {...fs.list()}>
+          {tilstand.hjemler.map((h) => <li><strong>{h.kode}</strong> {h.tekst}</li>)}
+        </ul>
+      </div>
+    </fs-popover>
+
+    <fs-suggestion class="kommunefelt">
+      <label {...forslag.label}>Bekreft kommunen søkeren hører til</label>
+      <div {...forslag.field}>
+        <input {...forslag.control} name="kommune" value={svar.kommune} />
+        <ul {...forslag.list}>
+          {kommuner.map((navn, i) => <li {...forslag.options[i]}>{navn}</li>)}
+        </ul>
+        <p {...forslag.empty}>Ingen treff. Finnes kommunen fortsatt?</p>
+        <span {...forslag.status}></span>
+      </div>
+      <p {...forslag.help}>
+        Begynn å skrive, så kommer forslagene. Finner du den ikke, la feltet stå tomt.
+      </p>
+      {feilPa("kommune") && <p {...forslag.error}>{feilPa("kommune")!.melding}</p>}
+    </fs-suggestion>
+
+    <fs-field>
+      <label {...fs.label()} for="felle">Er noe feil i søknaden?</label>
+      <select
+        {...fs.select({ picker: "styled", state: feilPa("felle") ? "invalid" : undefined })}
+        id="felle"
+        name="felle"
+        aria-describedby={`felle-hjelp${feilPa("felle") ? " felle-feil" : ""}`}
+      >
+        <option value="" selected={svar.felle === ""}>Velg</option>
+        {
+          feller.map(([verdi, tekst]) => (
+            <option value={verdi} selected={svar.felle === verdi}>{tekst}</option>
+          ))
+        }
+      </select>
+      <p {...fs.helpText()} id="felle-hjelp">Å se at alt er i orden teller like mye.</p>
+      {feilPa("felle") && <p {...fs.errorText()} id="felle-feil">{feilPa("felle")!.melding}</p>}
+    </fs-field>
+
+    <button {...knapp} class={`${knappKlasse} skjema__send`} type="submit">
+      Fatt vedtak
+    </button>
+  </form>
+</section>

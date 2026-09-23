@@ -350,7 +350,7 @@ fun topp(tilstand: Tilstand): String {
 
       ${if (tilstand.meg == null) "" else """
       <p class="topplinje__meg">
-        <span class="fs-avatar" data-size="s" aria-hidden="true">${initialer(tilstand.meg.navn)}</span>
+        <span class="fs-avatar" data-size="small" aria-hidden="true">${initialer(tilstand.meg.navn)}</span>
         <span class="topplinje__navnet">${tilstand.meg.navn.trygg()}</span>
       </p>"""}
     </div>
@@ -1179,7 +1179,7 @@ fun tavle(tilstand: Tilstand): String {
         <td>${it.plass}</td>
         <td>
           <span class="tavle__navn">
-            <span class="fs-avatar" data-size="xs" aria-hidden="true">${initialer(it.navn)}</span>
+            <span class="fs-avatar" data-size="small" aria-hidden="true">${initialer(it.navn)}</span>
             <span>${it.navn.trygg()}${if (it.erMeg) """ <span class="tavle__deg">(deg)</span>""" else ""}</span>
           </span>
         </td>

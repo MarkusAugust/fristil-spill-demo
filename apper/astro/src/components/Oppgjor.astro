@@ -1,0 +1,100 @@
+---
+import { fs } from "@fristil/designsystem"
+
+import { feltnavn, stor } from "../lib/tekst"
+import type { TavleRad, Tilstand } from "../lib/tilstand"
+import Sakskort from "./Sakskort.astro"
+
+interface Props {
+  tilstand: Tilstand
+}
+
+const { tilstand } = Astro.props
+const fasit = tilstand.fasit
+const meg = tilstand.meg
+
+/* Hvem som kom best ut av saken. */
+const beste = tilstand.tavle.reduce<TavleRad | null>(
+  (best, rad) => (!best || rad.sistePoeng > best.sistePoeng ? rad : best),
+  null,
+)
+const delt = beste ? tilstand.tavle.filter((r) => r.sistePoeng === beste.sistePoeng) : []
+const visBeste = tilstand.tavle.length >= 2 && beste !== null && beste.sistePoeng > 0
+const hvem =
+  !beste || !visBeste
+    ? ""
+    : delt.length === 1 && beste.erMeg
+      ? "Du kom best ut av saken"
+      : delt.length === 1
+        ? `${beste.navn} kom best ut av saken`
+        : delt.length === tilstand.tavle.length
+          ? "Alle kom likt ut av saken"
+          : `${delt.map((r) => r.navn).join(" og ")} kom likt best ut`
+
+const flytting =
+  !meg || meg.forrigePlass === 0
+    ? ""
+    : meg.plass < meg.forrigePlass
+      ? `Du gikk fra ${meg.forrigePlass}. til ${meg.plass}. plass.`
+      : meg.plass > meg.forrigePlass
+        ? `Du falt fra ${meg.forrigePlass}. til ${meg.plass}. plass.`
+        : `Du holder ${meg.plass}. plass.`
+
+const { class: kortKlasse, ...kort } = fs.card()
+const { class: merknadKlasse, ...merknad } = fs.alert({ color: "success" })
+---
+
+{
+  fasit && (
+    <>
+      <Sakskort sak={tilstand.sak} />
+
+      {visBeste && beste && (
+        <p {...merknad} class={`${merknadKlasse} beste`}>
+          <strong>{hvem}</strong> med {beste.sistePoeng} av {tilstand.poeng.fullPott} poeng.
+        </p>
+      )}
+
+      <section {...kort} class={`${kortKlasse} kort fasitkort`}>
+        <div class="fasitkort__topp">
+          <h2 {...fs.heading({ size: "s" })}>Fasit</h2>
+          <button {...fs.button({ variant: "secondary" })} type="button" data-apne-resultat>
+            Se resultatet
+          </button>
+        </div>
+
+        <dl class="fasit">
+          <div class="fasit__rad">
+            <dt>Utfall</dt>
+            <dd>{fasit.vedtak === "innvilget" ? "Innvilget" : "Avslått"}</dd>
+          </div>
+          <div class="fasit__rad">
+            <dt>Hjemmel</dt>
+            <dd>{fasit.hjemmel}</dd>
+          </div>
+          <div class="fasit__rad">
+            <dt>Kommune</dt>
+            <dd>{tilstand.fasitKommune ?? "Ingen, kommunen finnes ikke lenger"}</dd>
+          </div>
+          <div class="fasit__rad">
+            <dt>Feil i søknaden</dt>
+            <dd>{fasit.felle ? stor(feltnavn(fasit.felle)) : "Ingen, saken var i orden"}</dd>
+          </div>
+        </dl>
+
+        <div {...fs.alert({ color: "info" })}>
+          <p>{tilstand.forklaring ?? ""}</p>
+        </div>
+
+        {meg && (
+          <>
+            <p class="poeng">
+              <strong>+{meg.sistePoeng}</strong> denne runden · {meg.poeng} til sammen
+            </p>
+            <p class="vedtakskort__ingress">{flytting}</p>
+          </>
+        )}
+      </section>
+    </>
+  )
+}

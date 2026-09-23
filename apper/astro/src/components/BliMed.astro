@@ -1,0 +1,50 @@
+---
+import { fs } from "@fristil/designsystem"
+
+import { tallord } from "../lib/tekst"
+import type { Tilstand } from "../lib/tilstand"
+
+interface Props {
+  tilstand: Tilstand
+}
+
+const { tilstand } = Astro.props
+
+/*
+ * Skjemaet for å bli med.
+ *
+ * Et helt vanlig skjema: kapselen må være satt før hendelsesstrømmen åpnes,
+ * ellers vet serveren ikke hvem du er. Det virker dessuten uten JavaScript i
+ * det hele tatt, og i denne appen er det ikke tilfeldig.
+ */
+const felt = fs.field({ help: true })
+const sekunder = Math.round(tilstand.rundeLengdeMs / 1000)
+const tid =
+  sekunder % 60 !== 0
+    ? `${sekunder} sekunder`
+    : sekunder === 60
+      ? "ett minutt"
+      : `${tallord(sekunder / 60)} minutter`
+
+const { class: kortKlasse, ...kort } = fs.card()
+const { class: ingressKlasse, ...ingress } = fs.paragraph()
+const { class: knappKlasse, ...knapp } = fs.button()
+---
+
+<section {...kort} class={`${kortKlasse} kort blimed`}>
+  <h2 {...fs.heading({ size: "m" })}>Møt på vakt</h2>
+  <p {...ingress} class={`${ingressKlasse} blimed__ingress`}>
+    Du er saksbehandler i førstelinja. {tallord(tilstand.runderTotalt)} saker, {tid} på hver.
+    Finn riktig utfall, riktig hjemmel, riktig kommune, og feilen søkeren håpet du ikke så.
+  </p>
+
+  <form method="post" action="/bli-med">
+    <fs-field>
+      <label {...felt.label}>Navnet ditt</label>
+      <input {...fs.input()} {...felt.control} name="navn" type="text" required />
+      <p {...fs.helpText()} {...felt.help}>Vises på tavla for alle.</p>
+    </fs-field>
+
+    <button {...knapp} class={`${knappKlasse} skjema__send`} type="submit">Begynn vakta</button>
+  </form>
+</section>

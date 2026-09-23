@@ -1,0 +1,62 @@
+---
+import { fs } from "@fristil/designsystem"
+
+import type { SakUt } from "../lib/tilstand"
+
+interface Props {
+  sak: SakUt
+}
+
+const { sak } = Astro.props
+
+/*
+ * Saken slik den ligger på bordet.
+ *
+ * Fella ligger i opplysningene om søkeren, ikke i teksten, så begge fanene
+ * må leses. Det er hele oppgaven.
+ *
+ * Fanene her har ingen tilstand på serveren: `<fs-tabs>` tar over i
+ * nettleseren og flytter valget med piltastene. Serveren skriver rollene og
+ * koblingen, komponenten gjør resten.
+ */
+const { class: kortKlasse, ...kort } = fs.card()
+const { class: tittelKlasse, ...tittel } = fs.heading({ size: "m" })
+const { class: ingressKlasse, ...ingress } = fs.paragraph()
+const { class: tekstKlasse, ...tekst } = fs.paragraph()
+const faner = fs.tabs({ id: "sak", count: 2, selected: 0, label: "Saken" })
+const navn = ["Søknaden", "Søkeren"]
+---
+
+<section {...kort} class={`${kortKlasse} kort sakskort`}>
+  <p class="sakskort__stempel">
+    <span {...fs.tag()}>Sak {sak.id}</span>
+    <span class="sakskort__status">Til behandling</span>
+  </p>
+
+  <h2 {...tittel} class={`${tittelKlasse} sakskort__tittel`}>{sak.tittel}</h2>
+  <p {...ingress} class={`${ingressKlasse} sakskort__ingress`}>{sak.sammendrag}</p>
+
+  <fs-tabs class="sakskort__faner">
+    <div {...faner.list}>
+      {navn.map((ord, i) => <button {...faner.tabs[i]} type="button">{ord}</button>)}
+    </div>
+
+    <div {...faner.panels[0]}>
+      <p {...tekst} class={`${tekstKlasse} sakskort__tekst`}>{sak.tekst}</p>
+      <p class="sakskort__signatur">
+        Med vennlig hilsen<br />{sak.soker.navn}
+      </p>
+    </div>
+
+    <div {...faner.panels[1]}>
+      <table {...fs.table()}>
+        <tbody>
+          <tr><th scope="row">Navn</th><td>{sak.soker.navn}</td></tr>
+          <tr><th scope="row">Fødselsdato</th><td>{sak.soker.fodselsdato}</td></tr>
+          <tr><th scope="row">Kommune</th><td>{sak.soker.kommune}</td></tr>
+          <tr><th scope="row">E-post</th><td>{sak.soker.epost}</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </fs-tabs>
+</section>

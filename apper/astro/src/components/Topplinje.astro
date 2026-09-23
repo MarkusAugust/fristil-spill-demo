@@ -1,0 +1,124 @@
+---
+import { fs } from "@fristil/designsystem"
+
+import { APPNAVN, UTGAVER } from "../lib/fristil"
+import { initialer } from "../lib/tekst"
+import type { Tilstand } from "../lib/tilstand"
+
+interface Props {
+  tilstand: Tilstand
+}
+
+const { tilstand } = Astro.props
+const sisteRunde = tilstand.rundeNr >= tilstand.runderTotalt
+const fase =
+  tilstand.fase === "runde"
+    ? `Runde ${tilstand.rundeNr} av ${tilstand.runderTotalt}`
+    : tilstand.fase === "oppgjor"
+      ? "Oppgjør"
+      : "Omgangen er slutt"
+const merkelapp =
+  tilstand.fase === "runde"
+    ? "Frist"
+    : tilstand.fase === "oppgjor"
+      ? sisteRunde
+        ? "Sluttstilling"
+        : "Neste sak"
+      : "Ny omgang"
+
+/*
+ * Nedtellingen skrives ferdig regnet fra serveren og telles ned av øya.
+ * Serverens egen klokke følger med som `data-na`, slik at en maskin som går
+ * feil ikke gir feil frist.
+ */
+const igjen = Math.max(0, Math.round((tilstand.fristMs - tilstand.naMs) / 1000))
+const klokke = `${Math.floor(igjen / 60)}:${String(igjen % 60).padStart(2, "0")}`
+const avatar = tilstand.meg ? fs.avatar({ size: "small" }) : null
+
+/*
+ * Klassen trekkes ut av spredningen. `{...fs.fieldset()} class="..."` gir to
+ * `class`-attributter i Astro, og nettleseren beholder det første, altså
+ * systemets. Den egne klassen forsvinner uten at noe sier fra, og temavelgeren
+ * lå i en kolonne uten at det var noe galt med CSS-en.
+ */
+const { class: _feltsettKlasse, ...feltsett } = fs.fieldset()
+---
+
+<header class="topplinje">
+  <div class="topplinje__innhold stamme">
+    <div id="topp" class="topplinje__hoved">
+      <div class="topplinje__merke">
+        <svg
+          class="topplinje__emblem"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M6 2.75h6.5l5 5v13.5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3.75a1 1 0 0 1 1-1Z"></path>
+          <path d="M12.5 2.75v5.5h5"></path>
+          <path d="M8.5 13.5h7M8.5 17h4.5"></path>
+        </svg>
+        <div class="topplinje__ord">
+          <h1 class="topplinje__navn">Førstelinja</h1>
+          <span class="topplinje__etat">Etaten for alminnelige søknader</span>
+        </div>
+      </div>
+
+      <p class="topplinje__fase">{fase}</p>
+
+      <p class="topplinje__klokke">
+        <span class="topplinje__merkelapp">{merkelapp}</span>
+        <span
+          class="nedtelling"
+          data-nedtelling="klokke"
+          data-frist={tilstand.fristMs}
+          data-lengde={tilstand.faseLengdeMs}
+          data-na={tilstand.naMs}>{klokke}</span
+        >
+      </p>
+
+      <span class="topplinje__stack">Serverside · {APPNAVN}</span>
+
+      {
+        tilstand.meg && avatar && (
+          <p class="topplinje__meg">
+            <span {...avatar} aria-hidden="true">{initialer(tilstand.meg.navn)}</span>
+            <span class="topplinje__navnet">{tilstand.meg.navn}</span>
+          </p>
+        )
+      }
+    </div>
+
+    <nav class="utgavevelger" aria-label="Utgave">
+      {
+        UTGAVER.map((utgave) =>
+          utgave.navn === APPNAVN ? (
+            <span class="utgavevelger__her" aria-current="page">{utgave.navn}</span>
+          ) : (
+            <a class="utgavevelger__lenke" href={utgave.adresse}>{utgave.navn}</a>
+          ),
+        )
+      }
+    </nav>
+
+    {/* Fristil bytter tema av seg selv etter `prefers-color-scheme`, og
+        `data-theme` på rota overstyrer. Valget er brukerens og lagres i
+        nettleseren, så det følger med til de to andre utgavene. */}
+    <fieldset {...feltsett} class="fs-toggle-group temavelger">
+      <legend {...fs.srOnly()}>Fargetema</legend>
+      <label class="fs-toggle-group__option">
+        <input type="radio" name="tema" value="light" /> Lyst
+      </label>
+      <label class="fs-toggle-group__option">
+        <input type="radio" name="tema" value="system" checked /> System
+      </label>
+      <label class="fs-toggle-group__option">
+        <input type="radio" name="tema" value="dark" /> Mørkt
+      </label>
+    </fieldset>
+  </div>
+</header>

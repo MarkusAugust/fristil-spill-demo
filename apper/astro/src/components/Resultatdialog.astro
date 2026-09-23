@@ -1,0 +1,163 @@
+---
+import { fs } from "@fristil/designsystem"
+
+import { feltnavn, stor, vedtaksord } from "../lib/tekst"
+import type { Tilstand } from "../lib/tilstand"
+
+interface Props {
+  tilstand: Tilstand
+}
+
+const { tilstand } = Astro.props
+
+/*
+ * Resultatet av runden, som en modal dialog.
+ *
+ * Hele skjemaet vurderes, og dialogen sier både hva du svarte og hva som var
+ * riktig, felt for felt. Det holder ikke å si «feil»: da vet du fortsatt
+ * ikke hva du skulle ha svart, og neste runde blir like tilfeldig.
+ *
+ * Serveren sender den åpen når oppgjøret begynner. Lukker du den, kan du
+ * åpne den igjen med knappen i fasitkortet, og det er øya som gjør det.
+ */
+const fasit = tilstand.fasit
+const meg = tilstand.meg
+const vis = tilstand.fase === "oppgjor" && fasit !== null && meg !== null
+
+const svar = meg?.svar
+const vurdering = meg?.vurdering
+const besvart = Boolean(svar && vurdering)
+const full = tilstand.poeng.fullPott
+
+const utfall = !meg
+  ? "sent"
+  : besvart && (vurdering?.poeng ?? 0) >= full
+    ? "full"
+    : besvart && (vurdering?.poeng ?? 0) > 0
+      ? "delvis"
+      : besvart
+        ? "ingen"
+        : meg.medPaSaken
+          ? "avvik"
+          : "sent"
+
+const overskrift =
+  utfall === "full"
+    ? "Full pott"
+    : utfall === "delvis"
+      ? "Delvis truffet"
+      : utfall === "ingen"
+        ? "Ingen uttelling"
+        : utfall === "sent"
+          ? "Du kom inn midt i saken"
+          : "Avvik registrert"
+
+const riktigKommune = tilstand.fasitKommune ?? "Ingen, kommunen finnes ikke lenger"
+const riktigFelle = fasit?.felle ? stor(feltnavn(fasit.felle)) : "Ingen, saken var i orden"
+
+const rader = fasit
+  ? [
+      {
+        navn: "Utfall",
+        ditt: vedtaksord(svar?.vedtak),
+        riktig: vedtaksord(fasit.vedtak),
+        erRiktig: vurdering?.vedtakRiktig === true,
+      },
+      {
+        navn: "Hjemmel",
+        ditt: svar?.hjemmel || "Ikke besvart",
+        riktig: fasit.hjemmel,
+        erRiktig: vurdering?.hjemmelRiktig === true,
+      },
+      {
+        navn: "Kommune",
+        ditt: svar?.kommune || "Ingen",
+        riktig: riktigKommune,
+        erRiktig: vurdering?.kommuneRiktig === true,
+      },
+      {
+        navn: "Feil i søknaden",
+        ditt: svar?.felle ? stor(feltnavn(svar.felle)) : "Ingen",
+        riktig: riktigFelle,
+        erRiktig: vurdering?.felleRiktig === true,
+      },
+    ]
+  : []
+
+const igjen = meg ? tilstand.grenseUtenSvar - meg.runderUtenSvar : 0
+const boks = fs.dialog({ titleId: "resultat-tittel", open: vis })
+const { class: dialogKlasse, ...dialog } = boks.dialog
+---
+
+{
+  vis && meg && fasit ? (
+    <fs-dialog id="resultat" {...boks.host}>
+      <dialog {...dialog} class={`${dialogKlasse} resultat`} data-utfall={utfall}>
+        <div class="resultat__topp">
+          <h2 {...boks.title}>{overskrift}</h2>
+          {utfall === "sent" ? (
+            <p class="resultat__forklaring">
+              Saken lå alt på bordet da du møtte. Ingen poeng denne runden, og du er med
+              fra neste sak.
+            </p>
+          ) : utfall === "avvik" ? (
+            <p class="resultat__forklaring">
+              Saken ble ikke behandlet innen fristen. Avviket er varslet til
+              statsforvalteren, og runden gir null poeng.
+            </p>
+          ) : (
+            <p class="resultat__poeng">
+              <strong>{vurdering?.poeng ?? 0}</strong> av {full} poeng
+            </p>
+          )}
+        </div>
+
+        <div {...boks.body}>
+          <dl class="resultat__liste">
+            {rader.map((rad) =>
+              utfall === "sent" ? (
+                <div class="resultat__rad">
+                  <dt class="resultat__felt">{rad.navn}</dt>
+                  <dd class="resultat__ditt">{rad.riktig}</dd>
+                </div>
+              ) : (
+                <div class="resultat__rad" data-riktig={String(rad.erRiktig)}>
+                  <dt class="resultat__felt">{rad.navn}</dt>
+                  <dd class="resultat__ditt">{rad.ditt}</dd>
+                  <dd class="resultat__dom">{rad.erRiktig ? "Riktig" : "Feil"}</dd>
+                  {!rad.erRiktig && (
+                    <dd class="resultat__riktig">Riktig svar: {rad.riktig}</dd>
+                  )}
+                </div>
+              ),
+            )}
+          </dl>
+
+          {meg.runderUtenSvar >= 1 && meg.runderUtenSvar < tilstand.grenseUtenSvar && (
+            <p class="vedtakskort__ingress">
+              Du har stått over{" "}
+              {meg.runderUtenSvar === 1 ? "én sak" : `${meg.runderUtenSvar} saker`}.{" "}
+              {igjen === 1
+                ? "Står du over én til, blir du tatt av vakta."
+                : `Står du over ${igjen} til, blir du tatt av vakta.`}
+            </p>
+          )}
+
+          {/* Nøytral farge med vilje: toppfeltet over bærer utfallet, og to
+              fargede flater oppå hverandre gjør det uklart hvilken av dem som
+              betyr noe. */}
+          <div {...fs.alert()}>
+            <p class="fs-alert__title">Sak {tilstand.sak.id}</p>
+            <p>{tilstand.forklaring ?? ""}</p>
+          </div>
+        </div>
+
+        <form method="dialog" {...boks.footer}>
+          <button {...fs.button()} value="lukk">Lukk</button>
+        </form>
+      </dialog>
+    </fs-dialog>
+  ) : (
+    <fs-dialog id="resultat" />
+  )
+}

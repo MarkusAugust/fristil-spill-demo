@@ -1,0 +1,21 @@
+{
+  "name": "forstelinja-astro",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev --port 8083",
+    "build": "astro build",
+    "start": "bun run dist/server/entry.mjs",
+    "sjekk": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/node": "^11.1.6",
+    "@fristil/designsystem": "^0.7.0",
+    "astro": "^7.3.4"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@types/node": "^26.6.2",
+    "typescript": "6"
+  }
+}

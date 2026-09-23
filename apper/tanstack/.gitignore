@@ -1,0 +1,6 @@
+node_modules/
+dist/
+.tanstack/
+.nitro/
+# Generert av TanStack-plugin-en ved hver kjøring.
+src/routeTree.gen.ts

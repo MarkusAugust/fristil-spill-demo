@@ -1,0 +1,147 @@
+---
+import BliMed from "../components/BliMed.astro"
+import Kvittering from "../components/Kvittering.astro"
+import Oppgjor from "../components/Oppgjor.astro"
+import Resultatdialog from "../components/Resultatdialog.astro"
+import Sakskort from "../components/Sakskort.astro"
+import Side from "../components/Side.astro"
+import Slutt from "../components/Slutt.astro"
+import Tavle from "../components/Tavle.astro"
+import Topplinje from "../components/Topplinje.astro"
+import Vedtakskort from "../components/Vedtakskort.astro"
+import Velkomst from "../components/Velkomst.astro"
+import { APPNAVN, KAPSEL } from "../lib/fristil"
+import { KOMMUNER } from "../lib/kommuner"
+import { svarInn, tilstand as hentTilstand } from "../lib/spilltjener"
+import type { Feil } from "../lib/tilstand"
+import { valider } from "../lib/validering"
+
+export const prerender = false
+
+/*
+ * Hele skjermen, tegnet på serveren ved hver visning.
+ *
+ * Innsendingen kommer hit som en vanlig POST. Er skjemaet ufullstendig,
+ * tegnes den samme siden med feiloppsummeringen øverst og svarene stående.
+ * Er det i orden, sendes det til spilltjeneren, og siden som tegnes har
+ * kvitteringen. Ingen av delene trenger JavaScript.
+ */
+const spillerId = Astro.cookies.get(KAPSEL)?.value ?? null
+
+let feil: Feil[] = []
+let svar = { vedtak: "", hjemmel: "", kommune: "", felle: "" }
+
+if (Astro.request.method === "POST") {
+  const skjema = await Astro.request.formData()
+  svar = {
+    vedtak: String(skjema.get("vedtak") ?? "").trim(),
+    hjemmel: String(skjema.get("hjemmel") ?? "").trim(),
+    kommune: String(skjema.get("kommune") ?? "").trim(),
+    felle: String(skjema.get("felle") ?? "").trim(),
+  }
+
+  feil = valider(
+    svar.vedtak || null,
+    svar.hjemmel || null,
+    svar.kommune || null,
+    svar.felle || null,
+    KOMMUNER,
+  )
+
+  if (feil.length === 0 && spillerId) {
+    await svarInn(spillerId, {
+      vedtak: svar.vedtak,
+      hjemmel: svar.hjemmel,
+      kommune: svar.kommune || null,
+      // «nei» er et svar: saken er i orden. Spilltjeneren kjenner bare
+      // feltnavn og `null`, så valget oversettes her.
+      felle: svar.felle === "nei" ? null : svar.felle,
+    })
+  }
+}
+
+let tilstand: Awaited<ReturnType<typeof hentTilstand>> | null = null
+try {
+  tilstand = await hentTilstand(spillerId)
+} catch {
+  // Spilltjeneren er nede, eller er ikke kommet opp ennå. En rå
+  // stakksporing sier ingenting til den som står og venter.
+}
+---
+
+{
+  tilstand === null ? (
+    <Side tittel="Førstelinja åpner straks">
+      <main class="venteside">
+        <h1>Etaten åpner straks</h1>
+        <p>Saksbehandlingssystemet starter opp. Siden oppdaterer seg selv.</p>
+        <script is:inline>
+          setTimeout(function () {
+            location.reload()
+          }, 2000)
+        </script>
+      </main>
+    </Side>
+  ) : (
+    <Side tittel={`Førstelinja · ${APPNAVN}`}>
+      {tilstand.meg === null && <Velkomst />}
+
+      <fs-connection-status
+        class="fs-connection-status"
+        offline-text="Sambandet til etaten er nede"
+        online-text="Sambandet er tilbake"
+      />
+
+      <Topplinje tilstand={tilstand} />
+
+      <main class="brett">
+        <div class="stamme">
+          <div
+            id="brett"
+            class="brett__innhold"
+            data-fase={tilstand.fase}
+            data-runde={String(tilstand.rundeNr)}
+            data-sak={tilstand.sak.id}
+            data-svart={String(tilstand.meg?.harSvart ?? false)}
+          >
+            <div id="sak" class="brett__hoved">
+              {
+                tilstand.meg === null ? (
+                  <BliMed tilstand={tilstand} />
+                ) : tilstand.fase === "runde" ? (
+                  <>
+                    <Sakskort sak={tilstand.sak} />
+                    {tilstand.meg.harSvart ? (
+                      <Kvittering tilstand={tilstand} />
+                    ) : (
+                      <Vedtakskort
+                        tilstand={tilstand}
+                        kommuner={KOMMUNER}
+                        feil={feil}
+                        svar={svar}
+                      />
+                    )}
+                  </>
+                ) : tilstand.fase === "oppgjor" ? (
+                  <Oppgjor tilstand={tilstand} />
+                ) : (
+                  <Slutt tilstand={tilstand} />
+                )
+              }
+            </div>
+
+            <aside id="tavle" class="fs-card kort tavle">
+              <Tavle tilstand={tilstand} />
+            </aside>
+
+            <Resultatdialog tilstand={tilstand} />
+          </div>
+        </div>
+      </main>
+
+      <script>
+        import "../oya"
+      </script>
+    </Side>
+  )
+}

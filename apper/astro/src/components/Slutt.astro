@@ -1,0 +1,51 @@
+---
+import { fs } from "@fristil/designsystem"
+
+import { appnavn, farge } from "../lib/tekst"
+import type { Tilstand } from "../lib/tilstand"
+
+interface Props {
+  tilstand: Tilstand
+}
+
+const { tilstand } = Astro.props
+const meg = tilstand.meg
+const { class: kortKlasse, ...kort } = fs.card()
+---
+
+<section {...kort} class={`${kortKlasse} kort sluttkort`}>
+  <h2 {...fs.heading({ size: "m" })}>Vakta er over</h2>
+  {meg && <p class="poeng"><strong>{meg.poeng} poeng</strong> · {meg.plass}. plass</p>}
+  <p {...fs.paragraph()}>
+    Ny omgang starter om <span class="nedtelling" data-nedtelling>{
+      Math.max(0, Math.round((tilstand.fristMs - tilstand.naMs) / 1000))
+    }</span> sekunder.
+  </p>
+
+  <h3 {...fs.heading({ size: "xs" })}>Evig toppliste</h3>
+  <div class={fs.table.scroll} tabindex="0">
+    <table {...fs.table()}>
+      <thead>
+        <tr><th>#</th><th>Navn</th><th>Poeng</th><th>App</th></tr>
+      </thead>
+      <tbody>
+        {
+          tilstand.evigToppliste.length === 0 ? (
+            <tr><td colspan="4">Ingen ennå.</td></tr>
+          ) : (
+            tilstand.evigToppliste.map((rad, i) => (
+              <tr>
+                <td>{i + 1}</td>
+                <td>{rad.navn}</td>
+                <td>{rad.poeng}</td>
+                <td>
+                  <span {...fs.badge({ color: farge(rad.stack) })}>{appnavn(rad.stack)}</span>
+                </td>
+              </tr>
+            ))
+          )
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

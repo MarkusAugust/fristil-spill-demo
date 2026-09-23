@@ -17,10 +17,14 @@ fi
 
 # Ligger det igjen en tjener fra sist, feiler starten med «Address already in
 # use» langt nede i en stakksporing. Si det heller her, og si hvordan.
-for port in 8080 8081; do
-  if lsof -ti "tcp:$port" >/dev/null 2>&1; then
+#
+# `lsof -nP -iTCP:<port> -sTCP:LISTEN` og ikke `lsof -ti tcp:<port>`: den
+# siste treffer også klientsiden av en åpen forbindelse, altså nettleseren
+# din, og et `kill` på den lista feller mer enn tjeneren.
+for port in 8080 8081 8082; do
+  if lsof -nP -iTCP:"$port" -sTCP:LISTEN -t >/dev/null 2>&1; then
     echo "Port $port er opptatt. Noe kjører fra før."
-    echo "Stopp det med:  lsof -ti tcp:8080,tcp:8081 | xargs kill"
+    echo "Stopp det med:  lsof -nP -iTCP:8080 -iTCP:8081 -iTCP:8082 -sTCP:LISTEN -t | xargs kill"
     exit 1
   fi
 done
@@ -30,6 +34,7 @@ java -version 2>&1 | head -1
 echo "Bygger …"
 (cd apper/spilltjener && ./gradlew --quiet installDist)
 (cd apper/datastar && ./gradlew --quiet installDist)
+(cd apper/tanstack && bun install --silent)
 
 PIDER=()
 
@@ -70,8 +75,20 @@ vent_pa http://127.0.0.1:8080/helse
 PIDER+=($!)
 vent_pa http://127.0.0.1:8081/helse
 
+# TanStack-appen kjører i utviklingsmodus. Det er den ærlige utgaven av
+# «slik ser dette ut å jobbe i», og den bygger seg selv mens den står.
+(cd apper/tanstack && exec env SPILLTJENER=http://127.0.0.1:8080 \
+  ./node_modules/.bin/vite dev --port 8082 --clearScreen false) &
+PIDER+=($!)
+# `localhost` og ikke `127.0.0.1`: Vites utviklingstjener lytter på det
+# navnet, som på macOS slår opp til IPv6 først, og en sjekk mot IPv4-adressen
+# ville stått og ventet på noe som aldri kommer.
+vent_pa http://localhost:8082/helse
+
 echo
-echo "  Førstelinja kjører:  http://localhost:8081"
+echo "  Førstelinja kjører:"
+echo "    Datastar og Kotlin:      http://localhost:8081"
+echo "    TanStack Start og React: http://localhost:8082"
 echo
 echo "  Åpne den i to vinduer, ett vanlig og ett privat, så spiller du mot"
 echo "  deg selv og ser tavla oppdatere seg begge steder."

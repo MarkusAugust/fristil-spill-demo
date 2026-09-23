@@ -1,0 +1,74 @@
+---
+import { fs } from "@fristil/designsystem"
+
+import { APPNAVN, UTGAVER } from "../lib/fristil"
+
+/*
+ * Velkomsthilsenen, som forklarer hvorfor det finnes tre utgaver.
+ *
+ * Den vises bare før du har meldt deg på, og serveren sender den åpen.
+ * `<fs-dialog>` kaller `showModal()` når den har fått markupen.
+ */
+const boks = fs.dialog({ titleId: "velkomst-tittel", open: true })
+const { class: dialogKlasse, ...dialog } = boks.dialog
+const { class: overskriftKlasse, ...overskrift } = fs.heading({ size: "xs" })
+const { class: listeKlasse, ...liste } = fs.list({ variant: "plain" })
+---
+
+<fs-dialog id="velkomst" {...boks.host}>
+  <dialog {...dialog} class={`${dialogKlasse} velkomst`}>
+    <div class="velkomst__topp">
+      <h2 {...boks.title}>Velkommen til Førstelinja</h2>
+    </div>
+
+    <div {...boks.body}>
+      <p>
+        Etaten for alminnelige søknader har de siste årene fått et økende antall
+        henvendelser om hvilket rammeverk saksbehandlingsløsningen er skrevet i. Vi tar
+        slike tilbakemeldinger på alvor.
+      </p>
+      <p>
+        Løsningen leveres derfor i tre utgaver, skreddersydd til hvert sitt rammeverk:
+        TanStack Start, Datastar og Astro. Du sitter nå i <strong>{APPNAVN}</strong>-utgaven.
+      </p>
+      <p>Vi er trygge på at du vil merke forskjellen.</p>
+
+      <h3 {...overskrift} class={`${overskriftKlasse} velkomst__valg`}>
+        Velg din foretrukne utgave
+      </h3>
+      <ul {...liste} class={`${listeKlasse} velkomst__liste`}>
+        {
+          UTGAVER.map((utgave) =>
+            utgave.navn === APPNAVN ? (
+              <li>
+                <span class="velkomst__her">
+                  <strong>{utgave.navn}</strong>
+                  <span class="velkomst__om">{utgave.rammeverk}</span>
+                  <span {...fs.badge({ color: "success" })}>Du er her</span>
+                </span>
+              </li>
+            ) : (
+              <li>
+                <a class="velkomst__lenke" href={utgave.adresse}>
+                  <strong>{utgave.navn}</strong>
+                  <span class="velkomst__om">{utgave.rammeverk}</span>
+                </a>
+              </li>
+            ),
+          )
+        }
+      </ul>
+
+      <p class="velkomst__fotnote">
+        Alle tre er bygget med det samme designsystemet, og det er nettopp poenget: du
+        skal ikke merke forskjellen. Bytt utgave, og skjermen er den samme.
+      </p>
+    </div>
+
+    <form method="dialog" {...boks.footer}>
+      {/* `autofocus` her, ellers tar `showModal()` den første lenken i lista,
+          og et tilfeldig Enter sender deg til en annen utgave. */}
+      <button {...fs.button()} value="lukk" autofocus>Jeg merker nok forskjellen</button>
+    </form>
+  </dialog>
+</fs-dialog>

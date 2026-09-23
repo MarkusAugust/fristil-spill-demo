@@ -1,0 +1,26 @@
+{
+  "name": "forstelinja-tanstack",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev --port 8082",
+    "build": "vite build",
+    "start": "bun run dist/server/server.js",
+    "sjekk": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fristil/designsystem": "^0.7.0",
+    "@tanstack/react-router": "^1.170.0",
+    "@tanstack/react-start": "^1.168.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "^5.9.0",
+    "vite": "^7.0.0"
+  }
+}
