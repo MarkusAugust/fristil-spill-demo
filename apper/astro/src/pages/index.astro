@@ -115,6 +115,21 @@ if (Astro.request.method === "POST") {
       // hvis tjeneren fortsatt er nede når tilstanden skal hentes.
       feil = [{ felt: "v-innvilget", melding: "Vedtaket kom ikke fram. Prøv igjen." }]
     }
+
+    /*
+     * Et vedtak som gikk inn svarer med en omdirigering, ikke med en side.
+     *
+     * Uten dette er kvitteringen resultatet av en POST, og da er hver
+     * `location.reload()` en ny innsending av det samme skjemaet. Øya laster
+     * siden på nytt ved hvert rundeskifte, så det gamle vedtaket ble sendt
+     * inn på den **nye** saken: du sto med «Vedtaket er fattet» før du hadde
+     * sett saken, og fikk aldri svare igjen. I skallet, der de tre står side
+     * om side, ble Astro stående mens de to andre gikk videre.
+     *
+     * Feil i skjemaet omdirigerer ikke. Da skal siden tegnes med svarene og
+     * feilmeldingene stående, og det finnes ingenting å sende inn på nytt.
+     */
+    if (feil.length === 0) return Astro.redirect("/", 303)
   }
 }
 
@@ -137,7 +152,7 @@ try {
         <p>Saksbehandlingssystemet starter opp. Siden oppdaterer seg selv.</p>
         <script is:inline>
           setTimeout(function () {
-            location.reload()
+            location.replace("/")
           }, 2000)
         </script>
       </main>
