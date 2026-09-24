@@ -279,6 +279,48 @@ fun side(
       const serverNa = Number(document.body.dataset.serverNa ?? 0)
       const avvik = serverNa > 0 ? serverNa - Date.now() : 0
 
+      /*
+       * Vakthunden: en strøm kan dø uten at noen får vite det.
+       *
+       * Datastar henter hendelsesstrømmen med `fetch` og leser den som en
+       * strøm, og en lesing som aldri kaster gir aldri en gjenoppkobling.
+       * Sover telefonen, bytter nettet, eller kutter en mellomtjener
+       * forbindelsen, står siden igjen med en klokke som teller til null og
+       * ingenting som skjer. Det er den ene feilen som ser ut som at spillet
+       * har stoppet, og det var nettopp slik den viste seg.
+       *
+       * Vi kan ikke spørre strømmen om den lever. Men vi vet noe annet:
+       * serveren flytter fristen ved hvert faseskifte, og en frist som ikke
+       * har flyttet seg lenge etter at den gikk ut, betyr at ingen patch har
+       * kommet. Da henter vi siden på nytt, som er den samme veien inn som
+       * en vanlig lasting.
+       *
+       * De to andre utgavene trenger den ikke: `EventSource` kobler til
+       * igjen av seg selv, og Astro henter en ny side når runden er en annen
+       * enn den siden ble tegnet med.
+       */
+      const NAADE_SEKUNDER = 15
+      let sisteFrist = 0
+      let overtid = 0
+
+      const vakthund = (frist, igjen) => {
+        if (frist !== sisteFrist) {
+          sisteFrist = frist
+          overtid = 0
+          return
+        }
+        if (igjen > 0 || document.visibilityState !== "visible") return
+
+        overtid += 1
+        if (overtid === NAADE_SEKUNDER) {
+          // Si fra før vi henter siden, så det ikke ser ut som et tilfeldig
+          // hopp. Linja er den samme som brukes når spilltjeneren er borte.
+          const samband = document.querySelector("fs-connection-status")
+          if (typeof samband?.reportFailure === "function") samband.reportFailure()
+        }
+        if (overtid >= NAADE_SEKUNDER + 2) location.reload()
+      }
+
       setInterval(() => {
         for (const el of document.querySelectorAll(".nedtelling")) {
           const igjen = Math.max(0, Math.round((Number(el.dataset.frist) - (Date.now() + avvik)) / 1000))
@@ -289,6 +331,10 @@ fun side(
             "klokke" in el.dataset
               ? Math.floor(igjen / 60) + ":" + String(igjen % 60).padStart(2, "0")
               : igjen
+
+          // Bare klokka i toppen styrer vakthunden. Den står der i hver fase,
+          // og teksten inne i en setning finnes bare i noen av dem.
+          if ("klokke" in el.dataset) vakthund(Number(el.dataset.frist), igjen)
 
           const enhet = el.parentElement?.querySelector(".nedtelling-enhet")
           if (enhet) enhet.textContent = igjen === 1 ? "sekund" : "sekunder"

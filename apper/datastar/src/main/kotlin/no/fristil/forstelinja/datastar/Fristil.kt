@@ -72,6 +72,22 @@ private const val CDN = "https://cdn.jsdelivr.net/npm/@fristil/designsystem@$FRI
 val STILARK =
   listOf(
       "tokens/tokens.css",
+      /*
+       * De fem under hentes bare av `@import` inne i `field.css` og
+       * `suggestion.css`, og da i en andre runde: nettleseren må først laste
+       * og lese den ytre fila før den vet at de finnes. På et mobilnett er
+       * det en synlig forsinkelse, og den rammer nettopp feltene: kommunefeltet
+       * og ledeteksten sto uten ramme og bakgrunn til andre runde kom.
+       *
+       * Står de her, hentes alt i første runde. `@import`-ene inne i de to
+       * filene peker på de samme adressene, så de blir et treff i mellomlageret
+       * og ingen ekstra tur.
+       */
+      "components/css/label/label.css",
+      "components/css/input/input.css",
+      "components/css/textarea/textarea.css",
+      "components/css/help-text/help-text.css",
+      "components/css/error-text/error-text.css",
       "components/ramme/field/field.css",
       "components/ramme/tabs/tabs.css",
       "components/ramme/popover/popover.css",

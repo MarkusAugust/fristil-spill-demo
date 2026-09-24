@@ -165,15 +165,31 @@ function sidelast() {
   }
 }
 
+let husketimer = 0
+
+/**
+ * Skriver minnet, men ikke midt i en patch-storm.
+ *
+ * Kallet sto rett i `noter()`, altså i hver eneste mutasjonspakke. Det er en
+ * synkron `JSON.stringify` og en synkron skriving av opptil 24 kB, og under
+ * et faseskifte kommer pakkene tett. På en telefon spiste det hovedtråden i
+ * nettopp det øyeblikket siden skulle oppdatere seg.
+ *
+ * Panelet er et feilsøkingsverktøy, og det skal aldri koste appen noe. Derfor
+ * ett kall når det har vært stille i et halvt sekund.
+ */
 function husk() {
-  try {
-    sessionStorage.setItem(
-      MINNE,
-      JSON.stringify({ apen: tilstand.apen, hendelser: tilstand.hendelser }),
-    )
-  } catch {
-    // Privat vindu, eller lagringen er slått av. Panelet virker uten minne.
-  }
+  clearTimeout(husketimer)
+  husketimer = setTimeout(() => {
+    try {
+      sessionStorage.setItem(
+        MINNE,
+        JSON.stringify({ apen: tilstand.apen, hendelser: tilstand.hendelser }),
+      )
+    } catch {
+      // Privat vindu, eller lagringen er slått av. Panelet virker uten minne.
+    }
+  }, 500)
 }
 
 /**
@@ -280,9 +296,19 @@ function noter(plass, node, antallEndringer) {
     tilstand.hendelser.length = Math.min(tilstand.hendelser.length, HUSKES)
   }
 
-  lysOpp(elementFor(node))
+  /*
+   * Markeringen og opptegningen gjøres bare når noen ser på.
+   *
+   * Er panelet lukket, er begge to ren kostnad: en klasse som legges på og
+   * tas av på et element ute på brettet, og en full opptegning av en liste
+   * ingen har åpnet. Loggen føres like fullt, så den står der når panelet
+   * åpnes.
+   */
+  if (tilstand.apen) {
+    lysOpp(elementFor(node))
+    tegn()
+  }
   husk()
-  tegn()
 }
 
 /**
@@ -332,6 +358,8 @@ function byggPanel() {
   vis(tilstand.apen)
   knapp.addEventListener("click", () => {
     vis(panel.hidden)
+    // Loggen tegnes ikke mens panelet er lukket, så den tegnes her.
+    if (tilstand.apen) tegn()
     husk()
   })
 

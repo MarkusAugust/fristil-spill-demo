@@ -176,6 +176,7 @@ cd apper/spilltjener && ./gradlew test && ./gradlew installDist
 cd tester && bun install
 bun run paritet   # at de tre utgavene oppfører seg likt
 bun run panel     # at panelet forteller sant om hva som kom over ledningen
+bun run vakthund  # at Datastar-utgaven kommer seg etter en strøm som dør
 ```
 
 `tester/paritet.ts` kjører det samme løpet i alle tre utgavene: melder seg
@@ -188,6 +189,15 @@ de gjør det samme.
 Den venter på at en runde er i gang framfor å hoppe over skjemaet når den
 lander midt i et oppgjør. En test som feiler tilfeldig blir ignorert, og da
 er den verdiløs.
+
+`tester/vakthund.ts` kutter hendelsesstrømmen helt og krever at siden henter
+seg inn igjen. Det er feilen som ser ut som at spillet har stoppet: klokka
+teller til null, og så skjer ingenting. Serveren tikker videre fire ganger i
+sekundet, så den er ikke stanset; det er forbindelsen som er borte uten et ord.
+Datastar kobler til igjen bare når lesingen kaster, og en forbindelse som
+forsvinner mens telefonen sover kaster aldri. De to andre utgavene har hver
+sin vei ut: `EventSource` kobler til igjen av seg selv, og Astro henter en ny
+side når runden er en annen enn den siden ble tegnet med.
 
 `tester/panel.ts` krever at «Med hva» i panelet viser det utgaven faktisk
 sender: HTML over hendelsesstrømmen i Datastar, JSON i de to andre, med

@@ -539,7 +539,13 @@ class MarkupTest {
         Regex("""<(fs-[a-z-]+)""").findAll(html).map { it.groupValues[1].removePrefix("fs-") }.toSet()
 
     // Disse er bunter eller grunnlag, og har ingen egen klasse i markupen.
-    val alltid = setOf("tokens", "field", "label", "input", "help-text", "error-text")
+    //
+    // `textarea` står her selv om spillet ikke har et tekstområde: det er en
+    // av de seks `field.css` importerer, så nettleseren henter det uansett.
+    // Å skrive det ut i lista flytter det bare til første runde, og gjør
+    // kostnaden synlig ett sted framfor å skjule den i en `@import`.
+    val alltid =
+      setOf("tokens", "field", "label", "input", "textarea", "help-text", "error-text")
 
     val ubrukte =
       STILARK.map { it.substringAfterLast("/").removeSuffix(".css") }

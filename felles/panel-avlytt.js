@@ -205,6 +205,17 @@
   const opprinneligFetch = window.fetch
   window.fetch = async function (...argumenter) {
     const svar = await opprinneligFetch.apply(this, argumenter)
+
+    try {
+      return avlytt.call(this, svar, argumenter)
+    } catch {
+      // Panelet er et feilsøkingsverktøy. Kaster det, skal appen merke det
+      // like lite som om panelet ikke var der.
+      return svar
+    }
+  }
+
+  function avlytt(svar, argumenter) {
     const type = svar.headers.get("content-type") ?? ""
     const url = svar.url || String(argumenter[0])
 
@@ -217,46 +228,54 @@
 
     if (type.includes("text/event-stream") && svar.body && kanBæreKropp) {
       /*
-       * Strømmen deles i to: én til appen, én hit. Uten delingen ville
-       * panelet spist bytene appen venter på, og skjermen sluttet å
-       * oppdatere seg.
+       * Strømmen leses i forbifarten, ikke i en egen gren.
+       *
+       * Her sto `tee()` først, med en løkke som leste den andre grenen. Det
+       * er to strømmer med hver sin levetid, og spesifikasjonen sier at
+       * kilden først avbrytes når *begge* grenene er avbrutt. Avbrøt appen
+       * sin gren ved en gjenoppkobling, ble forbindelsen dermed stående
+       * åpen så lenge panelet leste, og på en telefon som sover og våkner
+       * blir det én stille forbindelse til for hver gang.
+       *
+       * Med en gjennomstrøm er det én strøm og én levetid. Avbryter appen,
+       * avbrytes kilden, og panelet slutter å lese i samme øyeblikk. Panelet
+       * ser bytene mens appen får dem, og kan ikke komme i veien.
        */
-      const [tilAppen, tilPanelet] = svar.body.tee()
+      const koder = new TextDecoder()
+      let rest = ""
+      let venterCR = false
+
       /*
-       * `.catch()` er ikke pynt: `leser.read()` avviser når strømmen ryker
-       * eller forespørselen avbrytes, og uten den fikk konsollen en
-       * uhåndtert avvisning for hver avbrutte forespørsel. Panelet skal ikke
-       * bråke i en app som virker.
+       * En CR som kom sist i en bit kan være første halvdel av et CR LF som
+       * kommer i neste. Den holdes igjen, ellers blir ett linjeskift til to.
        */
-      void (async () => {
-        const leser = tilPanelet.pipeThrough(new TextDecoderStream()).getReader()
-        let rest = ""
-        /*
-         * En CR som kom sist i en bit kan være første halvdel av et CR LF som
-         * kommer i neste. Den holdes igjen, ellers blir ett linjeskift til to.
-         */
-        let venterCR = false
-        const normaliser = (bit) => {
-          let tekst = venterCR ? `\r${bit}` : bit
-          venterCR = tekst.endsWith("\r")
-          if (venterCR) tekst = tekst.slice(0, -1)
-          return tekst.replace(/\r\n/g, "\n").replace(/\r/g, "\n")
-        }
+      const normaliser = (bit) => {
+        let tekst = venterCR ? `\r${bit}` : bit
+        venterCR = tekst.endsWith("\r")
+        if (venterCR) tekst = tekst.slice(0, -1)
+        return tekst.replace(/\r\n/g, "\n").replace(/\r/g, "\n")
+      }
 
-        for (;;) {
-          const { done, value } = await leser.read()
-          if (done) break
-          rest += normaliser(value)
-          const rammer = rest.split("\n\n")
-          rest = rammer.pop() ?? ""
-          for (const ramme of rammer) {
-            const { navn, data } = lesRamme(ramme)
-            if (data) noter({ transport: "SSE", hendelse: navn, tekst: data, url })
+      const gjennom = new TransformStream({
+        transform(bit, kø) {
+          // Appen først, alltid. Panelet skal aldri forsinke en patch.
+          kø.enqueue(bit)
+
+          try {
+            rest += normaliser(koder.decode(bit, { stream: true }))
+            const rammer = rest.split("\n\n")
+            rest = rammer.pop() ?? ""
+            for (const ramme of rammer) {
+              const { navn, data } = lesRamme(ramme)
+              if (data) noter({ transport: "SSE", hendelse: navn, tekst: data, url })
+            }
+          } catch {
+            // Et panel som kaster her ville tatt strømmen med seg.
           }
-        }
-      })().catch(() => {})
+        },
+      })
 
-      return new Response(tilAppen, {
+      return new Response(svar.body.pipeThrough(gjennom), {
         status: svar.status,
         statusText: svar.statusText,
         headers: svar.headers,
