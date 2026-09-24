@@ -62,7 +62,7 @@ Spilltjeneren er med vilje ikke den samme prosessen som Datastar-appen. Ellers v
 
 ## Omgangen
 
-Fire runder à ett minutt, med tolv sekunders oppgjør mellom. Under fem minutter, og så begynner en ny. Saken skal leses, ikke gjettes: to faner, en tabell, tre felt og en hjelpetekst om hjemlene.
+Fire runder à to minutter, med tolv sekunders oppgjør mellom. Rundt ni minutter, og så begynner en ny. Saken skal leses, ikke gjettes: to faner, en tabell, tre felt og en hjelpetekst om hjemlene. Tiden er romsligere enn saken krever, med vilje: en runde rører fem komponenter, og de skal kunne prøves og ikke bare fylles ut.
 
 **Ingen lobby.** Rundene går uavbrutt. Den som åpner adressen er med fra neste runde, og venter aldri lenger enn én runde. En lobby ville betydd at den første som kom satt og ventet på noen som aldri kom.
 
@@ -267,9 +267,12 @@ IPv6-bare, så tjenesten må lytte på `::`. Det er standarden i Dockerfilen.
 ### Det som er verdt å vite
 
 - **Runder og pauser** styres av `RUNDE_MS`, `OPPGJOR_MS` og `SLUTT_MS` på
-  spilltjeneren. Standard er ett minutt, 12,5 sekunder og 40 sekunder. En sak
-  leses på under et halvt minutt, så to minutter gikk mest med til å vente.
-  Sluttoppgjøret står lengre med vilje: der skal man rekke å lese topplista.
+  spilltjeneren. Standard er to minutter, 12,5 sekunder og 40 sekunder. En sak
+  leses på under et halvt minutt, så tallet er ikke satt etter lesingen, men
+  etter at den som vil prøve komponentene skal ha tid igjen når søknaden er
+  fylt ut. Sluttoppgjøret står lengre med vilje: der skal man rekke å lese
+  topplista. Skal du vise spillet på kort tid, sett `RUNDE_MS` ned framfor å
+  endre koden.
 - **`VARM_TIMER`** sier hvor lenge spilltjeneren holder seg våken etter at
   den siste spilleren er borte. Standard er 0, altså av.
 - **Uten volum forsvinner den evige topplista** ved hver utrulling. Ett volum
