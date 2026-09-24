@@ -178,6 +178,8 @@ bun run paritet   # at de tre utgavene oppfører seg likt
 bun run panel     # at panelet forteller sant om hva som kom over ledningen
 bun run vakthund  # at Datastar-utgaven kommer seg etter en strøm som dør
 bun run skall     # at hilsenen ikke legger seg over rammene i skallet
+bun run fristilbruk  # at appene bruker Fristil slik dokumentasjonen sier
+bun run klasselikhet # at de tre utgavene bruker de samme klassene
 ```
 
 `tester/paritet.ts` kjører det samme løpet i alle tre utgavene: melder seg
@@ -190,6 +192,17 @@ de gjør det samme.
 Den venter på at en runde er i gang framfor å hoppe over skjemaet når den
 lander midt i et oppgjør. En test som feiler tilfeldig blir ignorert, og da
 er den verdiløs.
+
+`tester/fristilbruk.ts` leser hva hver byggefunksjon faktisk sender ut, både
+fra returverdien og fra navnene som henger på funksjonen, og feller enhver
+`fs-`-klasse skrevet for hånd der det finnes en bunter eller en vei til en
+import. Datastar-appen er med vilje utenfor: Kotlin kan ikke kalle `fs`.
+
+`tester/klasselikhet.ts` teller `fs-`-klassene i DOM-en i hver utgave og
+krever likt sett. Den finnes fordi `paritet.ts` ikke så at temavelgeren i én
+utgave mistet `fs-toggle-group` og ble en kolonne uten ramme: den fant
+fortsatt tre knapper med riktig tekst, så alle de andre vaktpostene var
+grønne mens skjermen var synlig ødelagt.
 
 `tester/skall.ts` åpner skallet og krever at ingen av de tre rammene viser
 velkomsthilsenen, og at alle tre fortsatt viser den når de åpnes alene, hver
@@ -335,6 +348,20 @@ Regningen er nesten bare minne:
 
 JVM-ene har fått et tak på minnet i Dockerfilene. Uten det tar en JVM en
 firedel av det containeren har, enten den trenger det eller ikke.
+
+## To feller når Fristil brukes
+
+**I Astro skrives begge `class`-attributtene ut, og nettleseren beholder den
+første.** `{...fs.button()} class="min-klasse"` mister altså din egen klasse.
+Destrukturer i stedet: `const { class: k, ...knapp } = fs.button()`.
+
+**I JSX vinner den siste propen.** `{...fs.card()} className="fs-card kort"`
+kaster det byggefunksjonen ga, og virker likevel så lenge strengen gjentar
+klassen. Legger `fs.card()` noen gang til noe, forsvinner det i stillhet.
+Derfor finnes `med()` i `apper/tanstack/src/fristil.ts`.
+
+Den andre er verre enn den første: Astro-fella gir feil utseende med en gang,
+JSX-fella gir riktig utseende helt til klassen endrer navn.
 
 ## Velkomsthilsenen, og valget mellom de tre
 

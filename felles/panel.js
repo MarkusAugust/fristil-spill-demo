@@ -27,6 +27,16 @@
  * modulskript i det hele tatt har rukket å kjøre.
  */
 
+/*
+ * Byggefunksjonene, hentet som Datastar-appen henter dem.
+ *
+ * Fila lastes som `<script type="module">` uten bundling, og da er hele
+ * URL-en riktig: en nettleser slår ikke opp et pakkenavn. Panelet lager
+ * markup med JavaScript, og da er regelen den samme som overalt ellers,
+ * at byggefunksjonen kalles framfor at klassen skrives av.
+ */
+import { fs } from "https://cdn.jsdelivr.net/npm/@fristil/designsystem@0.13.0/dist/fs.js"
+
 /** Hvor mange oppdateringer som huskes. Nok til å bla litt tilbake. */
 const HUSKES = 12
 
@@ -371,8 +381,8 @@ function utgavetabell() {
   ).join("")
 
   return `
-    <div class="fs-table-scroll" tabindex="0">
-      <table class="fs-table panel__tabell">
+    <div class="${fs.table.scroll}" tabindex="0">
+      <table class="${fs.table().class} panel__tabell">
         <thead>
           <tr>
             <th>Utgave</th>
@@ -384,7 +394,7 @@ function utgavetabell() {
         <tbody>${rader}</tbody>
       </table>
     </div>
-    <ul class="fs-list panel__felles">
+    <ul class="${fs.list().class} panel__felles">
       ${FELLES.map((linje) => `<li>${linje}</li>`).join("")}
     </ul>
     <p class="panel__felles">
@@ -408,13 +418,13 @@ function byggPanel() {
     document.querySelector(".panelvert") ?? document.createElement("div")
   vert.className = "panelvert"
   vert.innerHTML = `
-    <button type="button" class="fs-button panelknapp" aria-expanded="false"
+    <button type="button" class="${fs.button().class} panelknapp" aria-expanded="false"
             aria-controls="panel">Hva skjedde?</button>
-    <section id="panel" class="fs-card panel" hidden aria-label="Hva skjedde">
+    <section id="panel" class="${fs.card().class} panel" hidden aria-label="Hva skjedde">
       <div class="panel__del panel__del--hva">
-        <h2 class="fs-heading panel__tittel" data-size="xs">
+        <h2 class="${fs.heading({ size: "xs" }).class} panel__tittel" data-size="xs">
           Med hva
-          <button type="button" class="fs-button panel__hjelp" data-variant="ghost"
+          <button type="button" class="${fs.button({ variant: "ghost" }).class} panel__hjelp" data-variant="ghost"
                   aria-expanded="false" aria-controls="panel-utgaver"
                   aria-label="Hvordan de tre utgavene henter data">?</button>
         </h2>
@@ -425,13 +435,13 @@ function byggPanel() {
         <pre class="panel__nyttelast" tabindex="0"></pre>
       </div>
       <div class="panel__del panel__del--logg">
-        <h2 class="fs-heading panel__tittel" data-size="xs">Hva som ble oppdatert</h2>
-        <ol class="fs-list panel__logg" data-variant="plain"></ol>
+        <h2 class="${fs.heading({ size: "xs" }).class} panel__tittel" data-size="xs">Hva som ble oppdatert</h2>
+        <ol class="${fs.list({ variant: "plain" }).class} panel__logg" data-variant="plain"></ol>
       </div>
       <div class="panel__del panel__del--hvordan">
-        <h2 class="fs-heading panel__tittel" data-size="xs">Hvordan</h2>
-        <p class="fs-paragraph panel__teknikk"></p>
-        <p class="fs-paragraph panel__forklaring" data-size="small"></p>
+        <h2 class="${fs.heading({ size: "xs" }).class} panel__tittel" data-size="xs">Hvordan</h2>
+        <p class="${fs.paragraph().class} panel__teknikk"></p>
+        <p class="${fs.paragraph({ size: "small" }).class} panel__forklaring" data-size="small"></p>
       </div>
     </section>`
   if (!vert.isConnected) document.body.append(vert)

@@ -5,11 +5,14 @@
     "": {
       "name": "forstelinja-prover",
       "devDependencies": {
+        "@fristil/designsystem": "0.13.0",
         "playwright": "^1.60.0",
       },
     },
   },
   "packages": {
+    "@fristil/designsystem": ["@fristil/designsystem@0.13.0", "", { "bin": { "fristil": "dist/cli.js" } }, "sha512-ewwSXCx2YcjeD+FFPtkYhdPHmvPNSHx6IaVSiN05CkzI1LN/3gRs6Y2jVXr93k/gmq2PInl+/QriPDzygV6Yyg=="],
+
     "playwright": ["playwright@1.63.0", "", { "dependencies": { "playwright-core": "1.63.0" }, "bin": { "playwright": "cli.js" } }, "sha512-+7ziBLidS4NaNCdt57SUDT+wYmmd5fmiQejUic/kb+YsYSCPyOOE9sebzMjNmQrsnNpDJqd4WHvV/8lfKfUDUg=="],
 
     "playwright-core": ["playwright-core@1.63.0", "", { "bin": { "playwright-core": "cli.js" } }, "sha512-rYCsBF/M5HjUch52bbtVONEFjv6Xu8sm8h72dNlR5bzIE1fvC/bxgspzkjSfU+MweEMmPM8KJebG6nnyxo5mCg=="],

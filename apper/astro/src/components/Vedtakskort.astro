@@ -76,7 +76,7 @@ const feller = [
           ["innvilget", "Innvilget", "v-innvilget"],
           ["avslatt", "Avslått", "v-avslatt"],
         ].map(([verdi, tekst, id]) => (
-          <div class="fs-radio-row">
+          <div class={fs.radio.row}>
             <input
               {...fs.radio({ state: feilPa("v-innvilget") ? "invalid" : undefined })}
               type="radio"

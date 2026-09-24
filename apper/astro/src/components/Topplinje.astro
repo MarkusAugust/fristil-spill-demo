@@ -43,12 +43,13 @@ const klokke = `${Math.floor(igjen / 60)}:${String(igjen % 60).padStart(2, "0")}
 const avatar = tilstand.meg ? fs.avatar({ size: "small" }) : null
 
 /*
- * Klassen trekkes ut av spredningen. `{...fs.fieldset()} class="..."` gir to
+ * Klassen trekkes ut av spredningen. `{...fs.toggleGroup()} class="..."` gir to
  * `class`-attributter i Astro, og nettleseren beholder det første, altså
  * systemets. Den egne klassen forsvinner uten at noe sier fra, og temavelgeren
  * lå i en kolonne uten at det var noe galt med CSS-en.
  */
-const { class: _feltsettKlasse, ...feltsett } = fs.fieldset()
+// Riktig byggefunksjon: det er en valggruppe, ikke et vanlig feltsett.
+const { class: gruppeKlasse, ...gruppe } = fs.toggleGroup()
 ---
 
 <header class="topplinje">
@@ -115,15 +116,15 @@ const { class: _feltsettKlasse, ...feltsett } = fs.fieldset()
     {/* Fristil bytter tema av seg selv etter `prefers-color-scheme`, og
         `data-theme` på rota overstyrer. Valget er brukerens og lagres i
         nettleseren, så det følger med til de to andre utgavene. */}
-    <fieldset {...feltsett} class="fs-toggle-group temavelger">
+    <fieldset {...gruppe} class={`${gruppeKlasse} temavelger`}>
       <legend {...fs.srOnly()}>Fargetema</legend>
-      <label class="fs-toggle-group__option">
+      <label class={fs.toggleGroup.option}>
         <input type="radio" name="tema" value="light" checked={tema === "light"} /> Lyst
       </label>
-      <label class="fs-toggle-group__option">
+      <label class={fs.toggleGroup.option}>
         <input type="radio" name="tema" value="system" checked={tema === null} /> System
       </label>
-      <label class="fs-toggle-group__option">
+      <label class={fs.toggleGroup.option}>
         <input type="radio" name="tema" value="dark" checked={tema === "dark"} /> Mørkt
       </label>
     </fieldset>
