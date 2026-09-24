@@ -1204,7 +1204,37 @@ private fun feltnavn(felle: String) =
     else -> felle
   }
 
-/** Sluttstilling og den evige topplista. */
+/**
+ * Ordet for plasseringen, og linja under.
+ *
+ * Den samme teksten står i alle tre utgavene. En vakt er over på få minutter,
+ * og det eneste man sitter igjen med er hvor det gikk, så det skal stå med
+ * store bokstaver framfor å gjemmes i en tabell.
+ */
+fun plasseringsord(plass: Int): String =
+  when (plass) {
+    1 -> "Gull"
+    2 -> "Sølv"
+    3 -> "Bronse"
+    else -> "$plass. plass"
+  }
+
+fun plasseringslinje(plass: Int, antall: Int, poeng: Int, mulige: Int): String {
+  // Null poeng og gull er en ekte kombinasjon, og den fortjener sin egen linje.
+  if (poeng == 0 && plass == 1) return "Null poeng, og likevel gull. Det sier mest om de andre."
+  if (poeng == 0) return "Null poeng. Det skjer i førstelinja."
+
+  val av = "$poeng av $mulige mulige poeng."
+  return when {
+    plass == 1 && antall == 1 -> "$av Du var alene på vakt, så seieren var ikke omstridt."
+    plass == 1 -> "$av Du vant vakta."
+    plass == 2 -> "$av Så nær."
+    plass == 3 -> "$av Du kom deg på pallen."
+    else -> "$av ${plass}. plass av $antall."
+  }
+}
+
+/** Sluttstilling: din egen plassering, omgangens resultat, og den evige lista. */
 fun slutt(tilstand: Tilstand): String {
   val evig =
     tilstand.evigToppliste.withIndex().joinToString("\n") { (nr, it) ->
@@ -1219,13 +1249,42 @@ fun slutt(tilstand: Tilstand): String {
         .trimIndent()
     }
 
+  val omgangen =
+    tilstand.tavle.joinToString("\n") {
+      """
+      <tr${if (it.erMeg) " class=\"meg\"" else ""}>
+        <td><span class="medalje" data-plass="${it.plass}" aria-hidden="true">${it.plass}</span></td>
+        <td>${it.navn.trygg()}${if (it.erMeg) " <span class=\"deg\">deg</span>" else ""}</td>
+        <td>${it.poeng}</td>
+        <td><span class="fs-badge" data-color="${farge(it.stack)}">${appnavn(it.stack)}</span></td>
+      </tr>
+      """
+        .trimIndent()
+    }
+
   val meg = tilstand.meg
+  val mulige = tilstand.poeng.fullPott * tilstand.runderTotalt
 
   return """
     <section class="fs-card kort sluttkort">
       <h2 class="fs-heading" data-size="m">Vakta er over</h2>
       ${if (meg == null) "" else """
-      <p class="poeng"><strong>${meg.poeng} poeng</strong> · ${meg.plass}. plass</p>"""}
+      <div class="plassering" data-plass="${meg.plass}">
+        <span class="medalje medalje--stor" data-plass="${meg.plass}" aria-hidden="true">${meg.plass}</span>
+        <div>
+          <p class="plassering__ord">${plasseringsord(meg.plass)}</p>
+          <p class="plassering__linje">${plasseringslinje(meg.plass, tilstand.tavle.size, meg.poeng, mulige)}</p>
+        </div>
+      </div>"""}
+
+      <h3 class="fs-heading" data-size="xs">Omgangens resultat</h3>
+      <div class="fs-table-scroll" tabindex="0">
+        <table class="fs-table">
+          <thead><tr><th>#</th><th>Navn</th><th>Poeng</th><th>App</th></tr></thead>
+          <tbody>${omgangen.ifBlank { "<tr><td colspan=\"4\">Ingen spilte denne omgangen.</td></tr>" }}</tbody>
+        </table>
+      </div>
+
       <p class="fs-paragraph">Ny omgang starter om
         <span class="nedtelling" data-frist="${tilstand.fristMs}"
           data-lengde="${tilstand.faseLengdeMs}" data-preserve-attr="style">…</span>

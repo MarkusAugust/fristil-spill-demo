@@ -8,14 +8,91 @@ interface Props {
   tilstand: Tilstand
 }
 
+/**
+ * Ordet for plasseringen, og linja under.
+ *
+ * Den samme teksten står i alle tre utgavene. En vakt er over på få minutter,
+ * og det eneste man sitter igjen med er hvor det gikk.
+ */
+function plasseringsord(plass: number): string {
+  if (plass === 1) return "Gull"
+  if (plass === 2) return "Sølv"
+  if (plass === 3) return "Bronse"
+  return `${plass}. plass`
+}
+
+function plasseringslinje(
+  plass: number,
+  antall: number,
+  poeng: number,
+  mulige: number,
+): string {
+  // Null poeng og gull er en ekte kombinasjon, og den fortjener sin egen linje.
+  if (poeng === 0 && plass === 1) return "Null poeng, og likevel gull. Det sier mest om de andre."
+  if (poeng === 0) return "Null poeng. Det skjer i førstelinja."
+
+  const av = `${poeng} av ${mulige} mulige poeng.`
+  if (plass === 1 && antall === 1) return `${av} Du var alene på vakt, så seieren var ikke omstridt.`
+  if (plass === 1) return `${av} Du vant vakta.`
+  if (plass === 2) return `${av} Så nær.`
+  if (plass === 3) return `${av} Du kom deg på pallen.`
+  return `${av} ${plass}. plass av ${antall}.`
+}
+
 const { tilstand } = Astro.props
 const meg = tilstand.meg
+const mulige = tilstand.poeng.fullPott * tilstand.runderTotalt
 const { class: kortKlasse, ...kort } = fs.card()
 ---
 
 <section {...kort} class={`${kortKlasse} kort sluttkort`}>
   <h2 {...fs.heading({ size: "m" })}>Vakta er over</h2>
-  {meg && <p class="poeng"><strong>{meg.poeng} poeng</strong> · {meg.plass}. plass</p>}
+
+  {
+    meg && (
+      <div class="plassering" data-plass={meg.plass}>
+        <span class="medalje medalje--stor" data-plass={meg.plass} aria-hidden="true">
+          {meg.plass}
+        </span>
+        <div>
+          <p class="plassering__ord">{plasseringsord(meg.plass)}</p>
+          <p class="plassering__linje">
+            {plasseringslinje(meg.plass, tilstand.tavle.length, meg.poeng, mulige)}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  <h3 {...fs.heading({ size: "xs" })}>Omgangens resultat</h3>
+  <div class={fs.table.scroll} tabindex="0">
+    <table {...fs.table()}>
+      <thead>
+        <tr><th>#</th><th>Navn</th><th>Poeng</th><th>App</th></tr>
+      </thead>
+      <tbody>
+        {
+          tilstand.tavle.length === 0 ? (
+            <tr><td colspan="4">Ingen spilte denne omgangen.</td></tr>
+          ) : (
+            tilstand.tavle.map((rad) => (
+              <tr class={rad.erMeg ? "meg" : undefined}>
+                <td>
+                  <span class="medalje" data-plass={rad.plass} aria-hidden="true">{rad.plass}</span>
+                </td>
+                <td>{rad.navn}{rad.erMeg && <span class="deg">deg</span>}</td>
+                <td>{rad.poeng}</td>
+                <td>
+                  <span {...fs.badge({ color: farge(rad.stack) })}>{appnavn(rad.stack)}</span>
+                </td>
+              </tr>
+            ))
+          )
+        }
+      </tbody>
+    </table>
+  </div>
+
   <p {...fs.paragraph()}>
     Ny omgang starter om <span class="nedtelling" data-nedtelling>{
       Math.max(0, Math.round((tilstand.fristMs - tilstand.naMs) / 1000))

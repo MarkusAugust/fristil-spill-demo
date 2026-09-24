@@ -782,18 +782,99 @@ function Oppgjor({ tilstand, apneResultat }: { tilstand: Tilstand; apneResultat:
   )
 }
 
-/** Sluttstilling og den evige topplista. */
+/**
+ * Ordet for plasseringen, og linja under.
+ *
+ * Den samme teksten står i alle tre utgavene. En vakt er over på få minutter,
+ * og det eneste man sitter igjen med er hvor det gikk.
+ */
+function plasseringsord(plass: number): string {
+  if (plass === 1) return "Gull"
+  if (plass === 2) return "Sølv"
+  if (plass === 3) return "Bronse"
+  return `${plass}. plass`
+}
+
+function plasseringslinje(
+  plass: number,
+  antall: number,
+  poeng: number,
+  mulige: number,
+): string {
+  // Null poeng og gull er en ekte kombinasjon, og den fortjener sin egen linje.
+  if (poeng === 0 && plass === 1) return "Null poeng, og likevel gull. Det sier mest om de andre."
+  if (poeng === 0) return "Null poeng. Det skjer i førstelinja."
+
+  const av = `${poeng} av ${mulige} mulige poeng.`
+  if (plass === 1 && antall === 1) return `${av} Du var alene på vakt, så seieren var ikke omstridt.`
+  if (plass === 1) return `${av} Du vant vakta.`
+  if (plass === 2) return `${av} Så nær.`
+  if (plass === 3) return `${av} Du kom deg på pallen.`
+  return `${av} ${plass}. plass av ${antall}.`
+}
+
+/** Sluttstilling: din egen plassering, omgangens resultat, og den evige lista. */
 function Slutt({ tilstand }: { tilstand: Tilstand }) {
   const meg = tilstand.meg
+  const mulige = tilstand.poeng.fullPott * tilstand.runderTotalt
 
   return (
     <section {...fs.card()} className="fs-card kort sluttkort">
       <h2 {...fs.heading({ size: "m" })}>Vakta er over</h2>
+
       {meg && (
-        <p className="poeng">
-          <strong>{meg.poeng} poeng</strong> · {meg.plass}. plass
-        </p>
+        <div className="plassering" data-plass={meg.plass}>
+          <span className="medalje medalje--stor" data-plass={meg.plass} aria-hidden="true">
+            {meg.plass}
+          </span>
+          <div>
+            <p className="plassering__ord">{plasseringsord(meg.plass)}</p>
+            <p className="plassering__linje">
+              {plasseringslinje(meg.plass, tilstand.tavle.length, meg.poeng, mulige)}
+            </p>
+          </div>
+        </div>
       )}
+
+      <h3 {...fs.heading({ size: "xs" })}>Omgangens resultat</h3>
+      <div className={fs.table.scroll} tabIndex={0}>
+        <table {...fs.table()}>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Navn</th>
+              <th>Poeng</th>
+              <th>App</th>
+            </tr>
+          </thead>
+          <tbody>
+            {tilstand.tavle.length === 0 ? (
+              <tr>
+                <td colSpan={4}>Ingen spilte denne omgangen.</td>
+              </tr>
+            ) : (
+              tilstand.tavle.map((rad) => (
+                <tr key={rad.navn + rad.plass} className={rad.erMeg ? "meg" : undefined}>
+                  <td>
+                    <span className="medalje" data-plass={rad.plass} aria-hidden="true">
+                      {rad.plass}
+                    </span>
+                  </td>
+                  <td>
+                    {rad.navn}
+                    {rad.erMeg && <span className="deg">deg</span>}
+                  </td>
+                  <td>{rad.poeng}</td>
+                  <td>
+                    <span {...fs.badge({ color: farge(rad.stack) })}>{appnavn(rad.stack)}</span>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
       <p {...fs.paragraph()}>
         Ny omgang starter om{" "}
         <Nedtelling
@@ -822,7 +903,7 @@ function Slutt({ tilstand }: { tilstand: Tilstand }) {
               </tr>
             ) : (
               tilstand.evigToppliste.map((rad, i) => (
-                <tr key={`${rad.navn}-${rad.nar}`}>
+                <tr key={rad.navn + i}>
                   <td>{i + 1}</td>
                   <td>{rad.navn}</td>
                   <td>{rad.poeng}</td>
@@ -838,10 +919,6 @@ function Slutt({ tilstand }: { tilstand: Tilstand }) {
     </section>
   )
 }
-
-/* ------------------------------------------------------------------ */
-/* Tavla, dialogen og innmeldingen                                     */
-/* ------------------------------------------------------------------ */
 
 /** Tavla. Den samme i alle tre appene, og det er hele poenget. */
 function Tavle({ tilstand }: { tilstand: Tilstand }) {

@@ -532,6 +532,78 @@ body:has(.fs-connection-status__bar) .topplinje {
   font-size: var(--font-size-l);
 }
 
+/*
+ * Sluttskjermen: plasseringen først, og pallen i omgangens resultat.
+ *
+ * En vakt er over på få minutter, og det eneste man sitter igjen med er hvor
+ * det gikk. Da skal det stå med store bokstaver framfor å gjemmes i en rad i
+ * en tabell. Medaljefargene er Skatteetatens egne: oker for gull, grafitt for
+ * sølv og burgunder for bronse.
+ */
+.plassering {
+  display: flex;
+  align-items: center;
+  gap: var(--size-4);
+  margin-block: var(--size-3) var(--size-5);
+}
+
+.plassering__ord {
+  margin: 0;
+  font-size: var(--font-size-xxl);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--semantic-line-height-heading);
+}
+
+.plassering__linje {
+  margin: 0;
+  color: var(--semantic-muted-foreground);
+}
+
+.medalje {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: var(--size-6);
+  block-size: var(--size-6);
+  border-radius: 50%;
+  font-size: var(--font-size-s);
+  font-weight: var(--font-weight-bold);
+  font-variant-numeric: tabular-nums;
+  background: var(--semantic-neutral-background);
+  color: var(--semantic-neutral-foreground);
+}
+
+.medalje--stor {
+  inline-size: var(--size-12);
+  block-size: var(--size-12);
+  font-size: var(--font-size-xl);
+}
+
+.medalje[data-plass="1"] {
+  background: var(--palette-ochre-30);
+  color: var(--palette-ochre-100);
+}
+
+.medalje[data-plass="2"] {
+  background: var(--palette-graphite-10);
+  color: var(--palette-graphite-100);
+}
+
+.medalje[data-plass="3"] {
+  background: var(--palette-burgundy-10);
+  color: var(--palette-burgundy-100);
+}
+
+/* «deg» står ved siden av navnet ditt i omgangens resultat. */
+.deg {
+  margin-inline-start: var(--size-2);
+  padding: 0 var(--size-2);
+  border-radius: var(--size-4);
+  font-size: var(--font-size-xs);
+  background: var(--semantic-interactive-background);
+  color: var(--semantic-interactive-foreground);
+}
+
 /* Resultatdialogen
    ------------------------------------------------------------------ */
 
@@ -936,6 +1008,24 @@ body:has(.fs-connection-status__bar) .topplinje {
 .panel__tabell tr[aria-current="true"] {
   background: var(--semantic-interactive-background);
   color: var(--semantic-interactive-foreground);
+}
+
+/* Lenkene i utgavetabellen peker på koden bak hver utgave. `.fs-link` ville
+   vært det opplagte valget, men stilarket lastes ikke i alle tre appene, og
+   panelet skal se likt ut i alle tre. */
+.panel__lenke {
+  color: var(--semantic-interactive-foreground);
+  text-underline-offset: 2px;
+}
+
+.panel__lenke:hover {
+  text-decoration-thickness: 2px;
+}
+
+.panel__lenke:focus-visible {
+  outline: var(--semantic-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--size-1);
 }
 
 .panel__her {

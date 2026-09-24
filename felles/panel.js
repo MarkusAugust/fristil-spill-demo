@@ -128,6 +128,8 @@ function erStoy(node) {
  * én tabell, og de ville gått fra hverandre første gang noen endret en av
  * dem.
  */
+const REPO = "https://github.com/MarkusAugust/fristil-spill-demo"
+
 const UTGAVER = [
   {
     id: "tanstack",
@@ -135,6 +137,7 @@ const UTGAVER = [
     apner: "EventSource",
     ledning: "hele tilstanden som JSON",
     tegner: "i nettleseren, av React",
+    kode: `${REPO}/tree/master/apper/tanstack`,
   },
   {
     id: "datastar",
@@ -142,6 +145,7 @@ const UTGAVER = [
     apner: "fetch, lest som en strøm",
     ledning: "ferdige HTML-biter",
     tegner: "på serveren, og morfes inn",
+    kode: `${REPO}/tree/master/apper/datastar`,
   },
   {
     id: "astro",
@@ -149,6 +153,7 @@ const UTGAVER = [
     apner: "EventSource",
     ledning: "en puls på noen hundre byte",
     tegner: "på serveren, som en ny side",
+    kode: `${REPO}/tree/master/apper/astro`,
   },
 ]
 
@@ -356,7 +361,9 @@ function utgavetabell() {
   const rader = UTGAVER.map(
     (u) => `
         <tr${u.id === tilstand.utgave ? ' aria-current="true"' : ""}>
-          <th scope="row">${u.navn}${u.id === tilstand.utgave ? " <span class=\"panel__her\">du er her</span>" : ""}</th>
+          <th scope="row">
+            <a class="panel__lenke" href="${u.kode}" target="_blank" rel="noreferrer">${u.navn}</a>${u.id === tilstand.utgave ? ' <span class="panel__her">du er her</span>' : ""}
+          </th>
           <td>${u.apner}</td>
           <td>${u.ledning}</td>
           <td>${u.tegner}</td>
@@ -379,7 +386,12 @@ function utgavetabell() {
     </div>
     <ul class="fs-list panel__felles">
       ${FELLES.map((linje) => `<li>${linje}</li>`).join("")}
-    </ul>`
+    </ul>
+    <p class="panel__felles">
+      Trykk på navnet for å se koden bak hver utgave, eller
+      <a class="panel__lenke" href="${REPO}" target="_blank" rel="noreferrer">hele demoen på GitHub</a>.
+      Det samme spillet, tre ganger, med det samme designsystemet.
+    </p>`
 }
 
 /**
