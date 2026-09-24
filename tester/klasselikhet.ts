@@ -94,18 +94,29 @@ try {
      *  begynner den forfra, så dette gjøres ved hvert steg. */
     const samle = async () => {
       for (const k of await side
-        .evaluate(() => [...((window as never as { __fsKlasser?: Set<string> }).__fsKlasser ?? [])])
+        .evaluate(() => [...((window as unknown as { __fsKlasser?: Set<string> }).__fsKlasser ?? [])])
         .catch(() => [] as string[]))
         klasser.add(k)
     }
 
     /*
-     * En oppvarming først. Vite optimaliserer avhengighetene sine ved første
-     * forespørsel og svarer «504 Outdated Optimize Dep» mens den holder på,
-     * så den aller første lastingen feiler i React-utgaven.
+     * Last til det går, framfor å sove en fast tid først.
+     *
+     * Vite optimaliserer avhengighetene sine ved første forespørsel og svarer
+     * «504 Outdated Optimize Dep» mens den holder på, så den aller første
+     * lastingen feiler i React-utgaven. En fast pause på halvannet sekund var
+     * svaret i `paritet.ts`, men det er å vente på klokka: tar Vite lenger tid
+     * på en kald maskin, feiler neste lasting av en grunn som ikke har noe med
+     * appene å gjøre.
      */
-    await side.goto(app.url, { waitUntil: "domcontentloaded" }).catch(() => {})
-    await side.waitForTimeout(1500)
+    for (let forsok = 0; forsok < 5; forsok++) {
+      const gikk = await side
+        .goto(app.url, { waitUntil: "domcontentloaded" })
+        .then((svar) => (svar?.ok() ?? false))
+        .catch(() => false)
+      if (gikk) break
+      await side.waitForTimeout(1000)
+    }
 
     try {
       await side.goto(app.url, { waitUntil: "domcontentloaded" })
@@ -123,6 +134,25 @@ try {
       await side.getByRole("button", { name: "Begynn vakta" }).click()
       await side.locator("#tavle").waitFor({ timeout: 15_000 })
       await samle()
+
+      /*
+       * Hvor lenge en runde varer, lest fra siden.
+       *
+       * Ventingen på neste skjema må være lengre enn en runde, ellers kan den
+       * ikke sitte ut den runden et forsøk mistet. Tallet sto som 90 sekunder
+       * mens standardrunden er 120, og det er en gjetning som blir feil i det
+       * `RUNDE_MS` endres. Klokka bærer det selv, som `vakthund.ts` også
+       * leser. Reserven er romslig, siden en for lang venting bare koster tid
+       * når noe faktisk er galt.
+       */
+      const lengde = Number(
+        (await side
+          .locator(".nedtelling[data-lengde]")
+          .first()
+          .getAttribute("data-lengde")
+          .catch(() => null)) ?? 0,
+      )
+      const rundeVindu = (Number.isFinite(lengde) && lengde > 0 ? lengde : 120_000) + 30_000
 
       const kvittering = side.locator("dialog.resultat[open]")
       const lukkKvittering = async () => {
@@ -155,11 +185,35 @@ try {
        * mister runden venter på den neste framfor å felle appen.
        */
       let vedtakFattet = false
+      let forslagVist = false
+      let sisteFeil = ""
       for (let forsok = 0; forsok < 3 && !vedtakFattet; forsok++) {
-        await side.locator("#hjemmel").waitFor({ timeout: 90_000 })
+        /*
+         * Ventingen må være lengre enn en runde, ellers kan den ikke sitte ut
+         * den runden forsøket mistet. `RUNDE_MS` er to minutter som standard,
+         * så 90 sekunder var for kort. Fristen står i markupen, så tallet
+         * leses framfor å gjettes, slik `vakthund.ts` gjør.
+         */
+        await side.locator("#hjemmel").waitFor({ timeout: rundeVindu })
         await lukkKvittering()
 
         try {
+          /*
+           * Et tomt vedtak først, som skal avvises.
+           *
+           * Uten dette rendres feilmeldingene og feiloppsummeringen aldri, og
+           * `.fs-error-text` og `.fs-error-summary__title` sto utenfor det
+           * sjekken så. Valideringen er nettopp der de tre utgavene gjør mest
+           * ulikt: Datastar får en patch fra serveren, Astro laster siden på
+           * nytt, og React tegner om i nettleseren.
+           */
+          await side.getByRole("button", { name: "Fatt vedtak" }).click({ timeout: 10_000 })
+          await side
+            .locator(".fs-error-summary, fs-error-summary:not([hidden])")
+            .first()
+            .waitFor({ timeout: 10_000 })
+          await samle()
+
           // Forslagslista tegner treffene sine mens feltet har fokus.
           await side.locator("#kommune").click({ timeout: 10_000 })
           await side.locator("#kommune").fill("Inder", { timeout: 10_000 })
@@ -176,6 +230,9 @@ try {
               undefined,
               { timeout: 10_000 },
             )
+            .then(() => {
+              forslagVist = true
+            })
             .catch(() => {})
           await samle()
 
@@ -187,12 +244,27 @@ try {
           await side.getByRole("button", { name: "Fatt vedtak" }).click({ timeout: 10_000 })
           await side.getByText("Vedtaket er fattet").waitFor({ timeout: 15_000 })
           vedtakFattet = true
-        } catch {
-          // Runden tok slutt. Samle det som rakk å stå der, og vent på neste.
+        } catch (e) {
+          /*
+           * Som regel tok runden slutt. Men et felt som mistet id-en sin, en
+           * knapp som mistet navnet sitt og en kvittering som ikke rendres
+           * kommer ut her også, og uten feilen fra forsøket sa meldingen bare
+           * «rakk aldri å fatte et vedtak», så utvikleren lette på feil sted.
+           */
+          sisteFeil = (e as Error).message
+            .split("\n")
+            .map((l) => l.trim())
+            .filter(Boolean)
+            .slice(0, 4)
+            .join(" | ")
           await samle()
         }
       }
-      if (!vedtakFattet) throw new Error("rakk aldri å fatte et vedtak på tre runder")
+      if (!vedtakFattet)
+        throw new Error(
+          `rakk aldri å fatte et vedtak på tre forsøk. Siste feil: ${sisteFeil || "ingen"}`,
+        )
+      if (!forslagVist) si("forslagslista viste ingen treff på «Inder»")
       await samle()
 
       fullfort.add(app.navn)
@@ -234,8 +306,12 @@ const sammenlignes = APPER.filter((a) => fullfort.has(a.navn))
  * kastet den. Sjekken fant null klasser i alle tre, alle tre var like, og
  * den skrev «De tre utgavene bruker de samme 0 Fristil-klassene». En
  * vaktpost som ikke kan feile sier ingenting.
+ *
+ * Tallet er satt under det løpet faktisk finner, med litt slark, siden gulvet
+ * skal fange en samling som kollapser og ikke en enkelt klasse som forsvinner.
+ * Det er sammenligningen som fanger den.
  */
-const GULV = 30
+const GULV = 34
 for (const app of sammenlignes) {
   const antall = sett.get(app.navn)?.size ?? 0
   if (antall < GULV)

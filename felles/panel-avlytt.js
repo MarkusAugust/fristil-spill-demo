@@ -22,7 +22,9 @@
  *     <script src="/panel-avlytt.js"></script>
  *
  * Den bør stå tidlig i `<head>`, men det som avgjør er at den ikke er en
- * modul. I React-utgaven havner den i `<body>`, og virker like fullt.
+ * modul. De tre appene plasserer den ulikt: Datastar og Astro etter
+ * stilarkene, TanStack helt sist i `<head>`. Alle tre virker, fordi et vanlig
+ * skript kjører mens dokumentet parses.
  *
  * Fila skriver ingenting på skjermen og rører ingen DOM. Den noterer bare det
  * siste som kom, på `window.forstelinjaLedning`, og `panel.js` leser derfra.

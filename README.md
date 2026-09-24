@@ -206,10 +206,16 @@ grønne mens skjermen var synlig ødelagt.
 
 Den spiller en hel runde, og det må den. Skjemaet, kvitteringen og oppgjøret
 finnes ikke før du har meldt deg på og fattet et vedtak, så et oppslag på
-forsiden så bare rundt tjue av de 36 klassene. Klassene samles med en
-`MutationObserver` som settes inn før noe skript på siden kjører, siden
-kvitteringen lukkes igjen og forslagslista bare tegnes mens feltet har fokus.
-Et gulv på 30 klasser gjør at en samling som svikter ikke kan melde grønt.
+forsiden så bare rundt tjue av de 38 klassene. Den fatter også et tomt vedtak
+først, som skal avvises: uten det rendres verken feilmeldingene eller
+feiloppsummeringen, og valideringen er nettopp der de tre utgavene gjør mest
+ulikt.
+
+Klassene samles med en `MutationObserver` som settes inn før noe skript på
+siden kjører, siden kvitteringen lukkes igjen og forslagslista bare tegnes
+mens feltet har fokus. Et gulv på 34 klasser gjør at en samling som kollapser
+ikke kan melde grønt; en enkelt klasse som forsvinner er det sammenligningen
+som fanger.
 
 `tester/skall.ts` åpner skallet og krever at ingen av de tre rammene viser
 velkomsthilsenen, og at alle tre fortsatt viser den når de åpnes alene, hver
@@ -559,10 +565,15 @@ en URL, og de to buntede appene fikk da 45 tredjepartskall i drift for et
 feilsøkingspanel, som forsvant når CDN-en ikke svarte.
 
 Avlyttingen ligger i `felles/panel-avlytt.js`, som lastes som et **vanlig
-skript først i `<head>`**, mens selve panelet er en modul som lastes nederst.
-Delingen er ikke pynt. Et modulskript kjører først når dokumentet er parset,
-og både Datastars bundle og Astros øy åpner strømmen sin i det de kjører. La
-avlyttingen i modulen, og den kom for sent i to av tre utgaver.
+skript i `<head>`**, mens selve panelet er en modul. Delingen er ikke pynt. Et
+modulskript kjører først når dokumentet er parset, og både Datastars bundle og
+Astros øy åpner strømmen sin i det de kjører. La avlyttingen i modulen, og den
+kom for sent i to av tre utgaver.
+
+Det avgjørende er at taggen ikke er en modul, ikke at den står aller først.
+De tre appene plasserer den ulikt innenfor `<head>`, Datastar og Astro etter
+stilarkene og TanStack helt sist, og alle tre virker, fordi et vanlig skript
+kjører mens dokumentet parses og altså før hvert modulskript.
 
 ## Komponentene i bruk
 

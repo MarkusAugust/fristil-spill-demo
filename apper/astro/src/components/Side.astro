@@ -60,9 +60,10 @@ const tema = valgt === "light" || valgt === "dark" ? valgt : null
     <link rel="stylesheet" href="/tema.css" />
     <link rel="stylesheet" href="/brett.css" />
 
-    <!-- Avlyttingen panelet leser fra. Den skal stå her og ikke nederst: et
-         vanlig skript kjører mens dokumentet parses, mens øya under, som
-         åpner hendelsesstrømmen, er et modulskript som kjører etterpå. -->
+    <!-- Avlyttingen panelet leser fra. Den skal stå i <head> og ikke nederst:
+         et vanlig skript kjører mens dokumentet parses, mens øya under, som
+         åpner hendelsesstrømmen, er et modulskript som kjører etterpå. Det er
+         at den ikke er en modul som avgjør, ikke hvor i <head> den står. -->
     <script is:inline src="/panel-avlytt.js"></script>
 
   </head>

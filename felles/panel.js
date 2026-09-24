@@ -34,9 +34,10 @@
  * historie.
  *
  * Avlyttingen av ledningen ligger **ikke** her, men i `felles/panel-avlytt.js`,
- * som må lastes som et vanlig skript først i `<head>`. Forklaringen står i den
- * fila, og den er verdt å lese: to av tre apper åpner strømmen sin før et
- * modulskript i det hele tatt har rukket å kjøre.
+ * som må lastes som et vanlig skript i `<head>`. Forklaringen står i den fila,
+ * og den er verdt å lese: to av tre apper åpner strømmen sin før et
+ * modulskript i det hele tatt har rukket å kjøre. Det avgjørende er at taggen
+ * ikke er en modul, ikke hvor i `<head>` den står.
  */
 
 /**
@@ -586,7 +587,7 @@ function tegn() {
   lapp.hidden = true
   nyttelast.textContent = ledningen()
     ? "Ingenting har kommet over ledningen ennå."
-    : "Avlyttingen er ikke lastet. «/panel-avlytt.js» skal stå først i <head>."
+    : "Avlyttingen er ikke lastet. «/panel-avlytt.js» skal stå som et vanlig skript i <head>."
 }
 
 /**
@@ -626,7 +627,7 @@ export function startPanel({ teknikk, forklaring, utgave, fs: byggere }) {
   if (!ledningen()) {
     console.warn(
       "Panelet: /panel-avlytt.js er ikke lastet, så «Med hva» kan ikke vise noe. " +
-        "Skriptet skal stå først i <head>.",
+        "Skriptet skal stå som et vanlig skript i <head>, ikke som en modul.",
     )
   }
 
