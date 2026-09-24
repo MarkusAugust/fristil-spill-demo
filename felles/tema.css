@@ -1,11 +1,17 @@
 /*
  * Generert av @fristil/designsystem. Rediger oppskriften, ikke denne fila.
  *
- * Legges etter tokens.css, og overstyrer verdiene der. Det som ikke står i
- * oppskriften, står fortsatt i tokens.css.
+ * Overstyrer verdiene i tokens.css. Det som ikke står i oppskriften, står
+ * fortsatt der.
+ *
+ * Laget er erklært etter «fristil», så temaet vinner over pakkens
+ * standardverdier uansett hvilken rekkefølge stilarkene lastes i. Din egen
+ * CSS er usortert, og vinner fortsatt over begge.
  */
 
-@layer fristil {
+@layer fristil, fristil-tema;
+
+@layer fristil-tema {
   :root {
     --font-family-base: Helvetica, Arial, sans-serif;
     --font-weight-regular: 400;
@@ -20,6 +26,7 @@
     --fs-skip-link-radius: 2.75rem;
     --fs-input-radius: 0.25rem;
     --fs-select-radius: 0.25rem;
+    --fs-textarea-radius: 0.25rem;
     --fs-card-radius: 0.25rem;
     --fs-dialog-radius: 0.25rem;
     --fs-popover-radius: 0.25rem;
@@ -29,6 +36,8 @@
     --fs-file-upload-radius: 0.25rem;
     --fs-session-timeout-radius: 0.25rem;
     --fs-suggestion-radius: 0.25rem;
+    --fs-toast-radius: 0.25rem;
+    --fs-tooltip-radius: 0.25rem;
     --fs-button-border-width: 3px;
     --fs-button-font-weight: 700;
   }
