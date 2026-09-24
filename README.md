@@ -165,7 +165,7 @@ cd apper/spilltjener && ./gradlew test && ./gradlew installDist
 | `KOMMUNER_FIL` | `../../felles/kommuner.json` | |
 | `TOPPLISTE_FIL` | `toppliste.db` | på Railway: et volum |
 | `VARM_TIMER` | `0` | timer tjenesten holder seg våken etter siste spiller. Står på `3` i Railway |
-| `RUNDE_MS` | `60000` | lengre runder når noen skal snakke over spillet |
+| `RUNDE_MS` | `120000` | kortere runder når spillet skal vises på liten tid |
 | `OPPGJOR_MS` | `12500` | |
 | `SLUTT_MS` | `40000` | |
 
@@ -177,6 +177,7 @@ cd tester && bun install
 bun run paritet   # at de tre utgavene oppfører seg likt
 bun run panel     # at panelet forteller sant om hva som kom over ledningen
 bun run vakthund  # at Datastar-utgaven kommer seg etter en strøm som dør
+bun run skall     # at hilsenen ikke legger seg over rammene i skallet
 ```
 
 `tester/paritet.ts` kjører det samme løpet i alle tre utgavene: melder seg
@@ -189,6 +190,13 @@ de gjør det samme.
 Den venter på at en runde er i gang framfor å hoppe over skjemaet når den
 lander midt i et oppgjør. En test som feiler tilfeldig blir ignorert, og da
 er den verdiløs.
+
+`tester/skall.ts` åpner skallet og krever at ingen av de tre rammene viser
+velkomsthilsenen, og at alle tre fortsatt viser den når de åpnes alene, hver
+i sin egen kontekst. Den kjører i alle tre nettlesermotorene, og det er med vilje: signalet
+er `Sec-Fetch-Dest: iframe`, altså en påstand om nettleserne og ikke om
+appene våre. Slutter en motor å sende overskriften, står det tre dialoger i
+skallet uten at noe annet sier fra.
 
 `tester/vakthund.ts` kutter hendelsesstrømmen helt og krever at siden henter
 seg inn igjen. Det er feilen som ser ut som at spillet har stoppet: klokka
@@ -346,6 +354,32 @@ Valget hører altså hjemme i appen, og da tar du med deg dine egne øyne mellom
 utgavene. Skallet er noe annet enn det: det er ikke en vei inn i
 spillet, men én skjerm der du ser alle tre samtidig og kan sammenligne dem
 side om side. Det er den eneste måten å se påstanden til demoen på én gang.
+
+Derfor står hilsenen ikke i skallet. Den er en presentasjon av de tre
+utgavene, med en lenke til hver, og i skallet er skallet den presentasjonen:
+alle tre er synlige samtidig, og en modal over hver ramme dekker nettopp det
+den skulle fortalt om. Påmeldingen ligger utenfor dialogen og
+utgavevelgeren står i topplinja, så de to tingene hilsenen gir deg finnes
+fortsatt. Vitsen om at «du skal ikke merke forskjellen» bor derimot bare i
+dialogen, og i skallet er det skallets egen ingress som bærer den.
+
+Signalet er nettleserens eget, `Sec-Fetch-Dest: iframe`, som Chromium,
+Firefox og WebKit alle sender, og ikke en egen adresse fra skallet. Det er
+med vilje: rammene skal ikke være en spesialutgave av appene, og med
+overskriften er adressen til hver ramme fortsatt nøyaktig den siden du kan
+åpne alene. Forskjellen ligger i forespørselen, ikke i adressen.
+
+**Overskriften sendes bare til en adresse nettleseren regner som sikker:**
+https, `localhost`, `127.0.0.1` og `::1`. Drift er https og `./kjor.sh` er
+localhost, så begge de vanlige veiene virker. Åpner du skallet over vanlig
+http mot en maskin på nettet, altså `http://192.168.x.x:8084`, kommer
+hilsenen tilbake i rammene. Testet i alle tre motorene. Det er en dårligere
+visning og ikke en ødelagt side, og reserven er å bruke adressen i drift.
+
+Svarene får `Vary: Sec-Fetch-Dest, Cookie` og `Cache-Control: private,
+no-cache`. Siden avhenger både av overskriften og av tre kapsler, og uten
+dette kunne en mellomtjener gitt én spillers side til en annen. Da er
+hilsenen det minste problemet.
 
 ## Datastar-appen
 

@@ -60,6 +60,20 @@ const spillerId = Astro.cookies.get(KAPSEL)?.value ?? null
 // Velkomsthilsenen lukkes i nettleseren, men siden kommer fra serveren ved
 // hver innsending. Uten kapselen dukket den opp igjen midt i påmeldingen.
 const harSettVelkomst = Astro.cookies.get("forstelinja-velkomst")?.value === "sett"
+/*
+ * Nettleseren sier selv at dette er en ramme.
+ *
+ * Hvorfor hilsenen utelates står i README. Overskriften sendes bare til en
+ * adresse nettleseren regner som sikker: https, `localhost`, `127.0.0.1` og
+ * `::1`. Drift er https og `./kjor.sh` er localhost, så begge de vanlige
+ * veiene virker. Over vanlig http mot en maskin på nettet kommer hilsenen
+ * tilbake i rammene.
+ */
+const iRamme = Astro.request.headers.get("sec-fetch-dest") === "iframe"
+// `append` og ikke `set`: Astro setter selv `Vary` for økter, og den skal
+// ikke overskrives.
+Astro.response.headers.append("Vary", "Sec-Fetch-Dest, Cookie")
+Astro.response.headers.set("Cache-Control", "private, no-cache")
 
 let feil: Feil[] = []
 let svar = { vedtak: "", hjemmel: "", kommune: "", felle: "" }
@@ -126,7 +140,7 @@ try {
     </Side>
   ) : (
     <Side tittel={`Førstelinja · ${APPNAVN}`}>
-      {tilstand.meg === null && !harSettVelkomst && <Velkomst />}
+      {tilstand.meg === null && !harSettVelkomst && !iRamme && <Velkomst />}
 
       <fs-connection-status
         class="fs-connection-status"

@@ -119,6 +119,7 @@ fun side(
   kommuner: List<String> = emptyList(),
   tema: String? = null,
   spillerId: String? = null,
+  iRamme: Boolean = false,
 ): String {
   val stilark = STILARK.joinToString("\n    ") { """<link rel="stylesheet" href="$it">""" }
   val imports = KOMPONENTER.joinToString("\n      ") { (fil, fn) -> """import { $fn } from "$fil"; $fn();""" }
@@ -164,7 +165,13 @@ fun side(
       online-text="Sambandet er tilbake"
       data-ignore-morph></fs-connection-status>
 
-    ${if (spillerNavn == null) velkomst(tema) else ""}
+    <!-- Hilsenen er en presentasjon av de tre utgavene, med en lenke til
+         hver. Står siden i en ramme, er skallet den presentasjonen: alle tre
+         er synlige samtidig, og en modal over hver av dem dekker nettopp det
+         den skulle fortalt om. Påmeldingen ligger utenfor dialogen, og
+         utgavevelgeren står i topplinja, så ingenting går tapt ved å la den
+         være. -->
+    ${if (spillerNavn == null && !iRamme) velkomst(tema) else ""}
 
     <!-- Merket serveren skriver når sambandet ryker. Det er skjult, og
          finnes bare for at skriptet skal ha noe å lytte på: en komponent
