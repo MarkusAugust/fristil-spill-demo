@@ -11,7 +11,7 @@
  */
 
 /** Versjonen av Fristil skallet henter tokens fra. Samme som appene bruker. */
-const FRISTIL = "0.13.0"
+const FRISTIL = "0.14.0"
 
 /**
  * Temaet, den samme fila som de tre appene serverer.

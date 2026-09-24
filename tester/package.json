@@ -8,11 +8,11 @@
     "panel": "bun run panel.ts",
     "paritet": "bun run paritet.ts",
     "skall": "bun run skall.ts",
-    "tema": "bunx @fristil/designsystem@0.13.0 tema ../felles/fristil.tema.json --ut=../felles/tema.css",
+    "tema": "bunx @fristil/designsystem@0.14.0 tema ../felles/fristil.tema.json --ut=../felles/tema.css",
     "vakthund": "bun run vakthund.ts"
   },
   "devDependencies": {
-    "@fristil/designsystem": "0.13.0",
+    "@fristil/designsystem": "0.14.0",
     "playwright": "^1.60.0"
   }
 }
