@@ -10,6 +10,28 @@
  * `className` og `htmlFor` i stedet for `class` og `for`.
  */
 
+/**
+ * Byggefunksjonens attributter, med appens egne klasser lagt til.
+ *
+ * `<section {...fs.card()} className="fs-card kort">` ser riktig ut og er
+ * det ikke. I JSX vinner den siste propen, så den literale `className`
+ * overstyrer den byggefunksjonen ga. I dag går det bra fordi strengen
+ * gjentar `fs-card`, men legger `fs.card()` noen gang til en klasse, blir den
+ * borte uten at noe sier fra. Det er den samme fella dokumentasjonen
+ * beskriver for Astro, bare i JSX.
+ *
+ * Her settes de to sammen i stedet, og appens klasse skrives bare én gang.
+ */
+export function med<T extends { className?: string }>(
+  bygget: T,
+  egne: string,
+): T {
+  return {
+    ...bygget,
+    className: [bygget.className, egne].filter(Boolean).join(" "),
+  }
+}
+
 /** Navnet denne utgaven har utad. */
 export const APPNAVN = "TanStack Start"
 

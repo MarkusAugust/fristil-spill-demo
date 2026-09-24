@@ -1,7 +1,7 @@
 import { fs } from "@fristil/designsystem/react"
 import { useEffect, useId, useRef, useState } from "react"
 
-import { APPNAVN, UTGAVER, lenkeTilUtgave } from "./fristil"
+import { APPNAVN, UTGAVER, lenkeTilUtgave, med } from "./fristil"
 import { type Tema, settTema } from "./tema"
 import type { Feil, SakUt, Skjermbilde, TavleRad, Tilstand } from "./tilstand"
 
@@ -229,7 +229,7 @@ function Temavelger({ tema }: { tema: Tema }) {
    * gjøre noe, og `settTema` skriver både kapselen og rota.
    */
   return (
-    <fieldset {...fs.fieldset()} className="fs-toggle-group temavelger">
+    <fieldset {...med(fs.fieldset(), "temavelger")}>
       <legend {...fs.srOnly()}>Fargetema</legend>
       {(
         [
@@ -238,7 +238,7 @@ function Temavelger({ tema }: { tema: Tema }) {
           ["dark", "Mørkt"],
         ] as [Tema, string][]
       ).map(([verdi, tekst]) => (
-        <label className="fs-toggle-group__option" key={verdi}>
+        <label className={fs.toggleGroup.option} key={verdi}>
           <input
             type="radio"
             name="tema"
@@ -295,16 +295,16 @@ function Sakskort({ sak }: { sak: SakUt }) {
   const navn = ["Søknaden", "Søkeren"]
 
   return (
-    <section {...fs.card()} className="fs-card kort sakskort">
+    <section {...med(fs.card(), "kort sakskort")}>
       <p className="sakskort__stempel">
         <span {...fs.tag()}>Sak {sak.id}</span>
         <span className="sakskort__status">Til behandling</span>
       </p>
 
-      <h2 {...fs.heading({ size: "m" })} className="fs-heading sakskort__tittel">
+      <h2 {...med(fs.heading({ size: "m" }), "sakskort__tittel")}>
         {sak.tittel}
       </h2>
-      <p {...fs.paragraph()} className="fs-paragraph sakskort__ingress">
+      <p {...med(fs.paragraph(), "sakskort__ingress")}>
         {sak.sammendrag}
       </p>
 
@@ -327,7 +327,7 @@ function Sakskort({ sak }: { sak: SakUt }) {
         </div>
 
         <div {...faner.panels[0]}>
-          <p {...fs.paragraph()} className="fs-paragraph sakskort__tekst">
+          <p {...med(fs.paragraph(), "sakskort__tekst")}>
             {sak.tekst}
           </p>
           <p className="sakskort__signatur">
@@ -409,7 +409,7 @@ function Vedtakskort({
   })
 
   return (
-    <section {...fs.card()} className="fs-card kort vedtakskort">
+    <section {...med(fs.card(), "kort vedtakskort")}>
       <h2 {...fs.heading({ size: "s" })}>Ditt vedtak</h2>
       <p className="vedtakskort__ingress">
         Fire spørsmål, {tilstand.poeng.fullPott} poeng. Du kan svare én gang.
@@ -447,7 +447,7 @@ function Vedtakskort({
             ["innvilget", "Innvilget"],
             ["avslatt", "Avslått"],
           ].map(([verdi, tekst]) => (
-            <div className="fs-radio-row" key={verdi}>
+            <div className={fs.radio.row} key={verdi}>
               <input
                 {...fs.radio({ state: feilPa("v-innvilget") ? "invalid" : undefined })}
                 type="radio"
@@ -582,7 +582,7 @@ function Vedtakskort({
           )}
         </fs-field>
 
-        <button {...fs.button()} className="fs-button skjema__send" type="submit">
+        <button {...med(fs.button(), "skjema__send")} type="submit">
           Fatt vedtak
         </button>
       </form>
@@ -654,11 +654,11 @@ function Kvittering({ tilstand }: { tilstand: Tilstand }) {
     : []
 
   return (
-    <section {...fs.card()} className="fs-card kort vedtakskort">
+    <section {...med(fs.card(), "kort vedtakskort")}>
       <h2 {...fs.heading({ size: "s" })}>Vedtaket er fattet</h2>
 
       <div {...fs.alert({ color: farge })}>
-        <p className="fs-alert__title">{overskrift}</p>
+        <p className={fs.alert.title}>{overskrift}</p>
         <p>
           Du fikk{" "}
           <strong>
@@ -669,7 +669,7 @@ function Kvittering({ tilstand }: { tilstand: Tilstand }) {
       </div>
 
       {linjer.length > 0 && (
-        <ul {...fs.list({ variant: "plain" })} className="fs-list kvittering">
+        <ul {...med(fs.list({ variant: "plain" }), "kvittering")}>
           {linjer.map(([navn, riktig, verdt]) => (
             <li className="kvittering__linje" data-riktig={String(riktig)} key={navn}>
               <span className="kvittering__felt">{navn}</span>
@@ -707,7 +707,7 @@ function BesteIRunden({ tilstand }: { tilstand: Tilstand }) {
           : `${delt.map((r) => r.navn).join(" og ")} kom likt best ut`
 
   return (
-    <p {...fs.alert({ color: "success" })} className="fs-alert beste">
+    <p {...med(fs.alert({ color: "success" }), "beste")}>
       <strong>{hvem}</strong> med {beste.sistePoeng} av {tilstand.poeng.fullPott} poeng.
     </p>
   )
@@ -734,7 +734,7 @@ function Oppgjor({ tilstand, apneResultat }: { tilstand: Tilstand; apneResultat:
 
       <BesteIRunden tilstand={tilstand} />
 
-      <section {...fs.card()} className="fs-card kort fasitkort">
+      <section {...med(fs.card(), "kort fasitkort")}>
         <div className="fasitkort__topp">
           <h2 {...fs.heading({ size: "s" })}>Fasit</h2>
           <button
@@ -819,7 +819,7 @@ function Slutt({ tilstand }: { tilstand: Tilstand }) {
   const mulige = tilstand.poeng.fullPott * tilstand.runderTotalt
 
   return (
-    <section {...fs.card()} className="fs-card kort sluttkort">
+    <section {...med(fs.card(), "kort sluttkort")}>
       <h2 {...fs.heading({ size: "m" })}>Vakta er over</h2>
 
       {meg && (
@@ -942,7 +942,7 @@ function Tavle({ tilstand }: { tilstand: Tilstand }) {
       )}
 
       <div className={fs.table.scroll} tabIndex={0}>
-        <table {...fs.table()} className="fs-table tavle__tabell">
+        <table {...med(fs.table(), "tavle__tabell")}>
           <thead>
             <tr>
               <th>#</th>
@@ -1085,7 +1085,7 @@ function Resultatdialog({
 
   return (
     <fs-dialog id="resultat" {...boks.host}>
-      <dialog {...boks.dialog} className="fs-dialog resultat" data-utfall={utfall}>
+      <dialog {...med(boks.dialog, "resultat")} data-utfall={utfall}>
         <div className="resultat__topp">
           <h2 {...boks.title}>{overskrift}</h2>
           {utfall === "sent" ? (
@@ -1144,7 +1144,7 @@ function Resultatdialog({
               fargede flater oppå hverandre gjør det uklart hvilken av dem som
               betyr noe. */}
           <div {...fs.alert()}>
-            <p className="fs-alert__title">Sak {tilstand.sak.id}</p>
+            <p className={fs.alert.title}>Sak {tilstand.sak.id}</p>
             <p>{tilstand.forklaring ?? ""}</p>
           </div>
         </div>
@@ -1169,7 +1169,7 @@ function Velkomst({ apen, settApen }: { apen: boolean; settApen: (a: boolean) =>
 
   return (
     <fs-dialog id="velkomst" {...boks.host}>
-      <dialog {...boks.dialog} className="fs-dialog velkomst">
+      <dialog {...med(boks.dialog, "velkomst")}>
         <div className="velkomst__topp">
           <h2 {...boks.title}>Velkommen til Førstelinja</h2>
         </div>
@@ -1187,10 +1187,10 @@ function Velkomst({ apen, settApen }: { apen: boolean; settApen: (a: boolean) =>
           </p>
           <p>Vi er trygge på at du vil merke forskjellen.</p>
 
-          <h3 {...fs.heading({ size: "xs" })} className="fs-heading velkomst__valg">
+          <h3 {...med(fs.heading({ size: "xs" }), "velkomst__valg")}>
             Velg din foretrukne utgave
           </h3>
-          <ul {...fs.list({ variant: "plain" })} className="fs-list velkomst__liste">
+          <ul {...med(fs.list({ variant: "plain" }), "velkomst__liste")}>
             {UTGAVER.map((utgave) => (
               <li key={utgave.navn}>
                 {utgave.navn === APPNAVN ? (
@@ -1254,9 +1254,9 @@ function BliMed({ tilstand }: { tilstand: Tilstand }) {
         : `${tallord(sekunder / 60)} minutter`
 
   return (
-    <section {...fs.card()} className="fs-card kort blimed">
+    <section {...med(fs.card(), "kort blimed")}>
       <h2 {...fs.heading({ size: "m" })}>Møt på vakt</h2>
-      <p {...fs.paragraph()} className="fs-paragraph blimed__ingress">
+      <p {...med(fs.paragraph(), "blimed__ingress")}>
         Du er saksbehandler i førstelinja. {tallord(tilstand.runderTotalt)} saker, {tid} på
         hver. Finn riktig utfall, riktig hjemmel, riktig kommune, og feilen søkeren håpet
         du ikke så.
@@ -1271,7 +1271,7 @@ function BliMed({ tilstand }: { tilstand: Tilstand }) {
           </p>
         </fs-field>
 
-        <button {...fs.button()} className="fs-button skjema__send" type="submit">
+        <button {...med(fs.button(), "skjema__send")} type="submit">
           Begynn vakta
         </button>
       </form>
@@ -1398,7 +1398,7 @@ export function Skjerm({
       )}
 
       <fs-connection-status
-        className="fs-connection-status"
+        {...fs.connectionStatus()}
         offline-text="Sambandet til etaten er nede"
         online-text="Sambandet er tilbake"
       />
@@ -1432,7 +1432,7 @@ export function Skjerm({
               )}
             </div>
 
-            <aside id="tavle" className="fs-card kort tavle">
+            <aside id="tavle" {...med(fs.card(), "kort tavle")}>
               <Tavle tilstand={tilstand} />
             </aside>
 

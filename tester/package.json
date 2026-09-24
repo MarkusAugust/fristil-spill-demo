@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "fristilbruk": "bun run fristilbruk.ts",
     "panel": "bun run panel.ts",
     "paritet": "bun run paritet.ts",
     "skall": "bun run skall.ts",
@@ -10,6 +11,7 @@
     "vakthund": "bun run vakthund.ts"
   },
   "devDependencies": {
+    "@fristil/designsystem": "0.13.0",
     "playwright": "^1.60.0"
   }
 }

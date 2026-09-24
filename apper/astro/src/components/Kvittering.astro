@@ -39,7 +39,7 @@ const { class: listeKlasse, ...liste } = fs.list({ variant: "plain" })
   <h2 {...fs.heading({ size: "s" })}>Vedtaket er fattet</h2>
 
   <div {...fs.alert({ color: farge })}>
-    <p class="fs-alert__title">{overskrift}</p>
+    <p class={fs.alert.title}>{overskrift}</p>
     <p>Du fikk <strong>{poeng} av {full} poeng</strong> på denne saken.</p>
   </div>
 

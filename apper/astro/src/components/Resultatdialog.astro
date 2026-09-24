@@ -147,7 +147,7 @@ const { class: dialogKlasse, ...dialog } = boks.dialog
               fargede flater oppå hverandre gjør det uklart hvilken av dem som
               betyr noe. */}
           <div {...fs.alert()}>
-            <p class="fs-alert__title">Sak {tilstand.sak.id}</p>
+            <p class={fs.alert.title}>Sak {tilstand.sak.id}</p>
             <p>{tilstand.forklaring ?? ""}</p>
           </div>
         </div>

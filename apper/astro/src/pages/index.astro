@@ -1,4 +1,6 @@
 ---
+import { fs } from "@fristil/designsystem"
+
 import BliMed from "../components/BliMed.astro"
 import Kvittering from "../components/Kvittering.astro"
 import Oppgjor from "../components/Oppgjor.astro"
@@ -69,6 +71,8 @@ const harSettVelkomst = Astro.cookies.get("forstelinja-velkomst")?.value === "se
  * veiene virker. Over vanlig http mot en maskin på nettet kommer hilsenen
  * tilbake i rammene.
  */
+const { class: kortKlasse, ...kort } = fs.card()
+
 const iRamme = Astro.request.headers.get("sec-fetch-dest") === "iframe"
 // `append` og ikke `set`: Astro setter selv `Vary` for økter, og den skal
 // ikke overskrives.
@@ -143,7 +147,7 @@ try {
       {tilstand.meg === null && !harSettVelkomst && !iRamme && <Velkomst />}
 
       <fs-connection-status
-        class="fs-connection-status"
+        {...fs.connectionStatus()}
         offline-text="Sambandet til etaten er nede"
         online-text="Sambandet er tilbake"
       />
@@ -186,7 +190,7 @@ try {
               }
             </div>
 
-            <aside id="tavle" class="fs-card kort tavle">
+            <aside id="tavle" {...kort} class={`${kortKlasse} kort tavle`}>
               <Tavle tilstand={tilstand} />
             </aside>
 
