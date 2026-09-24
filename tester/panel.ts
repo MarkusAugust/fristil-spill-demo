@@ -130,6 +130,23 @@ try {
       )
       .catch(() => si("loggen fikk aldri en linje fra hendelsesstrømmen"))
 
+    /*
+     * Vent på at merkelappen er fylt ut, ikke bare på at loggen har en linje.
+     *
+     * Lesingen traff av og til mellomrommet mellom de to, og da sto
+     * merkelappen tom. En test som feiler tilfeldig blir ignorert, og da er
+     * den verdiløs.
+     */
+    await side
+      .waitForFunction(
+        () =>
+          (document.querySelector(".panel__merkelapp")?.textContent ?? "").trim()
+            .length > 0,
+        undefined,
+        { timeout: 15000 },
+      )
+      .catch(() => si("merkelappen ble aldri fylt ut"))
+
     const nyttelast =
       (await panel.locator(".panel__nyttelast").textContent()) ?? ""
     if (/Ingenting har kommet/.test(nyttelast))
