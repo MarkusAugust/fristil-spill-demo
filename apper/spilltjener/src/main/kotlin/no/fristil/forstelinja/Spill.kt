@@ -25,17 +25,23 @@ import kotlinx.serialization.Serializable
 const val RUNDER_PER_SPILL = 4
 
 /*
- * Et minutt på en sak er nok.
+ * To minutter på en sak, fordi det er mer enn saken som skal utforskes.
  *
- * Runden var to minutter og oppgjøret 25 sekunder, og da tok en hel omgang
- * over ti minutter. Lest med to andre i rommet er en sak lest på under et
- * halvt minutt, og resten av tiden går med til å vente. Halvert er det
- * fortsatt god tid til å lese søknaden, se på søkeren og fylle ut vedtaket.
+ * Runden var to minutter, ble kuttet til ett fordi en hel omgang tok over ti
+ * minutter, og er tilbake på to. Grunnen til at den ble kuttet var at en sak
+ * er lest på under et halvt minutt, og det stemmer. Men spillet er en demo av
+ * et designsystem, og en runde rører fem komponenter: feltet med feilmelding,
+ * datofeltet, forslagsfeltet med hjemlene, valggruppa og dialogen. Skal noen
+ * rekke å prøve dem, og ikke bare svare riktig, må det være slakk igjen etter
+ * at søknaden er fylt ut.
+ *
+ * Oppgjøret står på tolv og et halvt sekund. Det er nok til poengsummen og
+ * hvem som traff, og pausen skal ikke vokse med runden.
  *
  * Sluttoppgjøret står som det var: der skal man rekke å lese topplista og
  * bestemme seg for om man vil ta en omgang til.
  */
-const val RUNDE_MS = 60_000L
+const val RUNDE_MS = 120_000L
 const val OPPGJOR_MS = 12_500L
 const val SLUTT_MS = 40_000L
 
