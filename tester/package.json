@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "fristilbruk": "bun run fristilbruk.ts",
+    "klasselikhet": "bun run klasselikhet.ts",
     "panel": "bun run panel.ts",
     "paritet": "bun run paritet.ts",
     "skall": "bun run skall.ts",

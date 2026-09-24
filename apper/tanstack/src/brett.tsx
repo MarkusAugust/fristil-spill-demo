@@ -229,7 +229,7 @@ function Temavelger({ tema }: { tema: Tema }) {
    * gjøre noe, og `settTema` skriver både kapselen og rota.
    */
   return (
-    <fieldset {...med(fs.fieldset(), "temavelger")}>
+    <fieldset {...med(fs.toggleGroup(), "temavelger")}>
       <legend {...fs.srOnly()}>Fargetema</legend>
       {(
         [

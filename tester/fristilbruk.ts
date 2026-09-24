@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from "node:fs"
-import { join } from "node:path"
+import { basename, join } from "node:path"
 import { fs } from "@fristil/designsystem"
 
 /**
@@ -21,8 +21,21 @@ import { fs } from "@fristil/designsystem"
  *     cd tester && bun run fristilbruk
  */
 
-const APPER = ["tanstack", "astro", "skall"]
-const ROT = join(import.meta.dir, "..", "apper")
+/*
+ * Mappene som leses, og hvorfor `felles` er med.
+ *
+ * `felles/panel.js` lastes av alle fire appene som `<script type="module">`
+ * uten bundling, altså samme spor som Datastar-appen. Den kan importere fra
+ * CDN, og da gjelder regelen der også. Den lå utenfor både rota og
+ * filtypefilteret, så den eneste ekte overtredelsen i repoet var usynlig for
+ * nettopp den vaktposten som skulle finne den.
+ */
+const MAPPER = [
+  join(import.meta.dir, "..", "apper", "tanstack"),
+  join(import.meta.dir, "..", "apper", "astro"),
+  join(import.meta.dir, "..", "apper", "skall"),
+  join(import.meta.dir, "..", "felles"),
+]
 
 const fraBygger = new Map<string, string>()
 for (const [navn, f] of Object.entries(fs)) {
@@ -58,13 +71,20 @@ const les = (m: string, app: string): void => {
       continue
     const p = join(m, o.name)
     if (o.isDirectory()) les(p, app)
-    else if (/\.(tsx?|astro)$/.test(o.name) && !o.name.includes(".test.")) {
+    else if (
+      /\.(tsx?|jsx?|astro)$/.test(o.name) &&
+      !o.name.includes(".test.")
+    ) {
+      lest += 1
       // Uten kommentarene: en kodeblokk i en forklaring er ikke markup, og
       // hjelperen i `fristil.ts` beskriver nettopp fella den finnes for.
       const t = readFileSync(p, "utf8")
         .replace(/\/\*[\s\S]*?\*\//g, "")
         .replace(/^\s*\/\/.*$/gm, "")
-      for (const mm of t.matchAll(/class(?:Name)?="([^"]*)"/g))
+      for (const mm of [
+        ...t.matchAll(/class(?:Name)?=["']([^"']*)["']/g),
+        ...t.matchAll(/classList\.add\(["']([^"']*)["']/g),
+      ])
         for (const k of mm[1].split(/\s+/))
           if (k.startsWith("fs-") && fraBygger.has(k)) {
             const n = `${app}|${k}|${fraBygger.get(k)}`
@@ -73,17 +93,24 @@ const les = (m: string, app: string): void => {
     }
   }
 }
-for (const app of APPER) {
-  try {
-    les(join(ROT, app), app)
-  } catch {}
-}
+/*
+ * Og en teller, så grønt betyr «lest og funnet ingenting».
+ *
+ * `try {} catch {}` rundt lesingen gjorde at en omdøpt mappe ga «Appene
+ * bruker Fristil slik dokumentasjonen sier» på null filer.
+ */
+let lest = 0
+for (const mappe of MAPPER) les(mappe, basename(mappe))
+if (lest < 20)
+  funn.push(
+    `leste bare ${lest} filer, så sjekken sier ikke noe. Stemmer stiene?`,
+  )
 
 const funn: string[] = []
 for (const [n, c] of treff) {
   const [app, klasse, bygger] = n.split("|")
   funn.push(
-    `${app}: skriver .${klasse} for hånd ${c} steder, men fs.${bygger} finnes`,
+    `${app}: skriver .${klasse} for hånd ${c} ${c === 1 ? "sted" : "steder"}, men fs.${bygger} finnes`,
   )
 }
 

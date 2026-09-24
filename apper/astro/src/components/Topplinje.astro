@@ -43,7 +43,7 @@ const klokke = `${Math.floor(igjen / 60)}:${String(igjen % 60).padStart(2, "0")}
 const avatar = tilstand.meg ? fs.avatar({ size: "small" }) : null
 
 /*
- * Klassen trekkes ut av spredningen. `{...fs.fieldset()} class="..."` gir to
+ * Klassen trekkes ut av spredningen. `{...fs.toggleGroup()} class="..."` gir to
  * `class`-attributter i Astro, og nettleseren beholder det første, altså
  * systemets. Den egne klassen forsvinner uten at noe sier fra, og temavelgeren
  * lå i en kolonne uten at det var noe galt med CSS-en.
