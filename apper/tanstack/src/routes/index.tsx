@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 import { createServerFn } from "@tanstack/react-start"
-import { getCookie } from "@tanstack/react-start/server"
+import { getCookie, getRequestHeader } from "@tanstack/react-start/server"
 
 import { Skjerm } from "../brett"
 import { Route as rotRuta } from "./__root"
@@ -19,7 +19,9 @@ export const KAPSEL = "spiller"
  * kjørt.
  */
 const hentSkjermbilde = createServerFn({ method: "GET" }).handler(
-  async (): Promise<Skjermbilde & { spillerId: string | null }> => {
+  async (): Promise<
+    Skjermbilde & { spillerId: string | null; iRamme: boolean }
+  > => {
     const spillerId = getCookie(KAPSEL) ?? null
     return {
       tilstand: await tilstand(spillerId),
@@ -28,6 +30,14 @@ const hentSkjermbilde = createServerFn({ method: "GET" }).handler(
       // Id-en følger med ned, fordi lenkene til de to andre utgavene bærer
       // den videre. Uten den mister du navnet ditt i det du bytter.
       spillerId,
+      /*
+       * Nettleseren sier selv at dette er en ramme.
+       *
+       * `Sec-Fetch-Dest: iframe` sendes av Chromium, Firefox og WebKit, og
+       * er testet mot alle tre. Skallet trenger dermed ingen egen adresse,
+       * og rammen er fortsatt nøyaktig den siden du kan åpne alene.
+       */
+      iRamme: getRequestHeader("sec-fetch-dest") === "iframe",
     }
   },
 )
@@ -41,7 +51,14 @@ export const Route = createFileRoute("/")({
 function Side() {
   // Temaet kommer fra rotruta, som leser kapselen på serveren.
   const data = Route.useLoaderData()
-  return <Skjerm forste={data} tema={rotRuta.useLoaderData()} spillerId={data.spillerId} />
+  return (
+    <Skjerm
+      forste={data}
+      tema={rotRuta.useLoaderData()}
+      spillerId={data.spillerId}
+      iRamme={data.iRamme}
+    />
+  )
 }
 
 /**

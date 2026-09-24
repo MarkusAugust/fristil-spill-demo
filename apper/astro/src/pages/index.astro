@@ -60,6 +60,18 @@ const spillerId = Astro.cookies.get(KAPSEL)?.value ?? null
 // Velkomsthilsenen lukkes i nettleseren, men siden kommer fra serveren ved
 // hver innsending. Uten kapselen dukket den opp igjen midt i påmeldingen.
 const harSettVelkomst = Astro.cookies.get("forstelinja-velkomst")?.value === "sett"
+/*
+ * Nettleseren sier selv at dette er en ramme.
+ *
+ * Hilsenen er en presentasjon av de tre utgavene, med en lenke til hver.
+ * Står siden i skallet, er skallet den presentasjonen: alle tre er synlige
+ * samtidig, og en modal over hver av dem dekker nettopp det den skulle
+ * fortalt om. `Sec-Fetch-Dest: iframe` sendes av Chromium, Firefox og
+ * WebKit, og er testet mot alle tre, så skallet trenger ingen egen adresse
+ * og rammen er fortsatt siden du kan åpne alene.
+ */
+const iRamme = Astro.request.headers.get("sec-fetch-dest") === "iframe"
+Astro.response.headers.set("Vary", "Sec-Fetch-Dest")
 
 let feil: Feil[] = []
 let svar = { vedtak: "", hjemmel: "", kommune: "", felle: "" }
@@ -126,7 +138,7 @@ try {
     </Side>
   ) : (
     <Side tittel={`Førstelinja · ${APPNAVN}`}>
-      {tilstand.meg === null && !harSettVelkomst && <Velkomst />}
+      {tilstand.meg === null && !harSettVelkomst && !iRamme && <Velkomst />}
 
       <fs-connection-status
         class="fs-connection-status"

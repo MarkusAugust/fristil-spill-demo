@@ -1287,15 +1287,26 @@ export function Skjerm({
   forste,
   tema,
   spillerId,
+  iRamme = false,
 }: {
   forste: Skjermbilde
   tema: Tema
   spillerId: string | null
+  iRamme?: boolean
 }) {
   const [bilde, settBilde] = useState(forste)
   const [skjema, settSkjema] = useState<Skjema>(TOMT_SKJEMA)
   const [resultatApent, settResultatApent] = useState(false)
-  const [velkomstApen, settVelkomstApen] = useState(forste.tilstand.meg === null)
+  /*
+   * Hilsenen er en presentasjon av de tre utgavene, med en lenke til hver.
+   * Står siden i en ramme, er skallet den presentasjonen: alle tre er
+   * synlige samtidig, og en modal over hver av dem dekker nettopp det den
+   * skulle fortalt om. Påmeldingen ligger utenfor dialogen, og
+   * utgavevelgeren står i topplinja, så ingenting går tapt.
+   */
+  const [velkomstApen, settVelkomstApen] = useState(
+    forste.tilstand.meg === null && !iRamme,
+  )
   const forrigeSak = useRef(forste.tilstand.sak.id)
   const forrigeFase = useRef(forste.tilstand.fase)
 
@@ -1382,7 +1393,7 @@ export function Skjerm({
 
   return (
     <>
-      {tilstand.meg === null && (
+      {tilstand.meg === null && !iRamme && (
         <Velkomst apen={velkomstApen} settApen={settVelkomstApen} />
       )}
 

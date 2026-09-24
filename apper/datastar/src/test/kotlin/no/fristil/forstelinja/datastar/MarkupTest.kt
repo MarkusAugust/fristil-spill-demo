@@ -722,6 +722,32 @@ class MarkupTest {
   }
 
   @Test
+  fun `hilsenen kommer ikke når siden står i skallet`() {
+    /*
+     * Skallet viser de tre utgavene side om side, og hilsenen er nettopp en
+     * presentasjon av de tre, med en lenke til hver. En modal over hver av
+     * rammene dekker det den skulle fortalt om.
+     *
+     * Nettleseren sier selv fra med `Sec-Fetch-Dest: iframe`, så skallet
+     * trenger ingen egen adresse og rammen er fortsatt siden du kan åpne
+     * alene.
+     */
+    val iRamme = side(tilstand, null, iRamme = true)
+    assertFalse(iRamme.contains("<fs-dialog id=\"velkomst"), "hilsenen skal være borte i skallet")
+
+    // Og alt annet er som før: påmeldingen ligger utenfor dialogen, og
+    // utgavevelgeren står i topplinja, så ingenting går tapt.
+    assertTrue(iRamme.contains("Møt på vakt"), "påmeldingen skal stå der")
+    assertTrue(iRamme.contains("utgavevelger"), "utgavevelgeren skal stå i topplinja")
+
+    // Uten overskriften er det som før.
+    assertTrue(
+      side(tilstand, null).contains("<fs-dialog id=\"velkomst\" open>"),
+      "hilsenen skal stå når siden åpnes alene",
+    )
+  }
+
+  @Test
   fun `du kan bytte utgave uten å gå via hilsenen`() {
     val html = side(tilstand, "Kari", listOf("Bergen"))
 

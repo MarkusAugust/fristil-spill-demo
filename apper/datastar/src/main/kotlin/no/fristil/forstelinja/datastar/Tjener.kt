@@ -142,7 +142,23 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
       // Temaet er brukerens valg, og ligger i en kapsel så serveren kan
       // skrive det inn i siden framfor å la et skript rette den etterpå.
       val tema = call.request.cookies["forstelinja-tema"]
-      call.respondText(side(tilstand, navn, kommuner, tema, spillerId), ContentType.Text.Html)
+      /*
+       * Nettleseren sier selv at dette er en ramme.
+       *
+       * `Sec-Fetch-Dest: iframe` sendes av Chromium, Firefox og WebKit, og
+       * er testet mot alle tre. Da trenger skallet ingen egen adresse, og
+       * hver ramme er fortsatt nøyaktig den siden du kan åpne alene. Mangler
+       * overskriften, får du hilsenen, altså det som var før.
+       *
+       * `Vary` fordi svaret nå avhenger av en overskrift. Uten den kan en
+       * mellomtjener gi en rammeutgave til noen som kom rett på adressen.
+       */
+      val iRamme = call.request.headers["Sec-Fetch-Dest"] == "iframe"
+      call.response.header(HttpHeaders.Vary, "Sec-Fetch-Dest")
+      call.respondText(
+        side(tilstand, navn, kommuner, tema, spillerId, iRamme),
+        ContentType.Text.Html,
+      )
     }
 
     post("/bli-med") {
