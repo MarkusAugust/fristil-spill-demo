@@ -1,0 +1,48 @@
+/*
+ * Generert av @fristil/designsystem. Rediger oppskriften, ikke denne fila.
+ *
+ * Overstyrer verdiene i tokens.css. Det som ikke står i oppskriften, står
+ * fortsatt der.
+ *
+ * Laget er erklært etter «fristil», så temaet vinner over pakkens
+ * standardverdier uansett hvilken rekkefølge stilarkene lastes i. Din egen
+ * CSS er usortert, og vinner fortsatt over begge.
+ */
+
+@layer fristil, fristil-tema;
+
+@layer fristil-tema {
+  :root {
+    --font-family-base: Helvetica, Arial, sans-serif;
+    --font-weight-regular: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --semantic-line-height-default: 1.666;
+    --semantic-line-height-heading: 1.333;
+    --semantic-line-height-article: 1.666;
+    --fs-button-radius: 2.75rem;
+    --fs-pagination-radius: 2.75rem;
+    --fs-skip-link-radius: 2.75rem;
+    --fs-input-radius: 0.25rem;
+    --fs-select-radius: 0.25rem;
+    --fs-textarea-radius: 0.25rem;
+    --fs-card-radius: 0.25rem;
+    --fs-dialog-radius: 0.25rem;
+    --fs-popover-radius: 0.25rem;
+    --fs-alert-radius: 0.25rem;
+    --fs-accordion-radius: 0.25rem;
+    --fs-error-summary-radius: 0.25rem;
+    --fs-file-upload-radius: 0.25rem;
+    --fs-session-timeout-radius: 0.25rem;
+    --fs-suggestion-radius: 0.25rem;
+    --fs-toast-radius: 0.25rem;
+    --fs-tooltip-radius: 0.25rem;
+    --fs-button-border-width: 3px;
+    --fs-button-font-weight: 700;
+  }
+
+  :root {
+    font-family: var(--font-family-base);
+  }
+}

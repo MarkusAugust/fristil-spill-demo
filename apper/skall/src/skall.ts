@@ -11,7 +11,18 @@
  */
 
 /** Versjonen av Fristil skallet henter tokens fra. Samme som appene bruker. */
-const FRISTIL = "0.11.0"
+const FRISTIL = "0.12.0"
+
+/**
+ * Temaet, den samme fila som de tre appene serverer.
+ *
+ * Skallet er rammen rundt de tre, og uten temaet sto rammen i system-ui mens
+ * alt inni sto i Helvetica. Det er nettopp den siden som skal vise at de tre
+ * er like, så den kan ikke være den ene som skiller seg ut.
+ */
+const TEMA_CSS = await Bun.file(
+  process.env.TEMA_CSS_FIL ?? "../../felles/tema.css",
+).text()
 
 const PORT = Number(process.env.PORT ?? 8084)
 const HOST = process.env.HOST ?? "::"
@@ -52,6 +63,7 @@ const SIDE = `<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Førstelinja · tre utgaver side om side</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fristil/designsystem@${FRISTIL}/src/tokens/tokens.css">
+<link rel="stylesheet" href="/tema.css">
 <style>
   /* Skallet eier bare rammene rundt. Fargene og avstandene er Fristils egne
      tokens, slik at kanten rundt rammene ikke sier noe annet enn innholdet. */
@@ -64,7 +76,14 @@ const SIDE = `<!doctype html>
     flex-direction: column;
     font-family: var(--font-family-base, system-ui, sans-serif);
     color: var(--semantic-page-foreground);
-    background: var(--semantic-page-subtle);
+    /* Sideflaten med et snev av tekstfargen i seg, som i brett.css. Her sto
+       det en gang semantic-page-subtle, et token som ikke finnes, og da er
+       hele regelen ugyldig og flaten gjennomsiktig. */
+    background: color-mix(
+      in oklab,
+      var(--semantic-page-foreground) 5%,
+      var(--semantic-page-background)
+    );
   }
 
   header {
@@ -179,6 +198,9 @@ Bun.serve({
   fetch(request) {
     const url = new URL(request.url)
     if (url.pathname === "/helse") return new Response("ok")
+    if (url.pathname === "/tema.css") {
+      return new Response(TEMA_CSS, { headers: { "content-type": "text/css" } })
+    }
     if (url.pathname !== "/") return new Response("Ikke funnet", { status: 404 })
     return new Response(SIDE, { headers: { "content-type": "text/html; charset=utf-8" } })
   },

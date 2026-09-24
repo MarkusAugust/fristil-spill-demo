@@ -12,6 +12,19 @@ import java.io.File
  * Den leses én gang ved oppstart. Endrer du CSS-en, start appen på nytt; det
  * er det samme som for sakene.
  */
+/**
+ * Temaet, generert av Fristil av `felles/fristil.tema.json`.
+ *
+ * Det setter skrift og form, og lar fargene stå: Fristils egen palett er
+ * allerede Skatteetatens, med de samme verdiene.
+ */
+val TEMA_CSS: String by lazy {
+  val sti = System.getenv("TEMA_CSS_FIL") ?: "../../felles/tema.css"
+  val fil = File(sti)
+  require(fil.exists()) { "Fant ingen tema.css på «$sti». Sett TEMA_CSS_FIL." }
+  fil.readText()
+}
+
 val BRETT_CSS: String by lazy {
   val sti = System.getenv("BRETT_CSS_FIL") ?: "../../felles/brett.css"
   val fil = File(sti)
@@ -29,5 +42,20 @@ val PANEL_JS: String by lazy {
   val sti = System.getenv("PANEL_JS_FIL") ?: "../../felles/panel.js"
   val fil = File(sti)
   require(fil.exists()) { "Fant ingen panel.js på «$sti». Sett PANEL_JS_FIL." }
+  fil.readText()
+}
+
+/**
+ * Avlyttingen av ledningen, som må kjøre før alt annet.
+ *
+ * Den er skilt ut fra panelet fordi rekkefølgen er avgjørende: Datastars
+ * bundle åpner hendelsesstrømmen i det modulen kjører, og et modulskript
+ * kjører etter at dokumentet er parset. Panelet la seg derfor utenpå `fetch`
+ * for sent, og så aldri den strømmen som bærer hele oppdateringen.
+ */
+val PANEL_AVLYTT_JS: String by lazy {
+  val sti = System.getenv("PANEL_AVLYTT_JS_FIL") ?: "../../felles/panel-avlytt.js"
+  val fil = File(sti)
+  require(fil.exists()) { "Fant ingen panel-avlytt.js på «$sti». Sett PANEL_AVLYTT_JS_FIL." }
   fil.readText()
 }

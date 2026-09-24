@@ -6,8 +6,11 @@ WORKDIR /app
 
 COPY apper/skall/package.json ./
 COPY apper/skall/src src
+# Temaet ligger utenfor appmappa, som resten av det de tre utgavene deler.
+COPY felles/tema.css felles/tema.css
 
 ENV HOST=:: \
-    PORT=8084
+    PORT=8084 \
+    TEMA_CSS_FIL=/app/felles/tema.css
 
 CMD ["bun", "run", "src/skall.ts"]

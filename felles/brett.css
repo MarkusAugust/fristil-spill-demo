@@ -17,14 +17,17 @@
 
 body {
   margin: 0;
-  /* Fristil arver skrift med vilje, så appen må si hvilken. Uten dette
-     er det nettleserens egen, som er en serif. */
-  font-family:
+  /* Skriften kommer fra temaet, som setter `--font-family-base`. Reserven er
+     her fordi Fristil arver skrift med vilje: uten et tema er det
+     nettleserens egen, og den er en serif. */
+  font-family: var(
+    --font-family-base,
     system-ui,
     -apple-system,
     "Segoe UI",
     Roboto,
-    sans-serif;
+    sans-serif
+  );
   color: var(--semantic-page-foreground);
   /* Flaten er sideflaten med et snev av tekstfargen i seg, slik at hvite
      kort løfter seg fra den. I mørkt tema snus det under. */
@@ -833,7 +836,7 @@ body:has(.fs-connection-status__bar) .topplinje {
   flex-direction: column;
   align-items: flex-end;
   gap: var(--size-2);
-  max-inline-size: min(34rem, calc(100vw - var(--size-8)));
+  max-inline-size: min(56rem, calc(100vw - var(--size-8)));
 }
 
 .panelknapp {
@@ -847,26 +850,64 @@ body:has(.fs-connection-status__bar) .topplinje {
   display: none;
 }
 
-/* Panelet er et kort, og arver flate, kant og hjørner av `.fs-card`. Det sto
-   en gang `var(--semantic-surface-background)` her, et token som ikke finnes,
-   så regelen var ugyldig og panelet var gjennomsiktig: sidens tekst slo
-   gjennom loggen. Mørkt tema har alt en regel for `.fs-card` lenger nede. */
+/*
+ * Panelet er et kort, og arver flate, kant og hjørner av `.fs-card`. Det sto
+ * en gang `var(--semantic-surface-background)` her, et token som ikke finnes,
+ * så regelen var ugyldig og panelet var gjennomsiktig: sidens tekst slo
+ * gjennom loggen. Mørkt tema har alt en regel for `.fs-card` lenger nede.
+ *
+ * Nyttelasten står i sin egen spalte og fyller høyden. Før delte den bredden
+ * med loggen og fikk ti rader, så det som faktisk kom over ledningen måtte
+ * rulles fram, og det er jo det panelet handler om.
+ */
 .panel {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  /* `minmax(0, 1fr)` og ikke `1fr`: en rad med `auto` som minstemål vokser
+     med innholdet, og da rant nyttelasten ut under panelet framfor å rulle i
+     sin egen rute. */
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "hva logg"
+    "hva hvordan";
   gap: var(--size-4);
-  inline-size: min(34rem, calc(100vw - var(--size-8)));
-  max-block-size: min(26rem, 60vh);
-  overflow: auto;
+  inline-size: min(56rem, calc(100vw - var(--size-8)));
+  /* Bestemt høyde og ikke bare et tak: en `1fr`-rad regnes mot en høyde som
+     er kjent, og med `max-block-size` alene ble raden like høy som innholdet
+     sitt. Nyttelasten ble da 768 piksler i et panel på 512, og rant ut. */
+  block-size: min(32rem, 74vh);
+  overflow: hidden;
   box-shadow: 0 24px 60px -30px rgb(0 0 0 / 60%);
 }
 
-.panel__del--bred {
-  grid-column: 1 / -1;
+.panel__del--hva {
+  grid-area: hva;
+  display: flex;
+  flex-direction: column;
+  min-block-size: 0;
+}
+
+.panel__del--logg {
+  grid-area: logg;
+  min-block-size: 0;
+  overflow: auto;
+}
+
+.panel__del--hvordan {
+  grid-area: hvordan;
 }
 
 .panel__tittel {
   margin-block-end: var(--size-1);
+}
+
+/* Merkelappen er svaret på «med hva», og skal leses før innholdet. */
+.panel__merkelapp {
+  margin-block-end: var(--size-2);
+  font-family: var(--font-family-mono, ui-monospace, monospace);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--semantic-interactive-foreground);
 }
 
 .panel__logg {
@@ -876,10 +917,43 @@ body:has(.fs-connection-status__bar) .topplinje {
   font-size: var(--font-size-s);
 }
 
-/* Den siste står øverst, og skal være den man ser først. */
-.panel__linje:first-child {
+.panel__linje {
+  display: flex;
+  flex-direction: column;
+  padding: var(--size-1);
+  border-radius: var(--size-1);
+}
+
+/* Bare linjene med en nyttelast kan velges, og bare de skal se klikkbare ut. */
+.panel__linje[data-hendelse] {
+  cursor: pointer;
+}
+
+.panel__linje[data-hendelse]:hover {
+  background: var(--semantic-interactive-background);
+}
+
+/* Den som er vist i nyttelastruta, og den nyeste, skal skille seg ut. */
+.panel__linje[aria-current="true"] {
+  background: var(--semantic-interactive-background);
+  color: var(--semantic-interactive-foreground);
+}
+
+/* Merkelappen arver fargen på den valgte raden. Sto den dempede fargen igjen,
+   ble den 3,45:1 mot den lyse flaten, altså under kravet på 4,5:1. */
+.panel__linje[aria-current="true"] .panel__linjelapp,
+.panel__linje[data-hendelse]:hover .panel__linjelapp {
+  color: inherit;
+}
+
+.panel__linje:first-child .panel__nar {
   font-weight: 600;
-  color: var(--semantic-info-foreground);
+}
+
+.panel__linjelapp {
+  font-family: var(--font-family-mono, ui-monospace, monospace);
+  font-size: var(--font-size-xs);
+  color: var(--semantic-muted-foreground, inherit);
 }
 
 .panel__teknikk {
@@ -887,7 +961,8 @@ body:has(.fs-connection-status__bar) .topplinje {
 }
 
 .panel__nyttelast {
-  max-block-size: 10rem;
+  flex: 1 1 0;
+  min-block-size: 8rem;
   overflow: auto;
   margin: 0;
   padding: var(--size-2);
@@ -906,9 +981,14 @@ body:has(.fs-connection-status__bar) .topplinje {
  *
  * `outline` og ikke `border`: en ramme som tar plass ville flyttet innholdet
  * hver gang noe oppdaterte seg, og da er det ikke lenger det samme brettet.
+ *
+ * Fargene sto en gang som `--semantic-info-*`, og de tokenene finnes ikke i
+ * Fristil. En ugyldig `var()` gjør hele regelen ugyldig, så `outline` ble
+ * `none` og markeringen tegnet aldri noe. Fristil har ingen «info»-status;
+ * det som er framhevet og aktivt heter `interactive`.
  */
 .panel-lyser {
-  outline: 2px solid var(--semantic-info-foreground);
+  outline: 2px solid var(--semantic-interactive-main);
   outline-offset: 2px;
   border-radius: var(--size-1);
   animation: panel-puls 1.2s ease-out;
@@ -916,8 +996,8 @@ body:has(.fs-connection-status__bar) .topplinje {
 
 @keyframes panel-puls {
   from {
-    outline-color: var(--semantic-info-foreground);
-    background-color: var(--semantic-info-background);
+    outline-color: var(--semantic-interactive-main);
+    background-color: var(--semantic-interactive-background);
   }
   to {
     outline-color: transparent;
@@ -932,10 +1012,25 @@ body:has(.fs-connection-status__bar) .topplinje {
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 860px) {
   .panel {
     grid-template-columns: 1fr;
-    max-block-size: 50vh;
+    grid-template-rows: auto;
+    grid-template-areas:
+      "hva"
+      "logg"
+      "hvordan";
+    block-size: auto;
+    max-block-size: 70vh;
+    overflow: auto;
+  }
+
+  .panel__del--logg {
+    overflow: visible;
+  }
+
+  .panel__nyttelast {
+    min-block-size: 9rem;
   }
 
   .panelvert {

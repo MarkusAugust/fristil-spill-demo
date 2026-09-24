@@ -31,9 +31,32 @@ const BRETT_CSS: string = readFileSync(
   "utf8",
 )
 
+/**
+ * Temaet, generert av Fristil av `felles/fristil.tema.json`.
+ *
+ * Det setter skrift og form, og lar fargene stå: Fristils egen palett er
+ * allerede Skatteetatens, med de samme verdiene.
+ */
+const TEMA_CSS: string = readFileSync(
+  process.env.TEMA_CSS_FIL ?? "../../felles/tema.css",
+  "utf8",
+)
+
 /** Panelet, samme fil som de to andre appene serverer. */
 const PANEL_JS: string = readFileSync(
   process.env.PANEL_JS_FIL ?? "../../felles/panel.js",
+  "utf8",
+)
+
+/**
+ * Avlyttingen av ledningen, servert som et vanlig skript.
+ *
+ * React-utgaven åpner strømmen sin fra en effekt, altså etter hydreringen, og
+ * var den ene av de tre der panelet rakk å se den. De to andre gjorde det
+ * ikke, og siden panelet er felles, er avlyttingen det også.
+ */
+const PANEL_AVLYTT_JS: string = readFileSync(
+  process.env.PANEL_AVLYTT_JS_FIL ?? "../../felles/panel-avlytt.js",
   "utf8",
 )
 
@@ -158,12 +181,22 @@ export default {
       return new Response(null, { status: 303, headers: hoder })
     }
 
+    if (url.pathname === "/tema.css") {
+      return new Response(TEMA_CSS, { headers: { "content-type": "text/css" } })
+    }
+
     if (url.pathname === "/brett.css") {
       return new Response(BRETT_CSS, { headers: { "content-type": "text/css" } })
     }
 
     if (url.pathname === "/panel.js") {
       return new Response(PANEL_JS, {
+        headers: { "content-type": "text/javascript" },
+      })
+    }
+
+    if (url.pathname === "/panel-avlytt.js") {
+      return new Response(PANEL_AVLYTT_JS, {
         headers: { "content-type": "text/javascript" },
       })
     }

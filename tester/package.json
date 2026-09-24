@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "paritet": "bun run paritet.ts"
+    "paritet": "bun run paritet.ts",
+    "panel": "bun run panel.ts",
+    "tema": "bunx @fristil/designsystem@0.12.0 tema ../felles/fristil.tema.json --ut=../felles/tema.css"
   },
   "devDependencies": {
     "playwright": "^1.60.0"

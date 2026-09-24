@@ -135,7 +135,15 @@ fun side(
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Førstelinja · Datastar og Kotlin</title>
     $stilark
+    <!-- Temaet ligger i sitt eget lag, `fristil-tema`, erklært etter
+         `fristil`, så det vinner over komponentenes standardverdier uansett
+         rekkefølge. brett.css er usortert og vinner over begge. -->
+    <link rel="stylesheet" href="/tema.css">
     <link rel="stylesheet" href="/brett.css">
+    <!-- Avlyttingen, som må kjøre før Datastars bundle under. Et vanlig
+         skript kjører mens dokumentet parses, et modulskript først etterpå,
+         så rekkefølgen her er hele forskjellen på om panelet ser strømmen. -->
+    <script src="/panel-avlytt.js"></script>
     <script type="module" src="$DATASTAR_CDN"></script>
 
     <script type="module">
