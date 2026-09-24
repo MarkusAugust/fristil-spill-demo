@@ -115,6 +115,37 @@ for (const [n, c] of treff) {
   )
 }
 
+/*
+ * Klassen er bare halve svaret fra en byggefunksjon.
+ *
+ * `fs.button({ variant: "ghost" })` gir både `class` og `data-variant`, og
+ * `felles/panel.js` skrev lenge av det siste for hånd ved siden av det
+ * første. Det er den samme feilen som en håndskrevet klasse: endrer pakken
+ * attributtnavnet, følger klassen med og attributtet blir stående.
+ *
+ * Sjekken må stå her og ikke i nettleseren. `panel.ts` leser de fire
+ * attributtene fra DOM-en, og et håndskrevet attributt ved siden av klassen
+ * gir nøyaktig den samme DOM-en, så den sjekken kan bare felle en
+ * halvreversering. Spørsmålet er hva koden skriver, ikke hva siden viser.
+ *
+ * Bare `felles/panel.js` leses. Der bygges all markup som tekst, og alt som
+ * har en klasse går gjennom `attributter()`, så et `data-*` skrevet ut i en
+ * mal er per definisjon skrevet av. I appene er de samme attributtene
+ * legitime på elementer uten byggefunksjon.
+ */
+const PANEL = join(import.meta.dir, "..", "felles", "panel.js")
+const AVSKREVNE = ["data-variant", "data-size", "data-color", "data-state"]
+const panelkilde = readFileSync(PANEL, "utf8")
+for (const attributt of AVSKREVNE) {
+  const antall = panelkilde.split(`${attributt}="`).length - 1
+  if (antall > 0)
+    funn.push(
+      `felles/panel.js: skriver ${attributt} for hånd ${antall} ${
+        antall === 1 ? "sted" : "steder"
+      }, men byggefunksjonen gir det gjennom attributter()`,
+    )
+}
+
 if (funn.length > 0) {
   console.error(
     `Fant ${funn.length} avvik:\n${funn

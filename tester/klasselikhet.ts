@@ -14,7 +14,7 @@ import { chromium } from "playwright"
  * bevisst forskjell i et demospill som handler om at de er like, finnes ikke.
  *
  * **Den spiller en hel runde.** Første utgave gjorde ett oppslag på forsiden,
- * og så dermed rundt tjue av de 36 klassene: skjemaet, kvitteringen og
+ * og så dermed rundt tjue av de 38 klassene: skjemaet, kvitteringen og
  * oppgjøret kommer først etter at du har meldt deg på og fattet et vedtak.
  * Omtrent halve systemet var altså utenfor den vaktposten som skulle se hele
  * det. Tallet var ikke stabilt heller, siden panelet bygges et øyeblikk etter
@@ -69,6 +69,24 @@ const SAMLER = `
   document.addEventListener("DOMContentLoaded", () => se(document.documentElement))
 `
 
+/*
+ * Hvor lenge testen venter på at et skjema skal dukke opp.
+ *
+ * Ventingen må være lengre enn en runde, ellers kan retry-løkka under ikke
+ * sitte ut den runden et forsøk mistet. To forsøk på å utlede tallet var
+ * feil. 90 sekunder var en gjetning, og standardrunden er 120. Og
+ * `data-lengde` på nedtellingen er **fasens** lengde og ikke rundens: står
+ * tavla i et oppgjør når tallet leses, får du 12 500, og under slutten
+ * 40 000. TanStack skriver ikke attributtet i det hele tatt, så der ble det
+ * tjue sekunder venting på et oppslag som uansett falt tilbake.
+ *
+ * Kilden er den samme miljøvariabelen spilltjeneren leser, med standarden
+ * fra `Spill.kt` og et påslag for oppgjøret imellom. En for lang venting
+ * koster ingenting når noe virker, siden den avsluttes i det skjemaet står
+ * der, og bare tid når noe faktisk er galt.
+ */
+const RUNDEVINDU = Number(process.env.RUNDE_MS ?? 120_000) + 60_000
+
 const funn: string[] = []
 const nettleser = await chromium.launch()
 const sett = new Map<string, Set<string>>()
@@ -109,18 +127,17 @@ try {
      * på en kald maskin, feiler neste lasting av en grunn som ikke har noe med
      * appene å gjøre.
      */
-    for (let forsok = 0; forsok < 5; forsok++) {
-      const gikk = await side
+    let lastet = false
+    for (let forsok = 0; forsok < 5 && !lastet; forsok++) {
+      lastet = await side
         .goto(app.url, { waitUntil: "domcontentloaded" })
-        .then((svar) => (svar?.ok() ?? false))
+        .then((svar) => svar?.ok() ?? false)
         .catch(() => false)
-      if (gikk) break
-      await side.waitForTimeout(1000)
+      if (!lastet) await side.waitForTimeout(1000)
     }
+    if (!lastet) si("siden svarte ikke på fem forsøk")
 
     try {
-      await side.goto(app.url, { waitUntil: "domcontentloaded" })
-
       // Velkomsthilsenen er modal først når komponenten har gjort den modal.
       await side.waitForFunction(
         () => document.querySelector("#velkomst dialog")?.matches(":modal") === true,
@@ -135,24 +152,6 @@ try {
       await side.locator("#tavle").waitFor({ timeout: 15_000 })
       await samle()
 
-      /*
-       * Hvor lenge en runde varer, lest fra siden.
-       *
-       * Ventingen på neste skjema må være lengre enn en runde, ellers kan den
-       * ikke sitte ut den runden et forsøk mistet. Tallet sto som 90 sekunder
-       * mens standardrunden er 120, og det er en gjetning som blir feil i det
-       * `RUNDE_MS` endres. Klokka bærer det selv, som `vakthund.ts` også
-       * leser. Reserven er romslig, siden en for lang venting bare koster tid
-       * når noe faktisk er galt.
-       */
-      const lengde = Number(
-        (await side
-          .locator(".nedtelling[data-lengde]")
-          .first()
-          .getAttribute("data-lengde")
-          .catch(() => null)) ?? 0,
-      )
-      const rundeVindu = (Number.isFinite(lengde) && lengde > 0 ? lengde : 120_000) + 30_000
 
       const kvittering = side.locator("dialog.resultat[open]")
       const lukkKvittering = async () => {
@@ -188,13 +187,7 @@ try {
       let forslagVist = false
       let sisteFeil = ""
       for (let forsok = 0; forsok < 3 && !vedtakFattet; forsok++) {
-        /*
-         * Ventingen må være lengre enn en runde, ellers kan den ikke sitte ut
-         * den runden forsøket mistet. `RUNDE_MS` er to minutter som standard,
-         * så 90 sekunder var for kort. Fristen står i markupen, så tallet
-         * leses framfor å gjettes, slik `vakthund.ts` gjør.
-         */
-        await side.locator("#hjemmel").waitFor({ timeout: rundeVindu })
+        await side.locator("#hjemmel").waitFor({ timeout: RUNDEVINDU })
         await lukkKvittering()
 
         try {
@@ -290,7 +283,7 @@ try {
     // Og så av vakt igjen, så testspilleren ikke blir stående på tavla.
     await side
       .evaluate(() => fetch("/ga-av", { method: "POST" }).then(() => undefined))
-      .catch(() => {})
+      .catch(() => si("kom ikke av vakt igjen"))
     await kontekst.close()
   }
 } finally {

@@ -254,6 +254,21 @@ class MarkupTest {
     assertTrue(STILARK.all { it.startsWith("https://cdn.jsdelivr.net/npm/@fristil/designsystem@") })
     assertTrue(html.contains("defineFsField"), "komponentene må registreres")
     assertTrue(html.contains(FRISTIL_VERSJON), "versjonen skal være pinnet")
+
+    // Testen heter «hentes fra CDN» og skal derfor dekke hver adresse på
+    // siden, ikke bare stilarkene. `FS_MODUL` kom til da panelet sluttet å
+    // importere byggefunksjonene selv, og gikk fri av denne testen en stund.
+    assertTrue(
+      FS_MODUL.startsWith("https://cdn.jsdelivr.net/npm/@fristil/designsystem@$FRISTIL_VERSJON/"),
+      "byggefunksjonene må hentes fra den samme pinnede adressen",
+    )
+    assertTrue(html.contains(FS_MODUL), "panelet må få byggefunksjonene")
+
+    val adresser = Regex("""https://cdn\.jsdelivr\.net/npm/@fristil/designsystem@([^/"]+)""")
+      .findAll(html)
+      .map { it.groupValues[1] }
+      .toSet()
+    assertEquals(setOf(FRISTIL_VERSJON), adresser, "alle CDN-adressene skal peke på samme versjon")
   }
 
   @Test
