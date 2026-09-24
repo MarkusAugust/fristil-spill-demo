@@ -24,9 +24,9 @@ import { fs } from "@fristil/designsystem"
 /*
  * Mappene som leses, og hvorfor `felles` er med.
  *
- * `felles/panel.js` lastes av alle fire appene som `<script type="module">`
- * uten bundling, altså samme spor som Datastar-appen. Den kan importere fra
- * CDN, og da gjelder regelen der også. Den lå utenfor både rota og
+ * `felles/panel.js` lastes av de tre spillutgavene som `<script
+ * type="module">`, og skriver markupen sin med byggefunksjoner appen sender
+ * inn. Regelen gjelder altså der like fullt. Fila lå utenfor både rota og
  * filtypefilteret, så den eneste ekte overtredelsen i repoet var usynlig for
  * nettopp den vaktposten som skulle finne den.
  */
@@ -99,6 +99,8 @@ const les = (m: string, app: string): void => {
  * `try {} catch {}` rundt lesingen gjorde at en omdøpt mappe ga «Appene
  * bruker Fristil slik dokumentasjonen sier» på null filer.
  */
+const funn: string[] = []
+
 let lest = 0
 for (const mappe of MAPPER) les(mappe, basename(mappe))
 if (lest < 20)
@@ -106,7 +108,6 @@ if (lest < 20)
     `leste bare ${lest} filer, så sjekken sier ikke noe. Stemmer stiene?`,
   )
 
-const funn: string[] = []
 for (const [n, c] of treff) {
   const [app, klasse, bygger] = n.split("|")
   funn.push(

@@ -127,4 +127,14 @@ val KOMPONENTER =
     )
     .map { (fil, funksjon) -> "$CDN/dist/$fil" to funksjon }
 
+/**
+ * Byggefunksjonene, som panelet trenger for å skrive markupen sin.
+ *
+ * Panelet er felles for de tre appene og importerer ikke `fs` selv: to av dem
+ * bunter designsystemet og skal ikke få et CDN-kall i drift for et
+ * feilsøkingspanel. Denne appen henter alt fra CDN uansett, så her er det den
+ * samme adressen som resten.
+ */
+const val FS_MODUL = "$CDN/dist/fs.js"
+
 const val DATASTAR_CDN = "https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.4/bundles/datastar.js"

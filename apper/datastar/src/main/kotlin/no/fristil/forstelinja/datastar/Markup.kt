@@ -373,12 +373,14 @@ fun side(
     <!-- Panelet som viser hva som ble oppdatert. Felles fil, egen teknikk. -->
     <script type="module">
       import { startPanel } from "/panel.js"
+      import { fs } from "$FS_MODUL"
 
       startPanel({
         teknikk: "Serveren sendte en ferdig HTML-bit, og Datastar morfet den inn.",
         forklaring:
           "Ingen JSON og ingen komponenter i nettleseren: serveren har alt tegnet skjermen, og Datastar bytter ut bare de attributtene og nodene som ble annerledes.",
         utgave: "datastar",
+        fs,
       })
     </script>
     </body>

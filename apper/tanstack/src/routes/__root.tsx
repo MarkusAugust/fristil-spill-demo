@@ -6,6 +6,7 @@ import {
   defineFsPopover,
   defineFsSuggestion,
   defineFsTabs,
+  fs,
 } from "@fristil/designsystem"
 import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router"
 import { createServerFn } from "@tanstack/react-start"
@@ -124,7 +125,10 @@ function Skall() {
    */
   useEffect(() => {
     import(/* @vite-ignore */ PANELMODUL).then(({ startPanel }) =>
-      (startPanel as (tekst: typeof PANELTEKST) => void)(PANELTEKST),
+      (startPanel as (valg: typeof PANELTEKST & { fs: typeof fs }) => void)({
+        ...PANELTEKST,
+        fs,
+      }),
     )
   }, [])
 

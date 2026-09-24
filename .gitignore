@@ -12,8 +12,8 @@ dist/
 *.db
 *.db-journal
 
-# Skjermbilder prøven tar når noe stopper underveis.
-tester/*-stoppet.png
+# Skjermbilder testene tar når noe stopper underveis.
+tester/*.png
 
 # Arbeidsplaner og notater er interne, og repoet er offentlig.
 PLAN.md
