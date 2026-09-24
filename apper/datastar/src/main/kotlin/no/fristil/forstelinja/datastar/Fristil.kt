@@ -59,7 +59,7 @@ val UTGAVER =
   )
 
 /** Versjonen av designsystemet siden henter fra CDN. */
-const val FRISTIL_VERSJON = "0.12.1"
+const val FRISTIL_VERSJON = "0.13.0"
 
 private const val CDN = "https://cdn.jsdelivr.net/npm/@fristil/designsystem@$FRISTIL_VERSJON"
 
