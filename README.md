@@ -198,11 +198,18 @@ fra returverdien og fra navnene som henger på funksjonen, og feller enhver
 `fs-`-klasse skrevet for hånd der det finnes en bunter eller en vei til en
 import. Datastar-appen er med vilje utenfor: Kotlin kan ikke kalle `fs`.
 
-`tester/klasselikhet.ts` teller `fs-`-klassene i DOM-en i hver utgave og
+`tester/klasselikhet.ts` samler `fs-`-klassene i DOM-en i hver utgave og
 krever likt sett. Den finnes fordi `paritet.ts` ikke så at temavelgeren i én
 utgave mistet `fs-toggle-group` og ble en kolonne uten ramme: den fant
 fortsatt tre knapper med riktig tekst, så alle de andre vaktpostene var
 grønne mens skjermen var synlig ødelagt.
+
+Den spiller en hel runde, og det må den. Skjemaet, kvitteringen og oppgjøret
+finnes ikke før du har meldt deg på og fattet et vedtak, så et oppslag på
+forsiden så bare rundt tjue av de 36 klassene. Klassene samles med en
+`MutationObserver` som settes inn før noe skript på siden kjører, siden
+kvitteringen lukkes igjen og forslagslista bare tegnes mens feltet har fokus.
+Et gulv på 30 klasser gjør at en samling som svikter ikke kan melde grønt.
 
 `tester/skall.ts` åpner skallet og krever at ingen av de tre rammene viser
 velkomsthilsenen, og at alle tre fortsatt viser den når de åpnes alene, hver
@@ -543,6 +550,13 @@ som gjorde det, og hva som kom over ledningen.
 
 Panelet spør ingen av appene. Det leser trafikken selv, og formatet kjennes
 igjen på innholdet framfor på hva noen påstår.
+
+Panelet får `fs` sendt inn, som et felt i `startPanel({ … })`, og importerer
+det ikke selv. Fila er delt av tre apper med hvert sitt spor: TanStack og
+Astro bunter designsystemet og sender byggefunksjonene de allerede har, mens
+Datastar sender sin fra CDN. Importerte panelet dem selv, måtte adressen vært
+en URL, og de to buntede appene fikk da 45 tredjepartskall i drift for et
+feilsøkingspanel, som forsvant når CDN-en ikke svarte.
 
 Avlyttingen ligger i `felles/panel-avlytt.js`, som lastes som et **vanlig
 skript først i `<head>`**, mens selve panelet er en modul som lastes nederst.

@@ -54,12 +54,22 @@ let fs = null
  * følger klassen med og attributtet blir stående.
  *
  * Appens egen klasse legges til på slutten, slik `med()` gjør i TanStack-appen.
+ *
+ * Boolske verdier følger `fs.setAttributes` i pakken: `true` blir et attributt
+ * uten verdi, `false` og `undefined` blir ingenting. Uten det skrev hjelperen
+ * `hidden="false"`, som er et sant boolsk attributt, og elementet ble skjult av
+ * nettopp det som skulle vise det. Ingen byggefunksjon sender `false` i dag,
+ * men `hidden` er blant de fire som sender `true`, og hjelperen er skrevet som
+ * den generelle veien.
  */
 function attributter({ class: klasse, ...resten }, egenKlasse) {
   const klasser = [klasse, egenKlasse].filter(Boolean).join(" ")
+  const tegn = (verdi) =>
+    String(verdi).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;")
 
   return Object.entries({ class: klasser, ...resten })
-    .map(([navn, verdi]) => `${navn}="${String(verdi).replace(/"/g, "&quot;")}"`)
+    .filter(([, verdi]) => verdi !== false && verdi !== undefined)
+    .map(([navn, verdi]) => (verdi === true ? `${navn}=""` : `${navn}="${tegn(verdi)}"`))
     .join(" ")
 }
 
@@ -591,12 +601,13 @@ export function startPanel({ teknikk, forklaring, utgave, fs: byggere }) {
   if (vertselement) return
 
   /*
-   * Uten byggefunksjonene ville panelet fått markup uten en eneste klasse, og
-   * det ser ut som CSS som ikke virker framfor som en manglende parameter.
+   * Panelet bygges ikke uten byggefunksjonene. Alternativet var markup uten en
+   * eneste klasse, og det ser ut som CSS som ikke virker framfor som en
+   * parameter som mangler.
    */
   if (!byggere) {
     console.warn(
-      "Panelet: `fs` ble ikke sendt inn, så markupen får ingen klasser. " +
+      "Panelet ble ikke bygget: `fs` mangler i kallet til startPanel(). " +
         "Appen skal sende byggefunksjonene: startPanel({ …, fs }).",
     )
     return

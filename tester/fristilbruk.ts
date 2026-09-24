@@ -24,11 +24,11 @@ import { fs } from "@fristil/designsystem"
 /*
  * Mappene som leses, og hvorfor `felles` er med.
  *
- * `felles/panel.js` lastes av de tre spillutgavene som `<script
- * type="module">`, og skriver markupen sin med byggefunksjoner appen sender
- * inn. Regelen gjelder altså der like fullt. Fila lå utenfor både rota og
- * filtypefilteret, så den eneste ekte overtredelsen i repoet var usynlig for
- * nettopp den vaktposten som skulle finne den.
+ * `felles/panel.js` lastes av alle tre spillutgavene, og skriver markupen sin
+ * med byggefunksjoner appen sender inn. Regelen gjelder altså der like fullt.
+ * Fila lå utenfor både rota og filtypefilteret, så den eneste ekte
+ * overtredelsen i repoet var usynlig for nettopp den vaktposten som skulle
+ * finne den.
  */
 const MAPPER = [
   join(import.meta.dir, "..", "apper", "tanstack"),

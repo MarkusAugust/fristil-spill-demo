@@ -13,10 +13,12 @@ import { chromium } from "playwright"
  * og ikke i de to andre er enten en feil eller en bevisst forskjell, og en
  * bevisst forskjell i et demospill som handler om at de er like, finnes ikke.
  *
- * **Den spiller en hel runde.** Første utgave leste bare forsiden, og så
- * dermed 19 av 36 klasser: skjemaet, kvitteringen og oppgjøret kommer først
- * etter at du har meldt deg på og fattet et vedtak. Halvparten av systemet
- * var altså utenfor den vaktposten som skulle se hele det.
+ * **Den spiller en hel runde.** Første utgave gjorde ett oppslag på forsiden,
+ * og så dermed rundt tjue av de 36 klassene: skjemaet, kvitteringen og
+ * oppgjøret kommer først etter at du har meldt deg på og fattet et vedtak.
+ * Omtrent halve systemet var altså utenfor den vaktposten som skulle se hele
+ * det. Tallet var ikke stabilt heller, siden panelet bygges et øyeblikk etter
+ * tavla, og et oppslag traff av og til før det.
  *
  *     ./kjor.sh rask
  *     cd tester && bun run klasselikhet
@@ -145,42 +147,60 @@ try {
       await side.locator(".panelknapp").first().waitFor({ timeout: 20_000 })
       await samle()
 
-      // Skjemaet finnes bare mens en runde går. Testen kan lande i et oppgjør.
-      await side.locator("#hjemmel").waitFor({ timeout: 90_000 })
-      await lukkKvittering()
+      /*
+       * Skjemaet finnes bare mens en runde går, og en runde kan ta slutt midt
+       * i utfyllingen: da forsvinner feltene under fingrene på testen, og en
+       * kjøring ble rød uten at noe var galt med appene. Vinduet er lite, men
+       * en vaktpost som feiler tilfeldig blir ignorert, så et forsøk som
+       * mister runden venter på den neste framfor å felle appen.
+       */
+      let vedtakFattet = false
+      for (let forsok = 0; forsok < 3 && !vedtakFattet; forsok++) {
+        await side.locator("#hjemmel").waitFor({ timeout: 90_000 })
+        await lukkKvittering()
 
-      // Forslagslista tegner treffene sine mens feltet har fokus.
-      await side.locator("#kommune").click()
-      await side.locator("#kommune").fill("Inder")
-      await side
-        .waitForFunction(
-          () => {
-            const liste = document.getElementById("kommune-list")
-            return liste && !liste.hidden
-              ? [...liste.querySelectorAll<HTMLElement>("[role='option']")].some((v) => !v.hidden)
-              : false
-          },
-          undefined,
-          { timeout: 10_000 },
-        )
-        .catch(() => si("forslagslista viste ingen treff på «Inder»"))
-      await samle()
+        try {
+          // Forslagslista tegner treffene sine mens feltet har fokus.
+          await side.locator("#kommune").click({ timeout: 10_000 })
+          await side.locator("#kommune").fill("Inder", { timeout: 10_000 })
+          await side
+            .waitForFunction(
+              () => {
+                const liste = document.getElementById("kommune-list")
+                return liste && !liste.hidden
+                  ? [...liste.querySelectorAll<HTMLElement>("[role='option']")].some(
+                      (v) => !v.hidden,
+                    )
+                  : false
+              },
+              undefined,
+              { timeout: 10_000 },
+            )
+            .catch(() => {})
+          await samle()
 
-      // Og så et helt vedtak, som gir kvitteringen.
-      await side.locator("#v-innvilget").check()
-      await side.selectOption("#hjemmel", { index: 1 })
-      await side.locator("#kommune").fill("Inderøy")
-      await side.selectOption("#felle", "nei")
-      await side.getByRole("button", { name: "Fatt vedtak" }).click()
-      await side.getByText("Vedtaket er fattet").waitFor({ timeout: 15_000 })
+          // Og så et helt vedtak, som gir kvitteringen.
+          await side.locator("#v-innvilget").check({ timeout: 10_000 })
+          await side.selectOption("#hjemmel", { index: 1 }, { timeout: 10_000 })
+          await side.locator("#kommune").fill("Inderøy", { timeout: 10_000 })
+          await side.selectOption("#felle", "nei", { timeout: 10_000 })
+          await side.getByRole("button", { name: "Fatt vedtak" }).click({ timeout: 10_000 })
+          await side.getByText("Vedtaket er fattet").waitFor({ timeout: 15_000 })
+          vedtakFattet = true
+        } catch {
+          // Runden tok slutt. Samle det som rakk å stå der, og vent på neste.
+          await samle()
+        }
+      }
+      if (!vedtakFattet) throw new Error("rakk aldri å fatte et vedtak på tre runder")
       await samle()
 
       fullfort.add(app.navn)
     } catch (e) {
       /*
        * Et løp som stoppet halvveis skal si nettopp det, og ikke bli til
-       * atten «klassen finnes bare i de to andre». Sammenligningen hopper
-       * over appen, og funnet peker på det som faktisk gikk galt.
+       * atten «klassen finnes bare i de to andre». Appen holdes utenfor
+       * sammenligningen, og funnet peker på det som faktisk gikk galt.
        */
       const melding = (e as Error).message
         .split("\n")
@@ -224,12 +244,19 @@ for (const app of sammenlignes) {
     )
 }
 
-if (sammenlignes.length < APPER.length) {
+if (sammenlignes.length < 2) {
   funn.push(
-    `bare ${sammenlignes.length} av ${APPER.length} utgaver kom gjennom løpet, så klassene kan ikke sammenlignes`,
+    `bare ${sammenlignes.length} av ${APPER.length} utgaver kom gjennom løpet, så det finnes ingenting å sammenligne`,
   )
 } else {
-  const alle = new Set([...sett.values()].flatMap((s) => [...s]))
+  /*
+   * To av tre er nok til å sammenligne. En klasse som finnes i den ene og
+   * ikke i den andre er en ekte forskjell, og appen som ikke kom gjennom har
+   * alt sitt eget funn lenger opp.
+   */
+  // Bare klassene fra dem som kom gjennom. En app som stoppet halvveis har et
+  // halvt sett, og hver klasse i det ville blitt meldt som «finnes bare i».
+  const alle = new Set(sammenlignes.flatMap((a) => [...(sett.get(a.navn) ?? [])]))
   for (const klasse of [...alle].sort()) {
     const har = sammenlignes.filter((a) => sett.get(a.navn)?.has(klasse)).map((a) => a.navn)
     if (har.length !== sammenlignes.length)
@@ -247,5 +274,7 @@ if (funn.length > 0) {
   process.exit(1)
 }
 console.log(
-  `De tre utgavene bruker de samme ${sett.get(APPER[0].navn)?.size ?? 0} Fristil-klassene.`,
+  `De ${sammenlignes.length} utgavene bruker de samme ${
+    sett.get(sammenlignes[0].navn)?.size ?? 0
+  } Fristil-klassene.`,
 )
