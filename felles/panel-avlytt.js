@@ -15,11 +15,14 @@
  * Datastar og Astro åpnet strømmen før innpakningen var på plass, React kom
  * etter fordi den kobler seg opp fra en effekt etter hydreringen.
  *
- * Et vanlig skript i `<head>` kjører derimot mens dokumentet parses, altså før
- * hvert eneste modulskript uansett hvor de står. Derfor denne fila, og derfor
- * skal taggen stå først i `<head>`:
+ * Et vanlig skript uten `defer` kjører derimot mens dokumentet parses, altså
+ * før hvert eneste modulskript uansett hvor begge står. Derfor denne fila, og
+ * derfor skal taggen være et vanlig skript:
  *
  *     <script src="/panel-avlytt.js"></script>
+ *
+ * Den bør stå tidlig i `<head>`, men det som avgjør er at den ikke er en
+ * modul. I React-utgaven havner den i `<body>`, og virker like fullt.
  *
  * Fila skriver ingenting på skjermen og rører ingen DOM. Den noterer bare det
  * siste som kom, på `window.forstelinjaLedning`, og `panel.js` leser derfra.
@@ -128,20 +131,38 @@
         noter({ transport: "SSE", hendelse: "message", tekst: e.data, url: String(url) })
       })
 
+      /*
+       * Innpakningen huskes per lytter, slik at `removeEventListener` treffer.
+       *
+       * Uten kartet var den registrerte funksjonen en ny en for hvert kall,
+       * og appens egen avregistrering fjernet ingenting. Nettleserens
+       * deduplisering av den samme lytteren to ganger forsvant også.
+       */
+      const innpakkede = new WeakMap()
+      const opprinneligFjern = strom.removeEventListener.bind(strom)
+
       strom.addEventListener = (navn, lytter, valg2) => {
-        if (navn === "message") return opprinneligLytt(navn, lytter, valg2)
-        return opprinneligLytt(
-          navn,
-          (e) => {
+        if (navn === "message" || !lytter) {
+          return opprinneligLytt(navn, lytter, valg2)
+        }
+
+        let innpakket = innpakkede.get(lytter)
+        if (!innpakket) {
+          innpakket = (e) => {
             if (typeof e.data === "string") {
               noter({ transport: "SSE", hendelse: navn, tekst: e.data, url: String(url) })
             }
             if (typeof lytter === "function") lytter(e)
             else lytter?.handleEvent?.(e)
-          },
-          valg2,
-        )
+          }
+          innpakkede.set(lytter, innpakket)
+        }
+
+        return opprinneligLytt(navn, innpakket, valg2)
       }
+
+      strom.removeEventListener = (navn, lytter, valg2) =>
+        opprinneligFjern(navn, innpakkede.get(lytter) ?? lytter, valg2)
       return strom
     }
     Innpakket.prototype = OpprinneligEventSource.prototype
@@ -187,13 +208,26 @@
     const type = svar.headers.get("content-type") ?? ""
     const url = svar.url || String(argumenter[0])
 
-    if (type.includes("text/event-stream") && svar.body) {
+    /*
+     * 204, 205 og 304 har ingen kropp, og `new Response(body, { status })`
+     * kaster for dem. En tjener som svarer 204 på en strøm ville da fått en
+     * TypeError inne i innpakningen, altså en feil panelet selv lagde.
+     */
+    const kanBæreKropp = ![204, 205, 304].includes(svar.status)
+
+    if (type.includes("text/event-stream") && svar.body && kanBæreKropp) {
       /*
        * Strømmen deles i to: én til appen, én hit. Uten delingen ville
        * panelet spist bytene appen venter på, og skjermen sluttet å
        * oppdatere seg.
        */
       const [tilAppen, tilPanelet] = svar.body.tee()
+      /*
+       * `.catch()` er ikke pynt: `leser.read()` avviser når strømmen ryker
+       * eller forespørselen avbrytes, og uten den fikk konsollen en
+       * uhåndtert avvisning for hver avbrutte forespørsel. Panelet skal ikke
+       * bråke i en app som virker.
+       */
       void (async () => {
         const leser = tilPanelet.pipeThrough(new TextDecoderStream()).getReader()
         let rest = ""
@@ -220,7 +254,7 @@
             if (data) noter({ transport: "SSE", hendelse: navn, tekst: data, url })
           }
         }
-      })()
+      })().catch(() => {})
 
       return new Response(tilAppen, {
         status: svar.status,

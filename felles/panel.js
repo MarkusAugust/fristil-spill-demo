@@ -370,8 +370,18 @@ function tegn() {
     ...tilstand.hendelser.map((h) => {
       const linje = document.createElement("li")
       linje.className = "panel__linje"
-      linje.dataset.hendelse = String(h.id)
-      if (h.last) linje.setAttribute("aria-current", h === valgt ? "true" : "false")
+      /*
+       * Bare linjer med en nyttelast er klikkbare.
+       *
+       * Sto `data-hendelse` på alle, kunne et klikk på en linje uten
+       * nyttelast velge den, og ruta skrev «Ingenting har kommet over
+       * ledningen ennå» selv om andre linjer hadde noe. Det er nøyaktig den
+       * løgnen panelet er skrevet om for å bli kvitt.
+       */
+      if (h.last) {
+        linje.dataset.hendelse = String(h.id)
+        linje.setAttribute("aria-current", h === valgt ? "true" : "false")
+      }
 
       const hode = document.createElement("span")
       hode.className = "panel__nar"

@@ -415,10 +415,14 @@ oppskrift som ligger i repoet:
 cd tester && bun run tema     # leser felles/fristil.tema.json, skriver felles/tema.css
 ```
 
+Kommandoen pinner versjonen av Fristil den kjører. Skrift og form kom i 0.12.0,
+og `bunx @fristil/designsystem` uten versjon ville hentet den nyeste som
+tilfeldigvis er publisert.
+
 Oppskriften setter **skrift og form, og lar fargene stå**. Grunnen er verdt å
 vite: Fristils innebygde palett *er* Skatteetatens. Alle 36 palettvariablene
-deres finnes i Fristil med nøyaktig samme verdi, og 14 av 15 semantiske
-fargetokens likeså. Å kjøre fargene deres gjennom generatoren ville derfor
+deres finnes i Fristil med nøyaktig samme verdi, og av de femten semantiske
+fargetokenene Skatteetaten har, er fjorten like. Å kjøre fargene deres gjennom generatoren ville derfor
 flyttet dem bort fra der de skal være, siden skalaene regnes om i OKLCH fra
 merkefargen: `#1362ae` kommer ut som `#1e6ab7`.
 
@@ -436,11 +440,17 @@ mot deres egen advarselsflate. Kravet for vanlig tekst er 4,5:1. Fristils
 | Knapperamme | `3px` | rammen deres er tykk |
 | Knappevekt | `700` | knappeteksten deres er fet |
 
+Rammen og vekten krever Fristil 0.12.0. Skrift og hjørner virker fra 0.11.0.
+
 `felles/tema.css` er generert. Rediger `felles/fristil.tema.json` og kjør
 kommandoen på nytt.
 
-Temaet lastes som `/tema.css` i alle tre appene, etter Fristils egne stilark og
-før `brett.css`. De ligger i det samme laget, og der vinner den siste.
+Temaet lastes som `/tema.css` i alle fire tjenestene med en skjerm, skallet
+medregnet. Det ligger i sitt eget lag, `fristil-tema`, erklært etter `fristil`,
+så det vinner over pakkens standardverdier uansett når stilarkene lastes. Det
+er ikke en detalj: både Astro og TanStack Start legger sin bundlede CSS inn
+rett før `</head>`, altså etter en lenke appen selv har skrevet. `brett.css`
+er usortert CSS og vinner over begge lagene, som appens egen CSS skal.
 
 ## Panelet som viser hva som skjedde
 

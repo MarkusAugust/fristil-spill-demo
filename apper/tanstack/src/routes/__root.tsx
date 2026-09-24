@@ -45,19 +45,26 @@ export const Route = createRootRoute({
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Førstelinja · TanStack Start og React" },
     ],
-    /* Temaet står før brett.css: de ligger i samme lag, og der vinner den
-       siste. Fristils egne stilark importeres i stil.ts, altså før begge. */
+    /* Temaet ligger i sitt eget lag, `fristil-tema`, erklært etter
+       `fristil`. Det avgjør rekkefølgen uansett når stilarkene lastes, og det
+       er nødvendig her: Vite legger Fristils CSS inn etter lenkene våre. */
     links: [
       { rel: "stylesheet", href: "/tema.css" },
       { rel: "stylesheet", href: "/brett.css" },
     ],
     /*
-     * Avlyttingen panelet leser fra, som et vanlig skript i `<head>`.
+     * Avlyttingen panelet leser fra.
      *
-     * Her er den ikke strengt nødvendig: React åpner strømmen fra en effekt,
-     * altså etter hydreringen, så en modul i `<body>` rakk det så vidt. I de
-     * to andre appene gjorde den ikke det, og et panel som virker av
-     * tilfeldige grunner i én av tre utgaver er ikke et panel man kan tro på.
+     * `scripts` i `head()` rendres av `<Scripts />`, som står i `<body>`, og
+     * ikke i hodet. Det virker likevel, og det er verdt å vite hvorfor: et
+     * vanlig skript uten `defer` er parserblokkerende uansett hvor det står,
+     * så det kjører før hvert modulskript. Gjør noen det om til en modul,
+     * ryker rekkefølgen stille.
+     *
+     * Her er den ikke strengt nødvendig uansett: React åpner strømmen fra en
+     * effekt, altså etter hydreringen. I de to andre appene var den det, og
+     * et panel som virker av tilfeldige grunner i én av tre utgaver er ikke
+     * et panel man kan tro på.
      */
     scripts: [{ src: "/panel-avlytt.js" }],
   }),

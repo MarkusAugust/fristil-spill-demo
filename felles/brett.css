@@ -910,10 +910,6 @@ body:has(.fs-connection-status__bar) .topplinje {
   color: var(--semantic-interactive-foreground);
 }
 
-.panel__merkelapp[hidden] {
-  display: none;
-}
-
 .panel__logg {
   display: flex;
   flex-direction: column;
@@ -926,7 +922,11 @@ body:has(.fs-connection-status__bar) .topplinje {
   flex-direction: column;
   padding: var(--size-1);
   border-radius: var(--size-1);
-  cursor: default;
+}
+
+/* Bare linjene med en nyttelast kan velges, og bare de skal se klikkbare ut. */
+.panel__linje[data-hendelse] {
+  cursor: pointer;
 }
 
 .panel__linje[data-hendelse]:hover {
@@ -937,6 +937,13 @@ body:has(.fs-connection-status__bar) .topplinje {
 .panel__linje[aria-current="true"] {
   background: var(--semantic-interactive-background);
   color: var(--semantic-interactive-foreground);
+}
+
+/* Merkelappen arver fargen på den valgte raden. Sto den dempede fargen igjen,
+   ble den 3,45:1 mot den lyse flaten, altså under kravet på 4,5:1. */
+.panel__linje[aria-current="true"] .panel__linjelapp,
+.panel__linje[data-hendelse]:hover .panel__linjelapp {
+  color: inherit;
 }
 
 .panel__linje:first-child .panel__nar {

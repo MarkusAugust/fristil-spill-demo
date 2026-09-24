@@ -53,8 +53,10 @@ const tema = valgt === "light" || valgt === "dark" ? valgt : null
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{tittel}</title>
-    <!-- Temaet står før brett.css: de ligger i samme lag, og der vinner den
-         siste. Fristils egne stilark importeres i stil.ts, altså før begge. -->
+    <!-- Temaet ligger i sitt eget lag, `fristil-tema`, erklært etter
+         `fristil`. Det avgjør rekkefølgen uansett når stilarkene lastes, og
+         det er nødvendig her: Astro legger sin bundlede CSS inn rett før
+         </head>, altså etter denne lenken. -->
     <link rel="stylesheet" href="/tema.css" />
     <link rel="stylesheet" href="/brett.css" />
 
