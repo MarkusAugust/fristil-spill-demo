@@ -62,7 +62,7 @@ Spilltjeneren er med vilje ikke den samme prosessen som Datastar-appen. Ellers v
 
 ## Omgangen
 
-Fire runder à to minutter, med 25 sekunders oppgjør mellom. Rundt ti minutter, og så begynner en ny. Saken skal leses, ikke gjettes: to faner, en tabell, tre felt og en hjelpetekst om hjemlene.
+Fire runder à ett minutt, med tolv sekunders oppgjør mellom. Under fem minutter, og så begynner en ny. Saken skal leses, ikke gjettes: to faner, en tabell, tre felt og en hjelpetekst om hjemlene.
 
 **Ingen lobby.** Rundene går uavbrutt. Den som åpner adressen er med fra neste runde, og venter aldri lenger enn én runde. En lobby ville betydd at den første som kom satt og ventet på noen som aldri kom.
 
@@ -165,8 +165,8 @@ cd apper/spilltjener && ./gradlew test && ./gradlew installDist
 | `KOMMUNER_FIL` | `../../felles/kommuner.json` | |
 | `TOPPLISTE_FIL` | `toppliste.db` | på Railway: et volum |
 | `VARM_TIMER` | `0` | timer tjenesten holder seg våken etter siste spiller. Står på `3` i Railway |
-| `RUNDE_MS` | `120000` | lengre runder når noen skal snakke over spillet |
-| `OPPGJOR_MS` | `25000` | |
+| `RUNDE_MS` | `60000` | lengre runder når noen skal snakke over spillet |
+| `OPPGJOR_MS` | `12500` | |
 | `SLUTT_MS` | `40000` | |
 
 ## Testene som sier om påstanden holder
@@ -267,7 +267,9 @@ IPv6-bare, så tjenesten må lytte på `::`. Det er standarden i Dockerfilen.
 ### Det som er verdt å vite
 
 - **Runder og pauser** styres av `RUNDE_MS`, `OPPGJOR_MS` og `SLUTT_MS` på
-  spilltjeneren. Standard er to minutter, 25 sekunder og 40 sekunder.
+  spilltjeneren. Standard er ett minutt, 12,5 sekunder og 40 sekunder. En sak
+  leses på under et halvt minutt, så to minutter gikk mest med til å vente.
+  Sluttoppgjøret står lengre med vilje: der skal man rekke å lese topplista.
 - **`VARM_TIMER`** sier hvor lenge spilltjeneren holder seg våken etter at
   den siste spilleren er borte. Standard er 0, altså av.
 - **Uten volum forsvinner den evige topplista** ved hver utrulling. Ett volum

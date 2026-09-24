@@ -901,6 +901,53 @@ body:has(.fs-connection-status__bar) .topplinje {
   margin-block-end: var(--size-1);
 }
 
+/*
+ * Spørsmålstegnet ved siden av «Med hva», og boksen det åpner.
+ *
+ * Panelet sier hva som skjedde i denne utgaven. Tabellen sier hva de to andre
+ * ville gjort med det samme, og det er nettopp sammenligningen demoen finnes
+ * for. Den står derfor her, i den delte fila, og ikke tre steder.
+ */
+.panel__hjelp {
+  margin-inline-start: var(--size-2);
+  padding: 0 var(--size-2);
+  font-size: var(--font-size-xs);
+  vertical-align: middle;
+}
+
+/* Boksen tar plass fra nyttelasten, men ikke all: uten taket ble ruta under
+   presset ut av panelet, og den er det panelet handler om. */
+.panel__utgaver {
+  flex: 0 1 auto;
+  min-block-size: 0;
+  max-block-size: 17rem;
+  overflow: auto;
+  margin-block-end: var(--size-3);
+}
+
+.panel__utgaver[hidden] {
+  display: none;
+}
+
+.panel__tabell {
+  font-size: var(--font-size-xs);
+}
+
+.panel__tabell tr[aria-current="true"] {
+  background: var(--semantic-interactive-background);
+  color: var(--semantic-interactive-foreground);
+}
+
+.panel__her {
+  font-weight: var(--font-weight-regular, 400);
+  white-space: nowrap;
+}
+
+.panel__felles {
+  margin-block-start: var(--size-2);
+  font-size: var(--font-size-xs);
+}
+
 /* Merkelappen er svaret på «med hva», og skal leses før innholdet. */
 .panel__merkelapp {
   margin-block-end: var(--size-2);

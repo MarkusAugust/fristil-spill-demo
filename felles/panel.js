@@ -15,7 +15,7 @@
  * Appen forteller bare hvilken teknikk den bruker:
  *
  *     import { startPanel } from "/panel.js"
- *     startPanel({ teknikk: "…", forklaring: "…" })
+ *     startPanel({ teknikk: "…", forklaring: "…", utgave: "datastar" })
  *
  * Resten finner panelet ut selv, og det er med vilje: at det samme skriptet
  * ser tre ulike ting skje er sterkere enn tre apper som forteller hver sin
@@ -81,6 +81,8 @@ const tilstand = {
   apen: false,
   /** Hendelsen brukeren har valgt i loggen, eller `null` for den nyeste. */
   valgt: null,
+  /** Hvilken av de tre utgavene dette er. Markerer raden i tabellen. */
+  utgave: "",
 }
 
 /** Avlyttingen, lagt på plass av `panel-avlytt.js` før alt annet. */
@@ -117,6 +119,44 @@ function erStoy(node) {
   const element = elementFor(node)
   return Boolean(element) && STOY.some((velger) => element.closest(velger))
 }
+
+/**
+ * De tre utgavene, og hvordan hver av dem henter data.
+ *
+ * Boksen står her og ikke i appene, av samme grunn som resten av panelet:
+ * skrev hver app sin egen, ville sammenligningen vært tre påstander framfor
+ * én tabell, og de ville gått fra hverandre første gang noen endret en av
+ * dem.
+ */
+const UTGAVER = [
+  {
+    id: "tanstack",
+    navn: "TanStack Start",
+    apner: "EventSource",
+    ledning: "hele tilstanden som JSON",
+    tegner: "i nettleseren, av React",
+  },
+  {
+    id: "datastar",
+    navn: "Datastar",
+    apner: "fetch, lest som en strøm",
+    ledning: "ferdige HTML-biter",
+    tegner: "på serveren, og morfes inn",
+  },
+  {
+    id: "astro",
+    navn: "Astro",
+    apner: "EventSource",
+    ledning: "en puls på noen hundre byte",
+    tegner: "på serveren, som en ny side",
+  },
+]
+
+const FELLES = [
+  "Alle tre bruker Server-Sent Events, altså én vei: serveren skriver i en forbindelse som står åpen, og nettleseren lytter.",
+  "Nettleseren snakker aldri med spilltjeneren. Hver appserver abonnerer selv, og vifter det ut til sine egne.",
+  "EventSource kobler til igjen av seg selv når forbindelsen ryker. Datastar bruker fetch for å få sende med signalene sine, og må derfor passe på det selv.",
+]
 
 const tall = new Intl.NumberFormat("no-NO", { maximumFractionDigits: 1 })
 
@@ -311,6 +351,37 @@ function noter(plass, node, antallEndringer) {
   husk()
 }
 
+/** Tabellen over de tre utgavene, med den du sitter i markert. */
+function utgavetabell() {
+  const rader = UTGAVER.map(
+    (u) => `
+        <tr${u.id === tilstand.utgave ? ' aria-current="true"' : ""}>
+          <th scope="row">${u.navn}${u.id === tilstand.utgave ? " <span class=\"panel__her\">du er her</span>" : ""}</th>
+          <td>${u.apner}</td>
+          <td>${u.ledning}</td>
+          <td>${u.tegner}</td>
+        </tr>`,
+  ).join("")
+
+  return `
+    <div class="fs-table-scroll" tabindex="0">
+      <table class="fs-table panel__tabell">
+        <thead>
+          <tr>
+            <th>Utgave</th>
+            <th>Åpner strømmen med</th>
+            <th>Over ledningen</th>
+            <th>Tegner</th>
+          </tr>
+        </thead>
+        <tbody>${rader}</tbody>
+      </table>
+    </div>
+    <ul class="fs-list panel__felles">
+      ${FELLES.map((linje) => `<li>${linje}</li>`).join("")}
+    </ul>`
+}
+
 /**
  * Panelets egen markup. Fristils klasser, ingen egne farger.
  *
@@ -329,7 +400,15 @@ function byggPanel() {
             aria-controls="panel">Hva skjedde?</button>
     <section id="panel" class="fs-card panel" hidden aria-label="Hva skjedde">
       <div class="panel__del panel__del--hva">
-        <h2 class="fs-heading panel__tittel" data-size="xs">Med hva</h2>
+        <h2 class="fs-heading panel__tittel" data-size="xs">
+          Med hva
+          <button type="button" class="fs-button panel__hjelp" data-variant="ghost"
+                  aria-expanded="false" aria-controls="panel-utgaver"
+                  aria-label="Hvordan de tre utgavene henter data">?</button>
+        </h2>
+        <div id="panel-utgaver" class="panel__utgaver" hidden>
+          ${utgavetabell()}
+        </div>
         <p class="panel__merkelapp" hidden></p>
         <pre class="panel__nyttelast" tabindex="0"></pre>
       </div>
@@ -361,6 +440,15 @@ function byggPanel() {
     // Loggen tegnes ikke mens panelet er lukket, så den tegnes her.
     if (tilstand.apen) tegn()
     husk()
+  })
+
+  const hjelp = vert.querySelector(".panel__hjelp")
+  const utgaver = vert.querySelector("#panel-utgaver")
+
+  hjelp.addEventListener("click", () => {
+    const apen = utgaver.hidden
+    utgaver.hidden = !apen
+    hjelp.setAttribute("aria-expanded", String(apen))
   })
 
   // Klikk i loggen velger hvilken oppdatering nyttelasten hører til. Uten
@@ -450,11 +538,12 @@ function tegn() {
  * `forklaring` er linja under, som sier hva det betyr i praksis. Alt annet
  * finner panelet ut selv.
  */
-export function startPanel({ teknikk, forklaring }) {
+export function startPanel({ teknikk, forklaring, utgave }) {
   if (vertselement) return
 
   tilstand.teknikk = teknikk
   tilstand.forklaring = forklaring
+  tilstand.utgave = utgave ?? ""
 
   /*
    * Panelet skal si fra når avlyttingen mangler, framfor å påstå at ingenting

@@ -371,6 +371,7 @@ fun side(
         teknikk: "Serveren sendte en ferdig HTML-bit, og Datastar morfet den inn.",
         forklaring:
           "Ingen JSON og ingen komponenter i nettleseren: serveren har alt tegnet skjermen, og Datastar bytter ut bare de attributtene og nodene som ble annerledes.",
+        utgave: "datastar",
       })
     </script>
     </body>

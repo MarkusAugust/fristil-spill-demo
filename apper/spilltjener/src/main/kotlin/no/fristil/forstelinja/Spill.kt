@@ -23,8 +23,20 @@ import kotlinx.serialization.Serializable
  */
 
 const val RUNDER_PER_SPILL = 4
-const val RUNDE_MS = 120_000L
-const val OPPGJOR_MS = 25_000L
+
+/*
+ * Et minutt på en sak er nok.
+ *
+ * Runden var to minutter og oppgjøret 25 sekunder, og da tok en hel omgang
+ * over ti minutter. Lest med to andre i rommet er en sak lest på under et
+ * halvt minutt, og resten av tiden går med til å vente. Halvert er det
+ * fortsatt god tid til å lese søknaden, se på søkeren og fylle ut vedtaket.
+ *
+ * Sluttoppgjøret står som det var: der skal man rekke å lese topplista og
+ * bestemme seg for om man vil ta en omgang til.
+ */
+const val RUNDE_MS = 60_000L
+const val OPPGJOR_MS = 12_500L
 const val SLUTT_MS = 40_000L
 
 /**

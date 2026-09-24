@@ -78,6 +78,7 @@ const PANELTEKST = {
   teknikk: "Serveren sendte JSON, og React tegnet om komponenten.",
   forklaring:
     "Hendelsesstrømmen bærer tilstanden som JSON. React sammenligner og bytter ut nøyaktig de nodene som ble annerledes, uten at siden lastes på nytt.",
+  utgave: "tanstack",
 }
 
 function Skall() {
