@@ -154,6 +154,15 @@ if (brett) {
      * Er runden en annen enn den siden ble tegnet med, er hele siden
      * utdatert: ny sak, nytt skjema, ny fasit. Da henter vi den på nytt, og
      * det er akkurat det denne appen skal gjøre.
+     *
+     * `location.replace("/")` og ikke `location.reload()`. Siden kan være
+     * resultatet av en POST, og da sender `reload()` den samme innsendingen
+     * en gang til. Det var ikke teoretisk: ved hvert rundeskifte ble det
+     * forrige vedtaket sendt inn på den nye saken, og hadde skjemaet
+     * valideringsfeil, kom den samme feilmeldingen tilbake på en sak
+     * brukeren ikke hadde sett. Astro ble stående mens de to andre gikk
+     * videre. `replace` henter alltid med GET, og legger ikke en ny
+     * oppføring i historikken, så tilbakeknappen oppfører seg som før.
      */
     if (
       puls.fase !== brett.dataset.fase ||
@@ -161,7 +170,7 @@ if (brett) {
       puls.sakId !== brett.dataset.sak ||
       String(puls.harSvart) !== brett.dataset.svart
     ) {
-      location.reload()
+      location.replace("/")
       return
     }
 
