@@ -59,7 +59,7 @@ val UTGAVER =
   )
 
 /** Versjonen av designsystemet siden henter fra CDN. */
-const val FRISTIL_VERSJON = "0.13.0"
+const val FRISTIL_VERSJON = "0.14.0"
 
 private const val CDN = "https://cdn.jsdelivr.net/npm/@fristil/designsystem@$FRISTIL_VERSJON"
 
@@ -126,5 +126,15 @@ val KOMPONENTER =
       "components/ramme/suggestion/fs-suggestion.js" to "defineFsSuggestion",
     )
     .map { (fil, funksjon) -> "$CDN/dist/$fil" to funksjon }
+
+/**
+ * Byggefunksjonene, som panelet trenger for å skrive markupen sin.
+ *
+ * Panelet er felles for de tre appene og importerer ikke `fs` selv: to av dem
+ * bunter designsystemet og skal ikke få et CDN-kall i drift for et
+ * feilsøkingspanel. Denne appen henter alt fra CDN uansett, så her er det den
+ * samme adressen som resten.
+ */
+const val FS_MODUL = "$CDN/dist/fs.js"
 
 const val DATASTAR_CDN = "https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.4/bundles/datastar.js"

@@ -9,33 +9,70 @@
  *
  * Fila ligger i `felles/`, av samme grunn som `brett.css`: den er det som gjør
  * at de tre panelene er det samme panelet. Hver app serverer den som
- * `/panel.js` og laster den med `<script type="module">`. Ingen bundling,
- * ingen import fra npm.
+ * `/panel.js`, og fila selv importerer ingenting. Den er ikke en del av noe
+ * bygg, og skal kunne lastes som den er.
  *
- * Appen forteller bare hvilken teknikk den bruker:
+ * Appen henter den og sier hvilken teknikk den bruker:
  *
- *     import { startPanel } from "/panel.js"
- *     startPanel({ teknikk: "…", forklaring: "…", utgave: "datastar" })
+ *     const { startPanel } = await import("/panel.js")
+ *     startPanel({ teknikk: "…", forklaring: "…", utgave: "datastar", fs })
+ *
+ * Datastar-utgaven skriver et vanlig `import` i et modulskript. De to andre
+ * bruker `import()` med adressen i en variabel: Vite leser et bokstavelig
+ * `import` og prøver å slå opp `/panel.js` under bygget, og den er en rute på
+ * serveren og ingen fil på disken.
+ *
+ * `fs` sendes inn framfor å importeres her. Fila er delt av tre apper med
+ * hvert sitt spor: to bunter designsystemet og har det allerede, én henter
+ * det fra CDN. Importerte panelet det selv, måtte adressen være en URL, og
+ * da fikk de to buntede appene en ekstern avhengighet i drift for et
+ * feilsøkingspanel. Testet: importen alene er 45 kall til jsDelivr, og de to
+ * appene gikk fra null til 45. Panelet forsvant også når CDN-en ikke svarte.
  *
  * Resten finner panelet ut selv, og det er med vilje: at det samme skriptet
  * ser tre ulike ting skje er sterkere enn tre apper som forteller hver sin
  * historie.
  *
  * Avlyttingen av ledningen ligger **ikke** her, men i `felles/panel-avlytt.js`,
- * som må lastes som et vanlig skript først i `<head>`. Forklaringen står i den
- * fila, og den er verdt å lese: to av tre apper åpner strømmen sin før et
- * modulskript i det hele tatt har rukket å kjøre.
+ * som må lastes som et vanlig skript i `<head>`. Forklaringen står i den fila,
+ * og den er verdt å lese: to av tre apper åpner strømmen sin før et
+ * modulskript i det hele tatt har rukket å kjøre. Det avgjørende er at taggen
+ * ikke er en modul, ikke hvor i `<head>` den står.
  */
 
-/*
- * Byggefunksjonene, hentet som Datastar-appen henter dem.
- *
- * Fila lastes som `<script type="module">` uten bundling, og da er hele
- * URL-en riktig: en nettleser slår ikke opp et pakkenavn. Panelet lager
- * markup med JavaScript, og da er regelen den samme som overalt ellers,
- * at byggefunksjonen kalles framfor at klassen skrives av.
+/**
+ * Byggefunksjonene fra Fristil. Appen sender dem inn i `startPanel`, og de to
+ * funksjonene som skriver markup leser dem herfra.
  */
-import { fs } from "https://cdn.jsdelivr.net/npm/@fristil/designsystem@0.13.0/dist/fs.js"
+let fs = null
+
+/**
+ * Skriver ut alt en byggefunksjon ga, ikke bare klassen.
+ *
+ * `fs.button({ variant: "ghost" })` gir både `class` og `data-variant`, og
+ * panelet skrev lenge av det siste for hånd ved siden av det første. Da er vi
+ * tilbake til det dokumentasjonen advarer mot: endrer pakken attributtnavnet,
+ * følger klassen med og attributtet blir stående.
+ *
+ * Appens egen klasse legges til på slutten, slik `med()` gjør i TanStack-appen.
+ *
+ * Boolske verdier følger `fs.setAttributes` i pakken: `true` blir et attributt
+ * uten verdi, `false` og `undefined` blir ingenting. Uten det skrev hjelperen
+ * `hidden="false"`, som er et sant boolsk attributt, og elementet ble skjult av
+ * nettopp det som skulle vise det. Ingen byggefunksjon sender `false` i dag,
+ * men `hidden` er blant de fire som sender `true`, og hjelperen er skrevet som
+ * den generelle veien.
+ */
+function attributter({ class: klasse, ...resten }, egenKlasse) {
+  const klasser = [klasse, egenKlasse].filter(Boolean).join(" ")
+  const tegn = (verdi) =>
+    String(verdi).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;")
+
+  return Object.entries({ class: klasser, ...resten })
+    .filter(([, verdi]) => verdi !== false && verdi !== undefined)
+    .map(([navn, verdi]) => (verdi === true ? `${navn}=""` : `${navn}="${tegn(verdi)}"`))
+    .join(" ")
+}
 
 /** Hvor mange oppdateringer som huskes. Nok til å bla litt tilbake. */
 const HUSKES = 12
@@ -382,7 +419,7 @@ function utgavetabell() {
 
   return `
     <div class="${fs.table.scroll}" tabindex="0">
-      <table class="${fs.table().class} panel__tabell">
+      <table ${attributter(fs.table(), "panel__tabell")}>
         <thead>
           <tr>
             <th>Utgave</th>
@@ -394,7 +431,7 @@ function utgavetabell() {
         <tbody>${rader}</tbody>
       </table>
     </div>
-    <ul class="${fs.list().class} panel__felles">
+    <ul ${attributter(fs.list(), "panel__felles")}>
       ${FELLES.map((linje) => `<li>${linje}</li>`).join("")}
     </ul>
     <p class="panel__felles">
@@ -418,13 +455,13 @@ function byggPanel() {
     document.querySelector(".panelvert") ?? document.createElement("div")
   vert.className = "panelvert"
   vert.innerHTML = `
-    <button type="button" class="${fs.button().class} panelknapp" aria-expanded="false"
+    <button type="button" ${attributter(fs.button(), "panelknapp")} aria-expanded="false"
             aria-controls="panel">Hva skjedde?</button>
-    <section id="panel" class="${fs.card().class} panel" hidden aria-label="Hva skjedde">
+    <section id="panel" ${attributter(fs.card(), "panel")} hidden aria-label="Hva skjedde">
       <div class="panel__del panel__del--hva">
-        <h2 class="${fs.heading({ size: "xs" }).class} panel__tittel" data-size="xs">
+        <h2 ${attributter(fs.heading({ size: "xs" }), "panel__tittel")}>
           Med hva
-          <button type="button" class="${fs.button({ variant: "ghost" }).class} panel__hjelp" data-variant="ghost"
+          <button type="button" ${attributter(fs.button({ variant: "ghost" }), "panel__hjelp")}
                   aria-expanded="false" aria-controls="panel-utgaver"
                   aria-label="Hvordan de tre utgavene henter data">?</button>
         </h2>
@@ -435,13 +472,13 @@ function byggPanel() {
         <pre class="panel__nyttelast" tabindex="0"></pre>
       </div>
       <div class="panel__del panel__del--logg">
-        <h2 class="${fs.heading({ size: "xs" }).class} panel__tittel" data-size="xs">Hva som ble oppdatert</h2>
-        <ol class="${fs.list({ variant: "plain" }).class} panel__logg" data-variant="plain"></ol>
+        <h2 ${attributter(fs.heading({ size: "xs" }), "panel__tittel")}>Hva som ble oppdatert</h2>
+        <ol ${attributter(fs.list({ variant: "plain" }), "panel__logg")}></ol>
       </div>
       <div class="panel__del panel__del--hvordan">
-        <h2 class="${fs.heading({ size: "xs" }).class} panel__tittel" data-size="xs">Hvordan</h2>
-        <p class="${fs.paragraph().class} panel__teknikk"></p>
-        <p class="${fs.paragraph({ size: "small" }).class} panel__forklaring" data-size="small"></p>
+        <h2 ${attributter(fs.heading({ size: "xs" }), "panel__tittel")}>Hvordan</h2>
+        <p ${attributter(fs.paragraph(), "panel__teknikk")}></p>
+        <p ${attributter(fs.paragraph({ size: "small" }), "panel__forklaring")}></p>
       </div>
     </section>`
   if (!vert.isConnected) document.body.append(vert)
@@ -550,18 +587,33 @@ function tegn() {
   lapp.hidden = true
   nyttelast.textContent = ledningen()
     ? "Ingenting har kommet over ledningen ennå."
-    : "Avlyttingen er ikke lastet. «/panel-avlytt.js» skal stå først i <head>."
+    : "Avlyttingen er ikke lastet. «/panel-avlytt.js» skal stå som et vanlig skript i <head>."
 }
 
 /**
  * Starter panelet.
  *
  * `teknikk` er én setning om hvordan denne utgaven oppdaterer seg, og
- * `forklaring` er linja under, som sier hva det betyr i praksis. Alt annet
+ * `forklaring` er linja under, som sier hva det betyr i praksis. `fs` er
+ * Fristils byggefunksjoner, hentet slik appen ellers henter dem. Alt annet
  * finner panelet ut selv.
  */
-export function startPanel({ teknikk, forklaring, utgave }) {
+export function startPanel({ teknikk, forklaring, utgave, fs: byggere }) {
   if (vertselement) return
+
+  /*
+   * Panelet bygges ikke uten byggefunksjonene. Alternativet var markup uten en
+   * eneste klasse, og det ser ut som CSS som ikke virker framfor som en
+   * parameter som mangler.
+   */
+  if (!byggere) {
+    console.warn(
+      "Panelet ble ikke bygget: `fs` mangler i kallet til startPanel(). " +
+        "Appen skal sende byggefunksjonene: startPanel({ …, fs }).",
+    )
+    return
+  }
+  fs = byggere
 
   tilstand.teknikk = teknikk
   tilstand.forklaring = forklaring
@@ -575,7 +627,7 @@ export function startPanel({ teknikk, forklaring, utgave }) {
   if (!ledningen()) {
     console.warn(
       "Panelet: /panel-avlytt.js er ikke lastet, så «Med hva» kan ikke vise noe. " +
-        "Skriptet skal stå først i <head>.",
+        "Skriptet skal stå som et vanlig skript i <head>, ikke som en modul.",
     )
   }
 

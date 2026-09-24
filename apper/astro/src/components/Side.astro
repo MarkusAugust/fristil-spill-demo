@@ -60,9 +60,10 @@ const tema = valgt === "light" || valgt === "dark" ? valgt : null
     <link rel="stylesheet" href="/tema.css" />
     <link rel="stylesheet" href="/brett.css" />
 
-    <!-- Avlyttingen panelet leser fra. Den skal stå her og ikke nederst: et
-         vanlig skript kjører mens dokumentet parses, mens øya under, som
-         åpner hendelsesstrømmen, er et modulskript som kjører etterpå. -->
+    <!-- Avlyttingen panelet leser fra. Den skal stå i <head> og ikke nederst:
+         et vanlig skript kjører mens dokumentet parses, mens øya under, som
+         åpner hendelsesstrømmen, er et modulskript som kjører etterpå. Det er
+         at den ikke er en modul som avgjør, ikke hvor i <head> den står. -->
     <script is:inline src="/panel-avlytt.js"></script>
 
   </head>
@@ -71,18 +72,29 @@ const tema = valgt === "light" || valgt === "dark" ? valgt : null
 
     <!-- Panelet som viser hva som ble oppdatert. Felles fil, egen teknikk.
 
-         `is:inline` fordi `/panel.js` er en rute og ikke en fil på disken.
-         Uten den prøver Vite å løse importen under bygget, og bygget stopper
-         med «Could not resolve '/panel.js'». -->
-    <script is:inline type="module">
-      import { startPanel } from "/panel.js"
+         Skriptet buntes, slik at `fs` kan hentes fra pakken appen allerede
+         har. Panelet importerer ikke byggefunksjonene selv: det er delt med
+         Datastar-utgaven, som henter alt fra CDN, og da måtte adressen vært
+         en URL. Denne appen ville i så fall fått et tredjepartskall i drift
+         for et feilsøkingspanel.
 
-      startPanel({
-        teknikk: "Serveren sendte hele siden på nytt.",
-        forklaring:
-          "Et vedtak er en vanlig innsending, og svaret er en ny side. Bare tavla oppdaterer seg uten det, fra en hendelsesstrøm som bytter ut tabellkroppen.",
-        utgave: "astro",
-      })
+         `/panel.js` er derimot en rute på serveren og ingen fil på disken.
+         Vite leser et bokstavelig `import` og prøver å slå den opp under
+         bygget, så adressen står i en variabel, med `@vite-ignore` i tillegg. -->
+    <script>
+      import { fs } from "@fristil/designsystem"
+
+      const PANELMODUL = "/panel.js"
+
+      import(/* @vite-ignore */ PANELMODUL).then(({ startPanel }) =>
+        startPanel({
+          teknikk: "Serveren sendte hele siden på nytt.",
+          forklaring:
+            "Et vedtak er en vanlig innsending, og svaret er en ny side. Bare tavla oppdaterer seg uten det, fra en hendelsesstrøm som bytter ut tabellkroppen.",
+          utgave: "astro",
+          fs,
+        }),
+      )
     </script>
   </body>
 </html>

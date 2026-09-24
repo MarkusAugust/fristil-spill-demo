@@ -6,6 +6,7 @@ import {
   defineFsPopover,
   defineFsSuggestion,
   defineFsTabs,
+  fs,
 } from "@fristil/designsystem"
 import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router"
 import { createServerFn } from "@tanstack/react-start"
@@ -55,11 +56,12 @@ export const Route = createRootRoute({
     /*
      * Avlyttingen panelet leser fra.
      *
-     * `scripts` i `head()` rendres av `<Scripts />`, som står i `<body>`, og
-     * ikke i hodet. Det virker likevel, og det er verdt å vite hvorfor: et
-     * vanlig skript uten `defer` er parserblokkerende uansett hvor det står,
-     * så det kjører før hvert modulskript. Gjør noen det om til en modul,
-     * ryker rekkefølgen stille.
+     * `scripts` i `head()` rendres av `<HeadContent />`, og havner sist i
+     * `<head>`, rett før `</head>`. Det er en annen plass enn i de to andre
+     * appene, som har den etter stilarkene, og alle tre virker: et vanlig
+     * skript uten `defer` er parserblokkerende uansett hvor i hodet det står,
+     * så det kjører før hvert modulskript. Det er altså at taggen ikke er en
+     * modul som avgjør. Gjør noen den om til en, ryker rekkefølgen stille.
      *
      * Her er den ikke strengt nødvendig uansett: React åpner strømmen fra en
      * effekt, altså etter hydreringen. I de to andre appene var den det, og
@@ -124,7 +126,10 @@ function Skall() {
    */
   useEffect(() => {
     import(/* @vite-ignore */ PANELMODUL).then(({ startPanel }) =>
-      (startPanel as (tekst: typeof PANELTEKST) => void)(PANELTEKST),
+      (startPanel as (valg: typeof PANELTEKST & { fs: typeof fs }) => void)({
+        ...PANELTEKST,
+        fs,
+      }),
     )
   }, [])
 

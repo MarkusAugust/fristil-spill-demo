@@ -417,7 +417,7 @@ function Vedtakskort({
 
       {/* Serveren skriver hele boksen, også overskriften og lista.
           Komponenten flytter bare fokus hit og tar klikkene på lenkene. */}
-      <fs-error-summary {...boks.container}>
+      <fs-error-summary {...boks.host}>
         {feil.length > 0 && (
           <>
             <h3 {...boks.title}>Du må rette {feil.length} feil</h3>
