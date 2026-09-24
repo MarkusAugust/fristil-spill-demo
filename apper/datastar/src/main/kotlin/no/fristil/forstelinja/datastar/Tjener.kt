@@ -143,18 +143,26 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
       // skrive det inn i siden framfor å la et skript rette den etterpå.
       val tema = call.request.cookies["forstelinja-tema"]
       /*
-       * Nettleseren sier selv at dette er en ramme.
+       * Nettleseren sier selv at dette er en ramme. Hvorfor hilsenen da
+       * utelates, står i README under «Velkomsthilsenen, og valget mellom de
+       * tre».
        *
-       * `Sec-Fetch-Dest: iframe` sendes av Chromium, Firefox og WebKit, og
-       * er testet mot alle tre. Da trenger skallet ingen egen adresse, og
-       * hver ramme er fortsatt nøyaktig den siden du kan åpne alene. Mangler
-       * overskriften, får du hilsenen, altså det som var før.
+       * Overskriften sendes bare til en adresse nettleseren regner som
+       * sikker: https, `localhost`, `127.0.0.1` og `::1`. Drift er https og
+       * `./kjor.sh` er localhost, så begge de vanlige veiene virker. Åpner
+       * noen skallet over vanlig http mot en maskin på nettet, altså
+       * `http://192.168.x.x:8084`, kommer hilsenen tilbake i rammene.
+       * Testet i alle tre motorene. Det er en dårligere visning, ikke en
+       * ødelagt side, og reserven er å bruke adressen i drift.
        *
-       * `Vary` fordi svaret nå avhenger av en overskrift. Uten den kan en
-       * mellomtjener gi en rammeutgave til noen som kom rett på adressen.
+       * `Vary` fordi svaret avhenger av en overskrift, og `Cache-Control`
+       * fordi det også avhenger av kapsler: uten den kunne en mellomtjener
+       * gitt én spillers side til en annen, og da er hilsenen det minste
+       * problemet.
        */
       val iRamme = call.request.headers["Sec-Fetch-Dest"] == "iframe"
-      call.response.header(HttpHeaders.Vary, "Sec-Fetch-Dest")
+      call.response.header(HttpHeaders.Vary, "Sec-Fetch-Dest, Cookie")
+      call.response.header(HttpHeaders.CacheControl, "private, no-cache")
       call.respondText(
         side(tilstand, navn, kommuner, tema, spillerId, iRamme),
         ContentType.Text.Html,

@@ -732,13 +732,13 @@ class MarkupTest {
      * trenger ingen egen adresse og rammen er fortsatt siden du kan åpne
      * alene.
      */
-    val iRamme = side(tilstand, null, iRamme = true)
-    assertFalse(iRamme.contains("<fs-dialog id=\"velkomst"), "hilsenen skal være borte i skallet")
+    val html = side(tilstand, null, iRamme = true)
+    assertFalse(html.contains("<fs-dialog id=\"velkomst"), "hilsenen skal være borte i skallet")
 
     // Og alt annet er som før: påmeldingen ligger utenfor dialogen, og
     // utgavevelgeren står i topplinja, så ingenting går tapt.
-    assertTrue(iRamme.contains("Møt på vakt"), "påmeldingen skal stå der")
-    assertTrue(iRamme.contains("utgavevelger"), "utgavevelgeren skal stå i topplinja")
+    assertTrue(html.contains("Møt på vakt"), "påmeldingen skal stå der")
+    assertTrue(html.contains("utgavevelger"), "utgavevelgeren skal stå i topplinja")
 
     // Uten overskriften er det som før.
     assertTrue(

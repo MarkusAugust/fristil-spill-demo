@@ -192,8 +192,8 @@ lander midt i et oppgjør. En test som feiler tilfeldig blir ignorert, og da
 er den verdiløs.
 
 `tester/skall.ts` åpner skallet og krever at ingen av de tre rammene viser
-velkomsthilsenen, og at den samme adressen fortsatt viser den når den åpnes
-alene. Den kjører i alle tre nettlesermotorene, og det er med vilje: signalet
+velkomsthilsenen, og at alle tre fortsatt viser den når de åpnes alene, hver
+i sin egen kontekst. Den kjører i alle tre nettlesermotorene, og det er med vilje: signalet
 er `Sec-Fetch-Dest: iframe`, altså en påstand om nettleserne og ikke om
 appene våre. Slutter en motor å sende overskriften, står det tre dialoger i
 skallet uten at noe annet sier fra.
@@ -358,16 +358,28 @@ side om side. Det er den eneste måten å se påstanden til demoen på én gang.
 Derfor står hilsenen ikke i skallet. Den er en presentasjon av de tre
 utgavene, med en lenke til hver, og i skallet er skallet den presentasjonen:
 alle tre er synlige samtidig, og en modal over hver ramme dekker nettopp det
-den skulle fortalt om. Ingenting går tapt ved å la den være, siden
-påmeldingen ligger utenfor dialogen og utgavevelgeren står i topplinja.
+den skulle fortalt om. Påmeldingen ligger utenfor dialogen og
+utgavevelgeren står i topplinja, så de to tingene hilsenen gir deg finnes
+fortsatt. Vitsen om at «du skal ikke merke forskjellen» bor derimot bare i
+dialogen, og i skallet er det skallets egen ingress som bærer den.
 
 Signalet er nettleserens eget, `Sec-Fetch-Dest: iframe`, som Chromium,
 Firefox og WebKit alle sender, og ikke en egen adresse fra skallet. Det er
 med vilje: rammene skal ikke være en spesialutgave av appene, og med
 overskriften er adressen til hver ramme fortsatt nøyaktig den siden du kan
-åpne alene. Forskjellen ligger i forespørselen, ikke i adressen. Svaret får
-`Vary: Sec-Fetch-Dest`, slik at en mellomtjener ikke gir en rammeutgave til
-noen som kom rett på adressen.
+åpne alene. Forskjellen ligger i forespørselen, ikke i adressen.
+
+**Overskriften sendes bare til en adresse nettleseren regner som sikker:**
+https, `localhost`, `127.0.0.1` og `::1`. Drift er https og `./kjor.sh` er
+localhost, så begge de vanlige veiene virker. Åpner du skallet over vanlig
+http mot en maskin på nettet, altså `http://192.168.x.x:8084`, kommer
+hilsenen tilbake i rammene. Testet i alle tre motorene. Det er en dårligere
+visning og ikke en ødelagt side, og reserven er å bruke adressen i drift.
+
+Svarene får `Vary: Sec-Fetch-Dest, Cookie` og `Cache-Control: private,
+no-cache`. Siden avhenger både av overskriften og av tre kapsler, og uten
+dette kunne en mellomtjener gitt én spillers side til en annen. Da er
+hilsenen det minste problemet.
 
 ## Datastar-appen
 

@@ -63,15 +63,17 @@ const harSettVelkomst = Astro.cookies.get("forstelinja-velkomst")?.value === "se
 /*
  * Nettleseren sier selv at dette er en ramme.
  *
- * Hilsenen er en presentasjon av de tre utgavene, med en lenke til hver.
- * Står siden i skallet, er skallet den presentasjonen: alle tre er synlige
- * samtidig, og en modal over hver av dem dekker nettopp det den skulle
- * fortalt om. `Sec-Fetch-Dest: iframe` sendes av Chromium, Firefox og
- * WebKit, og er testet mot alle tre, så skallet trenger ingen egen adresse
- * og rammen er fortsatt siden du kan åpne alene.
+ * Hvorfor hilsenen utelates står i README. Overskriften sendes bare til en
+ * adresse nettleseren regner som sikker: https, `localhost`, `127.0.0.1` og
+ * `::1`. Drift er https og `./kjor.sh` er localhost, så begge de vanlige
+ * veiene virker. Over vanlig http mot en maskin på nettet kommer hilsenen
+ * tilbake i rammene.
  */
 const iRamme = Astro.request.headers.get("sec-fetch-dest") === "iframe"
-Astro.response.headers.set("Vary", "Sec-Fetch-Dest")
+// `append` og ikke `set`: Astro setter selv `Vary` for økter, og den skal
+// ikke overskrives.
+Astro.response.headers.append("Vary", "Sec-Fetch-Dest, Cookie")
+Astro.response.headers.set("Cache-Control", "private, no-cache")
 
 let feil: Feil[] = []
 let svar = { vedtak: "", hjemmel: "", kommune: "", felle: "" }
