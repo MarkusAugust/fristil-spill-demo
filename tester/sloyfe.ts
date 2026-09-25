@@ -29,6 +29,10 @@ const SPILLTJENER = process.env.SPILLTJENER_URL ?? "http://127.0.0.1:8080"
  * `127.0.0.1` for to av dem, og det er nettopp det som skiller: kapselen
  * gjelder per vertsnavn, og det er den delte kapselen som gir én spiller i
  * tre utgaver.
+ *
+ * Astro står sist med vilje. Den henter siden på nytt ved hvert fasebytte
+ * og melder utgaven igjen, så sto den først, kunne et fasebytte under de
+ * neste lastingene gjort spilltjenerens svar til «astro» for en annen app.
  */
 const APPER = [
   { navn: "tanstack", adresse: process.env.TANSTACK_URL ?? "http://localhost:8082" },
@@ -171,4 +175,6 @@ if (funn.length > 0) {
   console.error(`Fant ${funn.length} avvik:\n${funn.map((f) => `  - ${f}`).join("\n")}`)
   process.exit(1)
 }
-console.log(`Én utløser ga ${etter} hendelser, og strømmen ble stille igjen.`)
+console.log(
+  `Én utløser ga ${etter} hendelser i vinduet på tre sekunder, og strømmen ble stille igjen.`,
+)
