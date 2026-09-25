@@ -31,9 +31,9 @@ const SPILLTJENER = process.env.SPILLTJENER_URL ?? "http://127.0.0.1:8080"
  * tre utgaver.
  */
 const APPER = [
-  process.env.TANSTACK_URL ?? "http://localhost:8082",
-  process.env.DATASTAR_URL ?? "http://localhost:8081",
-  process.env.ASTRO_URL ?? "http://localhost:8083",
+  { navn: "tanstack", adresse: process.env.TANSTACK_URL ?? "http://localhost:8082" },
+  { navn: "datastar", adresse: process.env.DATASTAR_URL ?? "http://localhost:8081" },
+  { navn: "astro", adresse: process.env.ASTRO_URL ?? "http://localhost:8083" },
 ]
 
 /** Hvor mange hendelser én utløser får lov til å gi før det er en sløyfe. */
@@ -49,6 +49,13 @@ async function bliMed(navn: string): Promise<string> {
     body: JSON.stringify({ navn, stack: "ukjent", erTest: true }),
   })
   return ((await svar.json()) as { spillerId: string }).spillerId
+}
+
+/** Utgaven spilltjeneren mener spilleren sitter i akkurat nå. */
+async function utgave(spillerId: string): Promise<string | undefined> {
+  const svar = await fetch(`${SPILLTJENER}/api/tilstand?spiller=${spillerId}`)
+  const t = (await svar.json()) as { tavle: { erMeg: boolean; stack: string }[] }
+  return t.tavle.find((rad) => rad.erMeg)?.stack
 }
 
 async function gaAv(spillerId: string) {
@@ -105,6 +112,7 @@ await kontekst.addCookies([
 ])
 
 let utloser: string | null = null
+let etter = 0
 try {
   /*
    * Alle tre som samme spiller, og alle tre skal ha brettet framme før
@@ -114,20 +122,26 @@ try {
    * Brettet alene er ikke nok. Alle tre tegner tavla også for en anonym
    * leser, ved siden av påmeldingsskjemaet, og navnet står på tavla for
    * alle. Når ikke kapselen fram, er spilleren ingen, ingen flyttes, og
-   * testen ville gått grønn med selve feilen i koden. Derfor ventes det på
-   * det brukeren ser når hun er spilleren: brettet står der, og
-   * påmeldingsskjemaet gjør det ikke.
+   * testen ville gått grønn med selve feilen i koden. Derfor to sjekker per
+   * lasting: det brukeren ser når hun er spilleren, altså brettet uten
+   * påmeldingsknappen, og det spilltjeneren mener etterpå, at hun sitter i
+   * utgaven som nettopp lastet. Den siste er beviset på at `stack` ble
+   * sendt, og den rokkes ikke av et fasebytte underveis.
    */
-  for (const adresse of APPER) {
+  for (const app of APPER) {
     const side = await kontekst.newPage()
     side.setDefaultTimeout(20_000)
-    await side.goto(adresse, { waitUntil: "domcontentloaded" })
+    await side.goto(app.adresse, { waitUntil: "domcontentloaded" })
     await side
       .locator("#tavle")
       .waitFor()
-      .catch(() => si(`${adresse}: brettet kom aldri fram`))
-    if (await side.getByLabel("Navnet ditt").isVisible()) {
-      si(`${adresse}: siden ber om navn, så kapselen nådde ikke fram`)
+      .catch(() => si(`${app.navn}: brettet kom aldri fram`))
+    if (await side.getByRole("button", { name: "Begynn vakta" }).isVisible()) {
+      si(`${app.navn}: siden ber om påmelding, så kapselen nådde ikke fram`)
+    }
+    const sitterI = await utgave(spiller)
+    if (sitterI !== app.navn) {
+      si(`${app.navn}: etter lastingen mener spilltjeneren at spilleren sitter i «${sitterI}». Sa ikke appen fra om utgaven?`)
     }
   }
 
@@ -135,18 +149,10 @@ try {
   // og det er tillatt: det er én hendelse per lasting, ikke én per hendelse.
   await vent(2000)
 
-  // Og de skal ha sagt fra. Spilleren meldte seg på som «ukjent», så hver
-  // av de tre lastingene flytter henne, og det gir en hendelse hver. Er det
-  // færre, ble `stack` ikke sendt, og resten av testen har ingen sløyfe å
-  // lete etter.
-  if (hendelser < APPER.length) {
-    si(`de tre sidelastingene ga ${hendelser} hendelser, minst ${APPER.length} var ventet. Sa ingen fra om utgaven?`)
-  }
-
   const for_ = hendelser
   utloser = await bliMed("Test utløser")
   await vent(3000)
-  const etter = hendelser - for_
+  etter = hendelser - for_
 
   if (etter > TAK) {
     si(`én påmelding ga ${etter} hendelser fra spilltjeneren på tre sekunder. Det er en sløyfe`)
@@ -165,4 +171,4 @@ if (funn.length > 0) {
   console.error(`Fant ${funn.length} avvik:\n${funn.map((f) => `  - ${f}`).join("\n")}`)
   process.exit(1)
 }
-console.log(`Én utløser ga ${hendelser} hendelser i alt, og strømmen ble stille igjen.`)
+console.log(`Én utløser ga ${etter} hendelser, og strømmen ble stille igjen.`)

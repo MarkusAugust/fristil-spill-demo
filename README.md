@@ -243,6 +243,12 @@ utgaver fødte hver hendelse en ny, og spillet druknet i tusenvis av
 hendelser i sekundet. Den ser på ledningen og ikke på skjermen, fordi
 skjermene så helt normale ut mens det sto på.
 
+Utgaven meldes derfor bare på dokumentlastinger, og den siste vinner. Lokalt,
+der de tre portene deler kapselen, betyr det at tavla sier Astro etter hvert
+rundeskifte uansett hvilken ramme du spiller i: Astro-utgaven henter en ny
+side ved hver runde. I drift har utgavene hvert sitt domene, og da gjelder
+det ikke.
+
 `tester/panel.ts` krever at «Med hva» i panelet viser det utgaven faktisk
 sender: HTML over hendelsesstrømmen i Datastar, JSON i de to andre, med
 hendelsesnavn og størrelse. Den finnes fordi en feil her ikke ser ut som en

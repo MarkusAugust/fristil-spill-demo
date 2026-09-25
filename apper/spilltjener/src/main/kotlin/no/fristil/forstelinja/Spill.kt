@@ -444,7 +444,6 @@ class Spill(
   private fun tavleliste(): List<Spiller> =
     spillere.values.sortedWith(compareByDescending<Spiller> { it.poeng }.thenBy { it.navn })
 
-  /** Tilstanden slik én spiller skal se den. */
   /**
    * Flytter en spiller til utgaven hun sitter i nå.
    *
@@ -464,6 +463,7 @@ class Spill(
     return true
   }
 
+  /** Tilstanden slik én spiller skal se den. */
   suspend fun tilstand(spillerId: String?, stack: Stack? = null): Tilstand {
     val flyttet =
       laas.withLock {
