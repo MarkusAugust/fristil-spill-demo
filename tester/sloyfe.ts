@@ -90,6 +90,13 @@ void lytt().catch((e) => {
   if (!stopp.signal.aborted) si(`mistet strømmen fra spilltjeneren: ${(e as Error).message}`)
 })
 
+// Tellingen begynner når strømmen står: tilkoblingen selv gir et par
+// hendelser, og de skal ikke telle som at noen sa fra om utgaven.
+for (let i = 0; i < 50 && hendelser === 0; i++) await vent(100)
+if (hendelser === 0) si("strømmen fra spilltjeneren kom aldri i gang")
+await vent(500)
+hendelser = 0
+
 const nettleser = await chromium.launch()
 const kontekst = await nettleser.newContext()
 await kontekst.addCookies([
@@ -99,8 +106,18 @@ await kontekst.addCookies([
 
 let utloser: string | null = null
 try {
-  // Alle tre som samme spiller, og alle tre skal ha brettet framme før
-  // utløseren kommer: da holder hver app en strøm og henter for hver hendelse.
+  /*
+   * Alle tre som samme spiller, og alle tre skal ha brettet framme før
+   * utløseren kommer: da holder hver app en strøm og henter for hver
+   * hendelse.
+   *
+   * Brettet alene er ikke nok. Alle tre tegner tavla også for en anonym
+   * leser, ved siden av påmeldingsskjemaet, og navnet står på tavla for
+   * alle. Når ikke kapselen fram, er spilleren ingen, ingen flyttes, og
+   * testen ville gått grønn med selve feilen i koden. Derfor ventes det på
+   * det brukeren ser når hun er spilleren: brettet står der, og
+   * påmeldingsskjemaet gjør det ikke.
+   */
   for (const adresse of APPER) {
     const side = await kontekst.newPage()
     side.setDefaultTimeout(20_000)
@@ -109,11 +126,22 @@ try {
       .locator("#tavle")
       .waitFor()
       .catch(() => si(`${adresse}: brettet kom aldri fram`))
+    if (await side.getByLabel("Navnet ditt").isVisible()) {
+      si(`${adresse}: siden ber om navn, så kapselen nådde ikke fram`)
+    }
   }
 
   // La sidelastingene få gjort seg ferdig. Hver av dem sier fra om utgaven,
   // og det er tillatt: det er én hendelse per lasting, ikke én per hendelse.
   await vent(2000)
+
+  // Og de skal ha sagt fra. Spilleren meldte seg på som «ukjent», så hver
+  // av de tre lastingene flytter henne, og det gir en hendelse hver. Er det
+  // færre, ble `stack` ikke sendt, og resten av testen har ingen sløyfe å
+  // lete etter.
+  if (hendelser < APPER.length) {
+    si(`de tre sidelastingene ga ${hendelser} hendelser, minst ${APPER.length} var ventet. Sa ingen fra om utgaven?`)
+  }
 
   const for_ = hendelser
   utloser = await bliMed("Test utløser")

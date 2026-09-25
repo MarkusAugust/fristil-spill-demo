@@ -453,9 +453,10 @@ class Spill(
    * lokalt, sto du fortsatt oppført med den gamle appen, både på tavla og i
    * den evige topplista, som lagrer `spiller.stack` ved omgangsslutt.
    *
-   * Hver app sier fra når den henter tilstanden, som den gjør for hver
-   * spiller uansett. Da trengs det ikke et kall til, og det dekker begge
-   * måtene å bytte på.
+   * Hver app sier fra når den tegner et dokument for spilleren, og bare da.
+   * Hentingen strømmen utløser sier ikke fra: flyttingen sender en hendelse,
+   * hendelsen utløser en henting i hver app, og med samme spiller i to
+   * utgaver var det en sløyfe uten ende. Se `tilstand` i hver app.
    */
   private fun flyttTilUtgave(spiller: Spiller, stack: Stack?): Boolean {
     if (stack == null || stack == Stack.UKJENT || spiller.stack == stack) return false

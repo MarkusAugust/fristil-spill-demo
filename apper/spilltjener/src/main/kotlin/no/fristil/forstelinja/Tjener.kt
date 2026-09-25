@@ -100,7 +100,8 @@ fun Application.spillModul(spill: Spill, varme: Varme = Varme()) {
 
     get("/api/tilstand") {
       // `stack` sier hvilken utgave spilleren sitter i nå. Appene sender den
-      // med, så tavla og topplista følger med når noen bytter underveis.
+      // med på dokumentlastinger, aldri fra hentingen strømmen utløser, så
+      // tavla og topplista følger med når noen bytter underveis.
       val stack =
         call.request.queryParameters["stack"]?.let { navn ->
           runCatching { Stack.valueOf(navn.uppercase()) }.getOrNull()
