@@ -1,6 +1,7 @@
 package no.fristil.forstelinja
 
 import java.util.UUID
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -196,8 +197,23 @@ class Spill(
 ) {
   private val laas = Mutex()
 
-  /** Slår ut hver gang noe endrer seg, slik at SSE kan sende på nytt. */
-  val endringer = MutableSharedFlow<Unit>(replay = 1, extraBufferCapacity = 16)
+  /**
+   * Slår ut hver gang noe endrer seg, slik at SSE kan sende på nytt.
+   *
+   * Hendelsen bærer ingen data: den som lytter henter tilstanden selv
+   * etterpå. Derfor kan to hendelser trygt slås sammen til én, og derfor
+   * `DROP_OLDEST`. Med standarden `SUSPEND` blokkerte `emit()` når en app
+   * ikke leste fort nok, og siden `tikk()` sender herfra, sto løkka som
+   * flytter spillet mellom fasene stille sammen med den. Spillet skal aldri
+   * vente på en lytter.
+   */
+  val endringer =
+    MutableSharedFlow<Unit>(replay = 1, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+
+  /** Sier fra om en endring, uten å kunne vente på noen. */
+  private fun meld() {
+    endringer.tryEmit(Unit)
+  }
 
   private val spillere = LinkedHashMap<String, Spiller>()
 
@@ -228,7 +244,7 @@ class Spill(
     val ren = navn.trim().take(24).ifBlank { "Anonym" }
     val spiller = Spiller(id = UUID.randomUUID().toString(), navn = ren, stack = stack, erTest = erTest)
     laas.withLock { spillere[spiller.id] = spiller }
-    endringer.emit(Unit)
+    meld()
     return spiller
   }
 
@@ -243,7 +259,7 @@ class Spill(
    */
   suspend fun gaAv(spillerId: String): Boolean {
     val fantes = laas.withLock { spillere.remove(spillerId) != null }
-    if (fantes) endringer.emit(Unit)
+    if (fantes) meld()
     return fantes
   }
 
@@ -263,7 +279,7 @@ class Spill(
         spiller.svar = svar
         true
       }
-    if (godtatt) endringer.emit(Unit)
+    if (godtatt) meld()
     return godtatt
   }
 
@@ -298,7 +314,7 @@ class Spill(
         }
         true
       }
-    if (endret) endringer.emit(Unit)
+    if (endret) meld()
   }
 
   /**
@@ -326,7 +342,7 @@ class Spill(
         faseSlutt = pust
         true
       }
-    if (endret) endringer.emit(Unit)
+    if (endret) meld()
   }
 
   /**
@@ -453,7 +469,7 @@ class Spill(
         val spiller = spillerId?.let { spillere[it] }
         spiller != null && flyttTilUtgave(spiller, stack)
       }
-    if (flyttet) endringer.emit(Unit)
+    if (flyttet) meld()
     return tilstandNa(spillerId)
   }
 

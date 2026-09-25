@@ -8,6 +8,7 @@
     "panel": "bun run panel.ts",
     "paritet": "bun run paritet.ts",
     "skall": "bun run skall.ts",
+    "sloyfe": "bun run sloyfe.ts",
     "tema": "bunx @fristil/designsystem@0.14.0 tema ../felles/fristil.tema.json --ut=../felles/tema.css",
     "vakthund": "bun run vakthund.ts"
   },
