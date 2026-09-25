@@ -51,7 +51,9 @@ const hentSkjermbilde = createServerFn({ method: "GET" }).handler(
   > => {
     const spillerId = getCookie(KAPSEL) ?? null
     return {
-      tilstand: await tilstand(spillerId),
+      // En dokumentlasting: her sier appen fra hvilken utgave spilleren
+      // sitter i. Strømmen gjør det ikke, se `tilstand` i spilltjener.ts.
+      tilstand: await tilstand(spillerId, true),
       kommuner: KOMMUNER,
       feil: [],
       // Id-en følger med ned, fordi lenkene til de to andre utgavene bærer

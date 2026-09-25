@@ -10,12 +10,25 @@ import type { Tilstand } from "./tilstand"
  */
 const ADRESSE = process.env.SPILLTJENER ?? "http://127.0.0.1:8080"
 
-export async function tilstand(spillerId: string | null): Promise<Tilstand> {
+/**
+ * Henter tilstanden slik én spiller skal se den.
+ *
+ * `meldUtgave` sier fra til spilltjeneren at spilleren sitter i denne
+ * utgaven nå, så tavla og den evige topplista følger med når noen bytter.
+ * Det skal bare skje på en dokumentlasting, aldri fra hentingen strømmen
+ * utløser. Spilltjeneren sender en hendelse for hver flytting, og sa alle
+ * hentingene fra, ble det en sløyfe: står den samme spilleren i to utgaver
+ * samtidig, som i skallet, flyttet hver hendelse henne fram og tilbake, og
+ * hver flytting fødte en hendelse til. Spilltjeneren druknet i tusenvis av
+ * hendelser i sekundet, og spillet sto stille.
+ */
+export async function tilstand(
+  spillerId: string | null,
+  meldUtgave = false,
+): Promise<Tilstand> {
   const url = new URL(`${ADRESSE}/api/tilstand`)
   if (spillerId) url.searchParams.set("spiller", spillerId)
-  // Hvilken utgave spilleren sitter i nå. Uten denne sto stacken på tavla og
-  // i den evige topplista stille når noen byttet utgave underveis.
-  url.searchParams.set("stack", "tanstack")
+  if (meldUtgave) url.searchParams.set("stack", "tanstack")
   const svar = await fetch(url)
   if (!svar.ok) throw new Error(`Spilltjeneren svarte ${svar.status}`)
   return (await svar.json()) as Tilstand

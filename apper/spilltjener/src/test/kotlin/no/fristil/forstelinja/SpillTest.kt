@@ -8,7 +8,12 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.yield
 
 /**
  * Reglene i Førstelinja.
@@ -531,5 +536,26 @@ class SpillTest {
 
     assertTrue(spill.gaAv(kari.id))
     assertFalse(spill.gaAv(kari.id), "en ukjent id skal ikke se ut som en avmelding")
+  }
+
+  @Test
+  fun `en lytter som aldri leser holder ikke spillet igjen`() = runTest {
+    val spill = nyttSpill()
+
+    // En app som har åpnet strømmen, men sitter fast og aldri tar imot.
+    // Med `SUSPEND` blokkerte `emit()` i det bufferen var full, og `tikk()`
+    // med den, så spillet sto stille til appen kom til seg selv.
+    val fast = launch { spill.endringer.collect { awaitCancellation() } }
+    // Lytteren må ha rukket å abonnere, ellers går hendelsene til ingen.
+    yield()
+
+    withTimeout(1_000) {
+      repeat(50) { spill.bliMed("Spiller $it", Stack.ASTRO) }
+      klokke.gaa(RUNDE_MS)
+      spill.tikk()
+    }
+
+    assertEquals(Fase.OPPGJOR, spill.fase, "spillet gikk ikke videre")
+    fast.cancel()
   }
 }

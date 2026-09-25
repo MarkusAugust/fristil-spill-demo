@@ -131,7 +131,9 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
       val spillerId = call.request.cookies[KAPSEL]
       val tilstand =
         try {
-          spilltjener.tilstand(spillerId)
+          // En dokumentlasting: her sier appen fra hvilken utgave spilleren
+          // sitter i. Strømmen gjør det ikke, se `tilstand` i Spilltjener.kt.
+          spilltjener.tilstand(spillerId, meldUtgave = true)
         } catch (e: Exception) {
           // Spilltjeneren er nede, eller er ikke kommet opp ennå. En rå
           // stakksporing fra Ktor sier ingenting til den som står og venter.

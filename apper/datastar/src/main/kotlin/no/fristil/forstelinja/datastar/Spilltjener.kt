@@ -11,6 +11,7 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -47,15 +48,33 @@ class Spilltjener(private val adresse: String) {
    * plass», så hver nettleser får sin egen etterpå. Strømmen sier altså
    * *når* noe skjedde, ikke *hva* hver enkelt skal se.
    */
-  val puls = MutableSharedFlow<Unit>(replay = 0, extraBufferCapacity = 8)
+  val puls =
+    MutableSharedFlow<Unit>(
+      replay = 0,
+      extraBufferCapacity = 1,
+      // Pulsen bærer ingen data, så to slag kan slås sammen til ett. Med
+      // standarden `SUSPEND` sto leseren av oppstrømmen fast så snart én
+      // nettleser ikke tok unna, og da sto alle de andre også.
+      onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
 
-  suspend fun tilstand(spillerId: String?): Tilstand =
+  /**
+   * Henter tilstanden slik én spiller skal se den.
+   *
+   * `meldUtgave` sier fra til spilltjeneren at spilleren sitter i denne
+   * utgaven nå, så tavla og den evige topplista følger med når noen bytter.
+   * Det skal bare skje på en dokumentlasting, aldri fra hentingen strømmen
+   * utløser. Spilltjeneren sender en hendelse for hver flytting, og sa alle
+   * hentingene fra, ble det en sløyfe: står den samme spilleren i to utgaver
+   * samtidig, som i skallet, flyttet hver hendelse henne fram og tilbake, og
+   * hver flytting fødte en hendelse til. Spilltjeneren druknet i tusenvis av
+   * hendelser i sekundet, og spillet sto stille.
+   */
+  suspend fun tilstand(spillerId: String?, meldUtgave: Boolean = false): Tilstand =
     klient
       .get("$adresse/api/tilstand") {
         spillerId?.let { parameter("spiller", it) }
-        // Hvilken utgave spilleren sitter i nå. Uten denne sto stacken på
-        // tavla og i den evige topplista stille når noen byttet underveis.
-        parameter("stack", "datastar")
+        if (meldUtgave) parameter("stack", "datastar")
       }
       .body()
 
@@ -162,7 +181,7 @@ class Spilltjener(private val adresse: String) {
           val kanal: ByteReadChannel = svar.bodyAsChannel()
           while (!kanal.isClosedForRead) {
             val linje = kanal.readUTF8Line() ?: break
-            if (linje.startsWith("data:")) puls.emit(Unit)
+            if (linje.startsWith("data:")) puls.tryEmit(Unit)
           }
         }
       } catch (e: CancellationException) {
@@ -180,7 +199,7 @@ class Spilltjener(private val adresse: String) {
       // pulsen prøver hver strøm å hente tilstanden, det kallet feiler, og
       // strømmen ryker slik den skal: Datastar kobler til igjen, og
       // sambandslinja sier fra.
-      puls.emit(Unit)
+      puls.tryEmit(Unit)
       delay(2000)
     }
   }

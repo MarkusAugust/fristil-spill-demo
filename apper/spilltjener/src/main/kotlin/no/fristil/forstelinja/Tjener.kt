@@ -10,7 +10,11 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.sse.*
 import io.ktor.sse.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -41,6 +45,18 @@ data class BliMedInn(
 @Serializable data class GaAvInn(val spillerId: String)
 
 @Serializable data class Kvittering(val ok: Boolean, val grunn: String? = null)
+
+/**
+ * Hvor ofte strømmen sier fra at den lever, når ingenting skjer.
+ *
+ * Bun lukker en forbindelse som har stått uten trafikk i fem minutter, og
+ * driftsloggene til de to Bun-appene viste nettopp det: «The operation timed
+ * out» hvert sjette minutt så lenge ingen spilte. Appene kobler til igjen,
+ * men hvert brudd sender et pulsslag til alle nettleserne for ingenting.
+ * En kommentarlinje er nok til å holde forbindelsen i live, og leserne i
+ * appene ser bare etter `data:`.
+ */
+const val HJERTESLAG_MS = 30_000L
 
 val tjenerJson = Json {
   prettyPrint = false
@@ -84,7 +100,8 @@ fun Application.spillModul(spill: Spill, varme: Varme = Varme()) {
 
     get("/api/tilstand") {
       // `stack` sier hvilken utgave spilleren sitter i nå. Appene sender den
-      // med, så tavla og topplista følger med når noen bytter underveis.
+      // med på dokumentlastinger, aldri fra hentingen strømmen utløser, så
+      // tavla og topplista følger med når noen bytter underveis.
       val stack =
         call.request.queryParameters["stack"]?.let { navn ->
           runCatching { Stack.valueOf(navn.uppercase()) }.getOrNull()
@@ -107,13 +124,25 @@ fun Application.spillModul(spill: Spill, varme: Varme = Varme()) {
       varme.abonner()
       try {
         send(ServerSentEvent(data = tjenerJson.encodeToString(spill.tilstand(spillerId)), event = "tilstand"))
-        spill.endringer.collect {
-          send(
-            ServerSentEvent(
-              data = tjenerJson.encodeToString(spill.tilstand(spillerId)),
-              event = "tilstand",
+        // Ett sted som skriver til strømmen, ikke to koroutiner om kapp:
+        // endringene og hjerteslaget flettes til én flyt før de sendes.
+        val hjerteslag = flow {
+          while (true) {
+            delay(HJERTESLAG_MS)
+            emit(false)
+          }
+        }
+        merge(spill.endringer.map { true }, hjerteslag).collect { erEndring ->
+          if (erEndring) {
+            send(
+              ServerSentEvent(
+                data = tjenerJson.encodeToString(spill.tilstand(spillerId)),
+                event = "tilstand",
+              )
             )
-          )
+          } else {
+            send(ServerSentEvent(comments = "hjerteslag"))
+          }
         }
       } finally {
         varme.avmeld()

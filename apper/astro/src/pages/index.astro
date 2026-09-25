@@ -135,7 +135,9 @@ if (Astro.request.method === "POST") {
 
 let tilstand: Awaited<ReturnType<typeof hentTilstand>> | null = null
 try {
-  tilstand = await hentTilstand(spillerId)
+  // En dokumentlasting: her sier appen fra hvilken utgave spilleren sitter
+  // i. Strømmen gjør det ikke, se `tilstand` i lib/spilltjener.ts.
+  tilstand = await hentTilstand(spillerId, true)
 } catch {
   // Spilltjeneren er nede, eller er ikke kommet opp ennå. En rå
   // stakksporing sier ingenting til den som står og venter, og 503 er det
