@@ -14,7 +14,8 @@ import kotlin.test.assertEquals
  */
 class TopplisteTest {
   private val fil = File.createTempFile("toppliste", ".db").apply { delete() }
-  private val toppliste = Toppliste(fil.absolutePath)
+  private val klokke = FalskKlokke(1_000_000)
+  private val toppliste = Toppliste(fil.absolutePath, klokke)
 
   @AfterTest
   fun rydd() {
@@ -63,5 +64,17 @@ class TopplisteTest {
     toppliste.lagre("Ola", 55, Stack.DATASTAR)
 
     assertEquals(listOf("Ola", "Kari"), toppliste.topp(10).map { it.navn })
+  }
+
+  @Test
+  fun `tidsstempelet kommer fra klokka, og den som kom først vinner ved likt`() {
+    toppliste.lagre("Kari", 55, Stack.ASTRO)
+    klokke.gaa(60_000)
+    toppliste.lagre("Ola", 55, Stack.DATASTAR)
+
+    val topp = toppliste.topp(10)
+
+    assertEquals(listOf("Kari", "Ola"), topp.map { it.navn }, "likt resultat skal stå i den rekkefølgen det kom")
+    assertEquals(listOf(1_000_000L, 1_060_000L), topp.map { it.nar }, "raden fikk ikke tida fra klokka")
   }
 }

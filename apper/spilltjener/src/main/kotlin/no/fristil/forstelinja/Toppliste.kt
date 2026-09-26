@@ -8,9 +8,9 @@ import java.sql.DriverManager
  *
  * SQLite framfor en database å drifte: det er én fil, og det er nok for en
  * liste med ti navn. På Railway må fila ligge på et volum, ellers forsvinner
- * den ved hver utrulling.
+ * den ved hver utrulling. Stien kommer fra `Main.kt`, som leser `TOPPLISTE_FIL`.
  */
-class Toppliste(sti: String = System.getenv("TOPPLISTE_FIL") ?: "toppliste.db") {
+class Toppliste(sti: String, private val klokke: Klokke = Klokke.system) {
   private val forbindelse: Connection = DriverManager.getConnection("jdbc:sqlite:$sti")
 
   init {
@@ -56,7 +56,7 @@ class Toppliste(sti: String = System.getenv("TOPPLISTE_FIL") ?: "toppliste.db") 
         it.setString(1, ryddet(navn))
         it.setInt(2, poeng)
         it.setString(3, stack.name)
-        it.setLong(4, System.currentTimeMillis())
+        it.setLong(4, klokke.na())
         it.executeUpdate()
       }
   }

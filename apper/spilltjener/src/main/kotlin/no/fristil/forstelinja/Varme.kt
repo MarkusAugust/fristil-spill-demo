@@ -26,26 +26,27 @@ import kotlinx.coroutines.withContext
  *
  * Standarden er null, altså av. Den hører hjemme i drift og ingen andre
  * steder, og på en utviklermaskin skal ingenting slå opp navn i bakgrunnen
- * hvert annet minutt. På Railway settes `VARM_TIMER=3`.
+ * hvert annet minutt. På Railway settes `VARM_TIMER=3`, og det er `Main.kt`
+ * som leser den og sender timene hit.
  */
-class Varme(private val timer: Double = System.getenv("VARM_TIMER")?.toDoubleOrNull() ?: 0.0) {
+class Varme(private val timer: Double = 0.0, private val klokke: Klokke = Klokke.system) {
   private val seere = AtomicInteger(0)
-  private val sistSett = AtomicLong(System.currentTimeMillis())
+  private val sistSett = AtomicLong(klokke.na())
 
   fun abonner() {
     seere.incrementAndGet()
-    sistSett.set(System.currentTimeMillis())
+    sistSett.set(klokke.na())
   }
 
   fun avmeld() {
     seere.decrementAndGet()
-    sistSett.set(System.currentTimeMillis())
+    sistSett.set(klokke.na())
   }
 
   /** Sant så lenge noen ser på, eller den varme halen ikke er over. */
-  fun erVarm(na: Long = System.currentTimeMillis()): Boolean {
+  fun erVarm(): Boolean {
     if (seere.get() > 0) return true
-    return na - sistSett.get() < (timer * 60 * 60 * 1000).toLong()
+    return klokke.na() - sistSett.get() < (timer * 60 * 60 * 1000).toLong()
   }
 
   /**

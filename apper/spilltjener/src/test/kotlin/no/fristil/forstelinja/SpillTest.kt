@@ -23,14 +23,6 @@ import kotlinx.coroutines.yield
  * maskinen er travel.
  */
 class SpillTest {
-  private class FalskKlokke(var tid: Long = 0) : Klokke {
-    override fun na() = tid
-
-    fun gaa(ms: Long) {
-      tid += ms
-    }
-  }
-
   private lateinit var klokke: FalskKlokke
   private lateinit var toppliste: Toppliste
   private lateinit var fil: java.io.File
@@ -66,7 +58,7 @@ class SpillTest {
   fun foer() {
     klokke = FalskKlokke(1_000_000)
     fil = java.io.File.createTempFile("toppliste", ".db")
-    toppliste = Toppliste(fil.absolutePath)
+    toppliste = Toppliste(fil.absolutePath, klokke)
   }
 
   @AfterTest
