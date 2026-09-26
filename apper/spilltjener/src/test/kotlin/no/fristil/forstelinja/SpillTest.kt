@@ -58,7 +58,7 @@ class SpillTest {
   fun foer() {
     klokke = FalskKlokke(1_000_000)
     fil = java.io.File.createTempFile("toppliste", ".db")
-    toppliste = Toppliste(fil.absolutePath)
+    toppliste = Toppliste(fil.absolutePath, klokke)
   }
 
   @AfterTest

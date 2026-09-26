@@ -63,7 +63,7 @@ val tjenerJson = Json {
   encodeDefaults = true
 }
 
-fun Application.spillModul(spill: Spill, varme: Varme = Varme()) {
+fun Application.spillModul(spill: Spill, varme: Varme) {
   install(ContentNegotiation) { json(tjenerJson) }
   install(SSE)
   install(CORS) {

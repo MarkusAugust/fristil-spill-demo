@@ -9,7 +9,7 @@ import kotlin.test.assertTrue
  * så lenge den er satt til.
  *
  * Klokka er falsk, den samme som spillet testes med. Varmen leser tida på
- * tre steder, og en test som regner ut framtida fra systemklokka selv kan
+ * fire steder, og en test som regner ut framtida fra systemklokka selv kan
  * ikke se om ett av dem leser feil klokke.
  */
 class VarmeTest {
