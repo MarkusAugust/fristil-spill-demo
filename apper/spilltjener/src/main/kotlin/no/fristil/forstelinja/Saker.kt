@@ -74,11 +74,11 @@ private val json = Json { ignoreUnknownKeys = true }
 /**
  * Leser samlingen fra disk.
  *
- * Stien kan settes med `SAKER_FIL`. Standarden peker opp i repoet, siden
- * fila er delt. Blir tjenesten bygd med bare sin egen mappe, må variabelen
- * settes, ellers finnes ikke fila.
+ * Stien kommer fra `Main.kt`, som leser `SAKER_FIL`. Standarden der peker
+ * opp i repoet, siden fila er delt. Blir tjenesten bygd med bare sin egen
+ * mappe, må variabelen settes, ellers finnes ikke fila.
  */
-fun lesSaker(sti: String = System.getenv("SAKER_FIL") ?: "../../felles/saker.json"): Sakssamling {
+fun lesSaker(sti: String): Sakssamling {
   val fil = File(sti)
   require(fil.exists()) { "Fant ingen saker på «$sti». Sett SAKER_FIL." }
   return json.decodeFromString(fil.readText())
@@ -94,9 +94,7 @@ fun lesSaker(sti: String = System.getenv("SAKER_FIL") ?: "../../felles/saker.jso
 @Serializable
 data class Kommunesamling(@SerialName("_om") val om: String = "", val kommuner: List<String>)
 
-fun lesKommuner(
-  sti: String = System.getenv("KOMMUNER_FIL") ?: "../../felles/kommuner.json"
-): List<String> {
+fun lesKommuner(sti: String): List<String> {
   val fil = File(sti)
   require(fil.exists()) { "Fant ingen kommuner på «$sti». Sett KOMMUNER_FIL." }
   return json.decodeFromString<Kommunesamling>(fil.readText()).kommuner

@@ -23,14 +23,6 @@ import kotlinx.coroutines.yield
  * maskinen er travel.
  */
 class SpillTest {
-  private class FalskKlokke(var tid: Long = 0) : Klokke {
-    override fun na() = tid
-
-    fun gaa(ms: Long) {
-      tid += ms
-    }
-  }
-
   private lateinit var klokke: FalskKlokke
   private lateinit var toppliste: Toppliste
   private lateinit var fil: java.io.File

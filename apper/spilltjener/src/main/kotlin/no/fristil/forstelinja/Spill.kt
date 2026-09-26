@@ -77,22 +77,13 @@ const val RUNDER_UTEN_SVAR_FOR_BORTE = 3
  * saksbehandlingen som er poenget. Oppgjøret er langt nok til å lese fasiten
  * og begrunnelsen, ikke bare til å se poengsummen. Fire runder gir en omgang
  * på rundt ti minutter. Skal spillet vises fram i full fart, settes
- * `RUNDE_MS` ned.
+ * `RUNDE_MS` ned. Miljøet leses i `Main.kt`, ikke her.
  */
 data class Tider(
   val runde: Long = RUNDE_MS,
   val oppgjor: Long = OPPGJOR_MS,
   val slutt: Long = SLUTT_MS,
-) {
-  companion object {
-    fun fraMiljo() =
-      Tider(
-        runde = System.getenv("RUNDE_MS")?.toLongOrNull() ?: RUNDE_MS,
-        oppgjor = System.getenv("OPPGJOR_MS")?.toLongOrNull() ?: OPPGJOR_MS,
-        slutt = System.getenv("SLUTT_MS")?.toLongOrNull() ?: SLUTT_MS,
-      )
-  }
-}
+)
 
 /** Full pott per runde: vedtaket, hjemmelen og fella. */
 const val POENG_VEDTAK = 10
@@ -177,15 +168,10 @@ data class Spiller(
   val erTest: Boolean = false,
 )
 
-/** Klokka, slik at testene slipper å vente i ekte sekunder. */
-fun interface Klokke {
-  fun na(): Long
-}
-
 class Spill(
   private val samling: Sakssamling,
   private val toppliste: Toppliste,
-  private val klokke: Klokke = Klokke { System.currentTimeMillis() },
+  private val klokke: Klokke = Klokke.system,
   private val tider: Tider = Tider(),
   /**
    * Kommuneregisteret, som fasiten for kommunefeltet regnes ut av.
