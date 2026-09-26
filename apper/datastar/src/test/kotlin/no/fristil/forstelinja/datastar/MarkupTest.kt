@@ -1,5 +1,7 @@
 package no.fristil.forstelinja.datastar
 
+import io.github.markusaugust.streamlord.core.domain.PatchElements
+import io.github.markusaugust.streamlord.core.protocol.SseEncoder
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -232,13 +234,23 @@ class MarkupTest {
   }
 
   @Test
-  fun `flere biter i ett event står på hver sin linje`() {
+  fun `flere biter i ett event får hver sin elements-linje på ledningen`() {
     // Formatet på ledningen eier Streamlord, og det testes der mot Datastars
-    // egne gylne filer. Her sjekkes bare det appen selv gjør: at hver bit blir
-    // sin egen linje, så hver får sin egen `data: elements`-linje.
+    // egne gylne filer. Det appen hviler på, er at bitene den legger i ett
+    // event kommer ut som hver sin `data: elements`-linje, så Datastar finner
+    // hver av dem på id. Derfor sjekkes ledningen gjennom biblioteket, og
+    // ikke bare at `biter` setter et linjeskift mellom dem.
+    val ut = SseEncoder.encode(PatchElements(biter("<div id=\"a\">en</div>", "<div id=\"b\">to</div>")))
+
     assertEquals(
-      "<div id=\"a\">en</div>\n<div id=\"b\">to</div>",
-      biter("<div id=\"a\">en</div>", "<div id=\"b\">to</div>"),
+      listOf(
+        "event: datastar-patch-elements",
+        """data: elements <div id="a">en</div>""",
+        """data: elements <div id="b">to</div>""",
+        "",
+        "",
+      ),
+      ut.split("\n"),
     )
   }
 

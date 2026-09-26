@@ -1,5 +1,6 @@
 package no.fristil.forstelinja.datastar
 
+import io.github.markusaugust.streamlord.core.StreamlordException
 import io.github.markusaugust.streamlord.core.domain.ElementPatchMode
 import io.github.markusaugust.streamlord.ktor.readSignals
 import io.github.markusaugust.streamlord.ktor.respondDatastar
@@ -186,8 +187,16 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
     post("/svar") {
       val spillerId = call.request.cookies[KAPSEL]
       // Signalene Datastar sender med en `@post`. Streamlord leser dem etter
-      // protokollen: i kroppen her, i `?datastar=` for GET.
-      val signaler = call.readSignals()
+      // protokollen: i kroppen her, i `?datastar=` for GET. Ugyldig JSON, eller
+      // en kropp over grensen, er en feil hos avsenderen og ikke hos oss, så
+      // den svares med 400 og ikke med en stakksporing i loggen.
+      val signaler =
+        try {
+          call.readSignals()
+        } catch (e: StreamlordException) {
+          call.respondText(e.message ?: "Ugyldige signaler", status = HttpStatusCode.BadRequest)
+          return@post
+        }
 
       val vedtak = signaler.string("vedtak")?.ifBlank { null }
       val hjemmel = signaler.string("hjemmel")?.ifBlank { null }
