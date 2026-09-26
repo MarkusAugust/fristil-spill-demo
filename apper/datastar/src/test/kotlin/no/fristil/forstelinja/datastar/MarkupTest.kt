@@ -232,18 +232,13 @@ class MarkupTest {
   }
 
   @Test
-  fun `patchen har Datastars format`() {
-    val ut = patch("<div id=\"a\">en</div>\n<div id=\"b\">to</div>")
-
+  fun `flere biter i ett event står på hver sin linje`() {
+    // Formatet på ledningen eier Streamlord, og det testes der mot Datastars
+    // egne gylne filer. Her sjekkes bare det appen selv gjør: at hver bit blir
+    // sin egen linje, så hver får sin egen `data: elements`-linje.
     assertEquals(
-      listOf(
-        "event: datastar-patch-elements",
-        """data: elements <div id="a">en</div>""",
-        """data: elements <div id="b">to</div>""",
-        "",
-        "",
-      ),
-      ut.split("\n"),
+      "<div id=\"a\">en</div>\n<div id=\"b\">to</div>",
+      biter("<div id=\"a\">en</div>", "<div id=\"b\">to</div>"),
     )
   }
 
