@@ -9,7 +9,8 @@ repositories { mavenCentral() }
 dependencies {
   implementation("io.ktor:ktor-server-core:3.6.0")
   implementation("io.ktor:ktor-server-cio:3.6.0")
-  implementation("io.ktor:ktor-server-sse:3.6.0")
+  // Datastar-protokollen: strømmen ned til nettleseren og signalene opp.
+  implementation("io.github.markusaugust.streamlord:streamlord-ktor:0.1.0-rc1")
   implementation("io.ktor:ktor-server-content-negotiation:3.6.0")
   implementation("io.ktor:ktor-serialization-kotlinx-json:3.6.0")
   implementation("io.ktor:ktor-client-core:3.6.0")
