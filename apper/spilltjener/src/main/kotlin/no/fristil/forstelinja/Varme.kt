@@ -44,9 +44,9 @@ class Varme(private val timer: Double = 0.0, private val klokke: Klokke = Klokke
   }
 
   /** Sant så lenge noen ser på, eller den varme halen ikke er over. */
-  fun erVarm(na: Long = klokke.na()): Boolean {
+  fun erVarm(): Boolean {
     if (seere.get() > 0) return true
-    return na - sistSett.get() < (timer * 60 * 60 * 1000).toLong()
+    return klokke.na() - sistSett.get() < (timer * 60 * 60 * 1000).toLong()
   }
 
   /**
