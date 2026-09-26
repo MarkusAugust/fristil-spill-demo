@@ -14,7 +14,7 @@ import kotlinx.serialization.json.Json
  */
 
 @Serializable
-data class Hjemmel(val kode: String, val tekst: String)
+data class Hjemmel(val kode: String, val tekst: String, val forklaring: String)
 
 @Serializable
 data class Soker(

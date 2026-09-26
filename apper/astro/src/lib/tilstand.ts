@@ -14,7 +14,7 @@ export type Soker = {
   epost: string
 }
 
-export type Hjemmel = { kode: string; tekst: string }
+export type Hjemmel = { kode: string; tekst: string; forklaring: string }
 
 export type SakUt = {
   id: string

@@ -1175,3 +1175,20 @@ body:has(.fs-connection-status__bar) .topplinje {
     align-items: stretch;
   }
 }
+
+/* Hjemmelhjelpen
+   ------------------------------------------------------------------ */
+
+/* Forklaringen står under navnet, dempet. Lista har en makshøyde og ruller:
+   med sju hjemler ble panelet høyere enn vinduet, sprettoppvinduet ble
+   skjøvet opp i hjørnet, og de siste hjemlene sto utenfor skjermen. `tabindex`
+   står på lista i markupen, så den som ruller med tastaturet kommer til. */
+.hjemmelhjelp__liste {
+  max-block-size: min(32rem, 70vh);
+  overflow-y: auto;
+}
+
+.hjemmelhjelp__om {
+  display: block;
+  color: var(--semantic-muted-foreground);
+}

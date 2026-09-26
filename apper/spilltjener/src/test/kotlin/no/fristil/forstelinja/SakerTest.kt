@@ -17,7 +17,7 @@ import kotlin.test.assertTrue
  * ellers først vist seg som et spill der ingen kan få full pott.
  */
 class SakerTest {
-  private val enHjemmel = listOf(Hjemmel("§ 4-1", "Alminnelig"))
+  private val enHjemmel = listOf(Hjemmel("§ 4-1", "Alminnelig", "Hovedregelen."))
 
   // `uuuu` og ikke `yyyy`, siden den strenge utgaven krever et årstall uten
   // epoke. `STRICT` er poenget: den milde utgaven gjør 31. februar om til
@@ -55,10 +55,11 @@ class SakerTest {
     )
 
     // Og at det finnes flere hjemler enn svar. «§ 9-1 Støy fra virksomhet i
-    // boligområde» og «§ 33-1 Tvangsmulkt» er ingen saks fasit, men de er
-    // fristende feilsvar i hønesaken og i gapestokken, og det er nettopp det
-    // en hjemmel som ikke er svaret skal være. Uten dem ville lista vært en
-    // fasit i seg selv.
+    // boligområde» er ingen saks fasit, men et fristende feilsvar i hønesaken
+    // og stillekonserten, og det er nettopp det en hjemmel som ikke er svaret
+    // skal være. Uten den ville lista vært en fasit i seg selv. Den er den
+    // eneste av det slaget: åtte hjemler var forvirrende, og «§ 33-1
+    // Tvangsmulkt» fristet ingen.
     //
     // «§ 8-2 Dyrehold i borettslag» sto her lenge, og er nå fasit i
     // kattesaken. En hjemmel som aldri er riktig noe sted blir lært bort som
@@ -80,6 +81,21 @@ class SakerTest {
   fun `to saker med samme id avvises`() {
     assertFailsWith<IllegalArgumentException> {
       Sakssamling(hjemler = enHjemmel, saker = (1..RUNDER_PER_SPILL).map { sak("lik") })
+    }
+  }
+
+  @Test
+  fun `hver hjemmel forklarer når den gjelder`() {
+    val samling = lesSaker("../../felles/saker.json")
+
+    // Knappen heter «Hva betyr hjemlene?», og panelet gjentok lenge bare
+    // koden og navnet fra nedtrekkslista. En forklaring som er tom, eller
+    // som bare sier navnet en gang til, er ikke en forklaring.
+    for (h in samling.hjemler) {
+      assertTrue(
+        h.forklaring.length > h.tekst.length + 20,
+        "${h.kode} forklarer ikke noe: «${h.forklaring}»",
+      )
     }
   }
 

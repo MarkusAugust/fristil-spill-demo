@@ -37,7 +37,7 @@ class MarkupTest {
           tekst = "Jeg søker om noe, og jeg mener det.",
           soker = Soker("Bjørg", "31.02.1974", "Bergen", "b@example.no"),
         ),
-      hjemler = listOf(Hjemmel("§ 4-1", "Alminnelig")),
+      hjemler = listOf(Hjemmel("§ 4-1", "Alminnelig", "Hovedregelen.")),
       tavle =
         listOf(
           TavleRad(

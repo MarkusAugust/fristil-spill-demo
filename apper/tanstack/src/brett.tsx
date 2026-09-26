@@ -3,7 +3,7 @@ import { useEffect, useId, useRef, useState } from "react"
 
 import { APPNAVN, UTGAVER, lenkeTilUtgave, med } from "./fristil"
 import { type Tema, settTema } from "./tema"
-import type { Feil, SakUt, Skjermbilde, TavleRad, Tilstand } from "./tilstand"
+import type { Feil, Hjemmel, SakUt, Skjermbilde, TavleRad, Tilstand } from "./tilstand"
 
 /**
  * Skjermen, i React.
@@ -597,9 +597,10 @@ function Vedtakskort({
  * plasserer det og lukker det. Om vinduet er åpent er brukerens tilstand, og
  * her er det React som holder den.
  */
-function Hjemmelhjelp({ hjemler }: { hjemler: { kode: string; tekst: string }[] }) {
+function Hjemmelhjelp({ hjemler }: { hjemler: Hjemmel[] }) {
   const [apen, settApen] = useState(false)
   const boks = fs.popover({ id: "hjemmelhjelp", open: apen })
+  const { className: listeKlasse, ...liste } = fs.list()
 
   return (
     <fs-popover {...boks.host} className="hjelpelenke" placement="bottom-start">
@@ -612,10 +613,13 @@ function Hjemmelhjelp({ hjemler }: { hjemler: { kode: string; tekst: string }[] 
         Hva betyr hjemlene?
       </button>
       <div {...boks.panel}>
-        <ul {...fs.list()}>
+        <ul {...liste} className={`${listeKlasse} hjemmelhjelp__liste`} tabIndex={0}>
           {hjemler.map((h) => (
             <li key={h.kode}>
-              <strong>{h.kode}</strong> {h.tekst}
+              <strong>
+                {h.kode} {h.tekst}
+              </strong>{" "}
+              <span className="hjemmelhjelp__om">{h.forklaring}</span>
             </li>
           ))}
         </ul>

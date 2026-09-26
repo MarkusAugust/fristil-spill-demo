@@ -3,35 +3,38 @@
   "hjemler": [
     {
       "kode": "§ 4-1",
-      "tekst": "Alminnelig søknadsbehandling"
+      "tekst": "Alminnelig søknadsbehandling",
+      "forklaring": "Hovedregelen. Søknaden er i orden, og du avgjør den på innholdet: innvilg eller avslå. Bruk den når ingen av de andre treffer."
     },
     {
       "kode": "§ 6-4",
-      "tekst": "Inhabilitet"
+      "tekst": "Inhabilitet",
+      "forklaring": "Ingen kan behandle sin egen sak. Kommer søknaden fra en som selv sitter i etaten, eller med vedtaket ferdig utfylt, er det denne."
     },
     {
       "kode": "§ 8-2",
-      "tekst": "Dyrehold i borettslag"
+      "tekst": "Dyrehold i borettslag",
+      "forklaring": "Dyr i borettslag, og bare der. Ett dyr som ikke er til sjenanse for noen skal få bli."
     },
     {
       "kode": "§ 9-1",
-      "tekst": "Støy fra virksomhet i boligområde"
+      "tekst": "Støy fra virksomhet i boligområde",
+      "forklaring": "Næringsvirksomhet som lager støy der folk bor. Gjelder bare lyd fra en virksomhet, ikke fra dyr eller naboer."
     },
     {
       "kode": "§ 12-3",
-      "tekst": "Mangelfulle personopplysninger"
+      "tekst": "Mangelfulle personopplysninger",
+      "forklaring": "Fødselsdatoen eller e-postadressen stemmer ikke, eller kommunen finnes ikke lenger. Da kan saken ikke behandles, uansett hva den gjelder. Se fanen «Søkeren»."
     },
     {
       "kode": "§ 19-7",
-      "tekst": "Klagefrist oversittet"
+      "tekst": "Klagefrist oversittet",
+      "forklaring": "Klagen kom for sent. Fristen er tre uker og løper etter kalenderen. Gjelder bare klager."
     },
     {
       "kode": "§ 21-2",
-      "tekst": "Navn som kan være til ulempe"
-    },
-    {
-      "kode": "§ 33-1",
-      "tekst": "Tvangsmulkt"
+      "tekst": "Navn som kan være til ulempe",
+      "forklaring": "Et navn som kan bli til ulempe for den som skal bære det, eller forveksles med noe annet, kan nektes. Gjelder bare navnesaker."
     }
   ],
   "saker": [
@@ -200,8 +203,8 @@
     {
       "id": "2024/2088",
       "tittel": "Søknad om parkeringstillatelse for en bil som ikke er levert",
-      "sammendrag": "Bilen kommer i august. Søker ville «være i forkant, for en gang».",
-      "tekst": "Jeg søker om parkeringstillatelse i Gamlevegen 4. Bilen leveres i august, men jeg ville være i forkant, for en gang. Vedlagt følger et bilde fra forhandlerens nettside og registreringsnummeret jeg håper å få.",
+      "sammendrag": "Bilen kommer i august. Søker ville «være i forkant, for en gangs skyld».",
+      "tekst": "Jeg søker om parkeringstillatelse i Gamlevegen 4. Bilen leveres i august, men jeg ville være i forkant, for en gangs skyld. Vedlagt følger et bilde fra forhandlerens nettside og registreringsnummeret jeg håper å få.",
       "soker": {
         "navn": "Turid Felg",
         "fodselsdato": "29.02.1975",

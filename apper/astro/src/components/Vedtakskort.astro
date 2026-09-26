@@ -39,6 +39,9 @@ const forslag = fs.suggestion({
 /* Sprettoppvinduet med hjemlene. Ett kall, tre attributtsett: verten,
    knappen og panelet hører sammen og deler id. */
 const hjelp = fs.popover({ id: "hjemmelhjelp" })
+// Klassen trekkes ut: `{...fs.list()} class="…"` gir to class-attributter, og
+// nettleseren beholder det første.
+const { class: listeKlasse, ...liste } = fs.list()
 const feller = [
   ["nei", "Nei, saken er i orden"],
   ["fodselsdato", "Fødselsdatoen"],
@@ -119,8 +122,13 @@ const feller = [
         Hva betyr hjemlene?
       </button>
       <div {...hjelp.panel}>
-        <ul {...fs.list()}>
-          {tilstand.hjemler.map((h) => <li><strong>{h.kode}</strong> {h.tekst}</li>)}
+        <ul {...liste} class={`${listeKlasse} hjemmelhjelp__liste`} tabindex="0">
+          {tilstand.hjemler.map((h) => (
+            <li>
+              <strong>{h.kode} {h.tekst}</strong>{" "}
+              <span class="hjemmelhjelp__om">{h.forklaring}</span>
+            </li>
+          ))}
         </ul>
       </div>
     </fs-popover>

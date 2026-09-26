@@ -12,7 +12,7 @@ import kotlinx.serialization.Serializable
  */
 @Serializable data class Soker(val navn: String, val fodselsdato: String, val kommune: String, val epost: String)
 
-@Serializable data class Hjemmel(val kode: String, val tekst: String)
+@Serializable data class Hjemmel(val kode: String, val tekst: String, val forklaring: String)
 
 @Serializable
 data class SakUt(

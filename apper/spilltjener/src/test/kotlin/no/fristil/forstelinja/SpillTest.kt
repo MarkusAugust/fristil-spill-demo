@@ -30,7 +30,7 @@ class SpillTest {
   /** Én sak med felle, én uten, så begge veier kan prøves. */
   private val samling =
     Sakssamling(
-      hjemler = listOf(Hjemmel("§ 4-1", "Alminnelig"), Hjemmel("§ 12-3", "Mangelfullt")),
+      hjemler = listOf(Hjemmel("§ 4-1", "Alminnelig", "Hovedregelen."), Hjemmel("§ 12-3", "Mangelfullt", "Opplysningene stemmer ikke.")),
       saker =
         (1..RUNDER_PER_SPILL).map { nr ->
           Sak(

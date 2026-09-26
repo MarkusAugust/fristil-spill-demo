@@ -730,9 +730,11 @@ private fun vedtakskort(tilstand: Tilstand, kommuner: List<String>, feil: List<F
   val ugyldigUtfall = if (feil.any { it.felt == "v-innvilget" }) "data-state=\"invalid\"" else ""
   val ugyldigRadio = if (feil.any { it.felt == "v-innvilget" }) "aria-invalid=\"true\"" else ""
 
+  // Panelet heter «Hva betyr hjemlene?», og sa lenge bare det nedtrekkslista
+  // alt sier: kode og navn. Forklaringen er det som gjør knappen verdt å trykke.
   val hjemmelforklaringer =
     tilstand.hjemler.joinToString("\n") {
-      "<li><strong>${it.kode.trygg()}</strong> ${it.tekst.trygg()}</li>"
+      """<li><strong>${it.kode.trygg()} ${it.tekst.trygg()}</strong> <span class="hjemmelhjelp__om">${it.forklaring.trygg()}</span></li>"""
     }
 
   val kommunevalg =
@@ -812,7 +814,7 @@ private fun vedtakskort(tilstand: Tilstand, kommuner: List<String>, feil: List<F
           <button type="button" class="fs-button" data-variant="ghost"
                   aria-expanded="false" aria-controls="hjemmelhjelp">Hva betyr hjemlene?</button>
           <div class="fs-popover" id="hjemmelhjelp" popover="manual">
-            <ul class="fs-list">
+            <ul class="fs-list hjemmelhjelp__liste" tabindex="0">
               $hjemmelforklaringer
             </ul>
           </div>
