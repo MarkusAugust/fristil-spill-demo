@@ -1,12 +1,4 @@
-import {
-  defineFsConnectionStatus,
-  defineFsDialog,
-  defineFsErrorSummary,
-  defineFsField,
-  defineFsPopover,
-  defineFsSuggestion,
-  defineFsTabs,
-} from "@fristil/designsystem"
+import { defineFs } from "@fristil/designsystem/register"
 
 import { tavlekropp } from "./lib/tavle"
 import type { TavleRad } from "./lib/tilstand"
@@ -27,13 +19,7 @@ import type { TavleRad } from "./lib/tilstand"
  * ingen tilstand. Det ligger i serveren, og skjemaet er en vanlig POST.
  */
 
-defineFsField()
-defineFsTabs()
-defineFsPopover()
-defineFsSuggestion()
-defineFsErrorSummary()
-defineFsDialog()
-defineFsConnectionStatus()
+defineFs()
 
 /* --- Temaet ------------------------------------------------------- */
 

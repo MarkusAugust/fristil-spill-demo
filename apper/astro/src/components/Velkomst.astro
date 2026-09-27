@@ -12,15 +12,17 @@ import { APPNAVN, UTGAVER, lenkeTilUtgave } from "../lib/fristil"
 const valgtTema = Astro.cookies.get("forstelinja-tema")?.value
 const tema = valgtTema === "light" || valgtTema === "dark" ? valgtTema : null
 
-const boks = fs.dialog({ titleId: "velkomst-tittel", open: true })
+const boks = fs.dialog({ titleId: "velkomst-tittel", open: true, color: "brand" })
 const { class: dialogKlasse, ...dialog } = boks.dialog
 const { class: overskriftKlasse, ...overskrift } = fs.heading({ size: "xs" })
 const { class: listeKlasse, ...liste } = fs.list({ variant: "plain" })
 ---
 
-<fs-dialog id="velkomst" {...boks.host}>
+{/* `open` skrives bokstavelig: Astro sprer `true` som `open="true"` på et
+    egendefinert element, og det er feil form for et boolsk attributt. */}
+<fs-dialog id="velkomst" open="">
   <dialog {...dialog} class={`${dialogKlasse} velkomst`}>
-    <div class="velkomst__topp">
+    <div {...boks.header}>
       <h2 {...boks.title}>Velkommen til Førstelinja</h2>
     </div>
 

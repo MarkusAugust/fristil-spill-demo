@@ -1,3 +1,4 @@
+import { reportFailure, reportSuccess } from "@fristil/designsystem"
 import { fs } from "@fristil/designsystem/react"
 import { useEffect, useId, useRef, useState } from "react"
 
@@ -1021,7 +1022,6 @@ function Resultatdialog({
 }) {
   const fasit = tilstand.fasit
   const meg = tilstand.meg
-  const boks = fs.dialog({ titleId: "resultat-tittel", open: apen })
 
   // Dialogen hører til oppgjøret, og innholdet skal ikke stå i markupen
   // ellers. Spilltjeneren sender ingen fasit i en runde, men skjermen skal
@@ -1043,6 +1043,17 @@ function Resultatdialog({
           : meg.medPaSaken
             ? "avvik"
             : "sent"
+
+  // Toppen bærer utfallet, med dialogens egne farger.
+  const farge =
+    utfall === "full"
+      ? "success"
+      : utfall === "delvis"
+        ? "info"
+        : utfall === "ingen" || utfall === "avvik"
+          ? "danger"
+          : "neutral"
+  const boks = fs.dialog({ titleId: "resultat-tittel", open: apen, color: farge })
 
   const overskrift =
     utfall === "full"
@@ -1090,20 +1101,20 @@ function Resultatdialog({
   return (
     <fs-dialog id="resultat" {...boks.host}>
       <dialog {...med(boks.dialog, "resultat")} data-utfall={utfall}>
-        <div className="resultat__topp">
+        <div {...boks.header}>
           <h2 {...boks.title}>{overskrift}</h2>
           {utfall === "sent" ? (
-            <p className="resultat__forklaring">
+            <p {...med(boks.subtitle, "resultat__forklaring")}>
               Saken lå alt på bordet da du møtte. Ingen poeng denne runden, og du er med
               fra neste sak.
             </p>
           ) : utfall === "avvik" ? (
-            <p className="resultat__forklaring">
+            <p {...med(boks.subtitle, "resultat__forklaring")}>
               Saken ble ikke behandlet innen fristen. Avviket er varslet til
               statsforvalteren, og runden gir null poeng.
             </p>
           ) : (
-            <p className="resultat__poeng">
+            <p {...med(boks.subtitle, "resultat__poeng")}>
               <strong>{vurdering?.poeng ?? 0}</strong> av {full} poeng
             </p>
           )}
@@ -1169,12 +1180,12 @@ function Resultatdialog({
  * Den vises bare før du har meldt deg på.
  */
 function Velkomst({ apen, settApen }: { apen: boolean; settApen: (a: boolean) => void }) {
-  const boks = fs.dialog({ titleId: "velkomst-tittel", open: apen })
+  const boks = fs.dialog({ titleId: "velkomst-tittel", open: apen, color: "brand" })
 
   return (
     <fs-dialog id="velkomst" {...boks.host}>
       <dialog {...med(boks.dialog, "velkomst")}>
-        <div className="velkomst__topp">
+        <div {...boks.header}>
           <h2 {...boks.title}>Velkommen til Førstelinja</h2>
         </div>
 
@@ -1331,28 +1342,23 @@ export function Skjerm({
     const kilde = new EventSource("/hendelser")
 
     /*
-     * Sambandslinja, men bare når den er oppgradert.
-     *
-     * Elementet står i HTML-en fra serveren lenge før komponenten er
-     * registrert, og da har det ingen metoder. Uten denne sjekken kastet
-     * første melding fra strømmen «reportSuccess is not a function», og
-     * hele skjermen sto igjen utegnet. Er komponenten ikke der ennå, er det
-     * heller ingen linje å melde noe til.
+     * `reportSuccess(element)` og `reportFailure(element)` venter på at
+     * komponenten er registrert før de kaller metoden. Elementet står i
+     * HTML-en fra serveren lenge før registreringen, og uten ventingen kastet
+     * første melding fra strømmen «reportSuccess is not a function».
      */
-    const status = () => {
-      const linje = document.querySelector<
-        HTMLElement & { reportFailure(): void; reportSuccess(): void }
-      >("fs-connection-status")
-      return typeof linje?.reportSuccess === "function" ? linje : null
+    const meld = (ok: boolean) => {
+      const linje = document.querySelector("fs-connection-status")
+      if (linje) void (ok ? reportSuccess : reportFailure)(linje)
     }
 
     kilde.addEventListener("tilstand", (hendelse) => {
       const nytt = JSON.parse((hendelse as MessageEvent<string>).data) as Skjermbilde
       settBilde((forrige) => ({ ...nytt, feil: forrige.feil }))
-      status()?.reportSuccess()
+      meld(true)
     })
-    kilde.addEventListener("samband", () => status()?.reportFailure())
-    kilde.onerror = () => status()?.reportFailure()
+    kilde.addEventListener("samband", () => meld(false))
+    kilde.onerror = () => meld(false)
 
     return () => kilde.close()
   }, [])
@@ -1386,10 +1392,8 @@ export function Skjerm({
     } catch {
       // Et vedtak som forsvinner i stillhet er det verste som kan skje her:
       // spilleren tror hun har levert, og runden går fra henne.
-      const linje = document.querySelector<HTMLElement & { reportFailure(): void }>(
-        "fs-connection-status",
-      )
-      if (typeof linje?.reportFailure === "function") linje.reportFailure()
+      const linje = document.querySelector("fs-connection-status")
+      if (linje) void reportFailure(linje)
     }
   }
 
