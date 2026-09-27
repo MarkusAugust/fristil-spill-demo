@@ -27,6 +27,9 @@ const feilPa = (felt: string) => feil.find((f) => f.felt === felt)
 const { class: kortKlasse, ...kort } = fs.card()
 const tittel = fs.heading({ size: "s" })
 const boks = fs.errorSummary({ count: feil.length, id: "feilboks" })
+// `hidden` skrives bokstavelig: Astro sprer `true` som `hidden="true"` på et
+// egendefinert element, og det er feil form for et boolsk attributt.
+const { hidden: skjult, ...feilboks } = boks.host
 const { class: knappKlasse, ...knapp } = fs.button()
 const utfall = fs.fieldset({ state: feilPa("v-innvilget") ? "invalid" : undefined })
 const forslag = fs.suggestion({
@@ -56,7 +59,7 @@ const feller = [
     Fire spørsmål, {tilstand.poeng.fullPott} poeng. Du kan svare én gang.
   </p>
 
-  <fs-error-summary {...boks.host}>
+  <fs-error-summary {...feilboks} hidden={skjult ? "" : undefined}>
     {
       feil.length > 0 && (
         <>

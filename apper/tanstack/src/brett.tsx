@@ -14,11 +14,8 @@ import type { Feil, Hjemmel, SakUt, Skjermbilde, TavleRad, Tilstand } from "./ti
  * HTML-biter, her sender den JSON og React setter sammen DOM-en i
  * nettleseren.
  *
- * Markupen skrives ikke for hånd her. `fs`-byggerne gir klassene og
+ * Markupen skrives ikke for hånd her. `fs`-byggefunksjonene gir klassene og
  * koblingen, og da kan den ikke komme i utakt med designsystemet.
- * `data-preserve-attr` står i det byggerne sender ut, og er uten virkning i
- * denne appen: React eier DOM-en, og ingen morfer den. Det er riktig at det
- * står der likevel, for det er det samme attributtsettet begge apper får.
  */
 
 /** Initialene i avataren. */

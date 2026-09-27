@@ -7,6 +7,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
+private const val CDN_ROT = "https://cdn.jsdelivr.net/npm/@fristil/designsystem@$FRISTIL_VERSJON"
+
 /**
  * At markupen holder Fristils kontrakt.
  *
@@ -19,8 +21,6 @@ import kotlin.test.assertTrue
  * feilen ville først vist seg som et skjema som mister koblingen sin etter
  * første oppdatering, hos noen andre, senere.
  */
-private const val CDN_ROT = "https://cdn.jsdelivr.net/npm/@fristil/designsystem@$FRISTIL_VERSJON"
-
 class MarkupTest {
   private val tilstand =
     Tilstand(
@@ -292,6 +292,7 @@ class MarkupTest {
     val fraCdn = Regex("<link rel=\"stylesheet\" href=\"([^\"]*)\"").findAll(html).map { it.groupValues[1] }.filter { it.contains("cdn.jsdelivr") }.toList()
     assertEquals(listOf("$CDN_ROT/dist/fristil.css"), fraCdn, "ett stilark fra CDN, resten er appens egne")
   }
+
   @Test
   fun `ingen id står to ganger i siden`() {
     // Nedtellingen sto med samme id både i toppen og i panelet når omgangen
@@ -453,7 +454,8 @@ class MarkupTest {
     // står.
     val flat = html.replace(Regex("""\s+"""), " ")
     assertTrue(flat.contains("varslet til statsforvalteren"), "avviket skal ha en følge")
-    assertTrue(html.contains("""data-utfall="avvik""""), "dialogen skal fargelegges som avvik")
+    assertTrue(html.contains("""data-color="danger""""), "dialogen skal fargelegges som avvik")
+    assertTrue(html.contains("""data-utfall="avvik""""), "utfallet skal stå som datakrok")
   }
 
   @Test
@@ -511,6 +513,7 @@ class MarkupTest {
       assertTrue(html.contains("<$tagg"), "$tagg står ikke i markupen")
     }
   }
+
   @Test
   fun `ingen dollartegn slipper gjennom fra strengmalene`() {
     // `$$` er en mal som er redigert feil, og det så ut som «$25 poeng» på
