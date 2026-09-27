@@ -270,38 +270,19 @@ body:has(.fs-connection-status__bar) .topplinje {
 /* Velkomsthilsenen
    ------------------------------------------------------------------ */
 
+/* Toppen, fargen og luften mellom delene kommer fra dialogen selv:
+   `fs.dialog({ color: "brand" })` med en `header`-del. Her står bare bredden. */
 .velkomst {
   --fs-dialog-width: min(38rem, 100%, calc(100vw - var(--size-8)));
-  /* Toppen og kroppen setter sin egen luft. Med dialogens padding i tillegg
-     ble det en hvit kant rundt det blå båndet, altså en boks inni en boks. */
-  --fs-dialog-padding: 0;
 }
-
-.velkomst__topp {
-  padding: var(--size-4) var(--size-5);
-  color: var(--palette-graphite-0);
-  background: var(--palette-denim-100);
-  border-start-start-radius: var(--size-2);
-  border-start-end-radius: var(--size-2);
-}
-
-.velkomst .fs-dialog__title { color: inherit; }
 
 .velkomst .fs-dialog__body {
   display: flex;
   flex-direction: column;
   gap: var(--size-3);
-  padding: var(--size-5);
 }
 
 .velkomst .fs-dialog__body p { margin: 0; line-height: 1.6; }
-
-/* Fotfeltet får luften kroppen ellers ga det, siden dialogen ikke har noen
-   egen lenger. Uten dette lå knappen inntil kanten. */
-.velkomst .fs-dialog__footer {
-  margin-block-start: 0;
-  padding: 0 var(--size-5) var(--size-5);
-}
 
 .velkomst__valg { margin: var(--size-2) 0 0; }
 
@@ -609,65 +590,15 @@ body:has(.fs-connection-status__bar) .topplinje {
 
 .resultat {
   --fs-dialog-width: min(34rem, 100%, calc(100vw - var(--size-8)));
-  /* Innholdet får sin egen luft, siden toppfeltet går helt ut til kanten. */
-  --fs-dialog-padding: 0;
 }
 
-/*
- * Utfallet står som et eget felt øverst, ikke som en strek langs kanten.
- * Streken var ment som en farge, men leste som noe som hadde havnet feil:
- * en linje uten forklaring, i en farge uten noe å høre til.
- *
- * Feltet bruker de samme parene som `fs-alert`, altså bakgrunn og
- * forgrunn fra samme token, så kontrasten holder i begge temaer.
- */
-.resultat__topp {
-  display: flex;
-  flex-direction: column;
-  gap: var(--size-1);
-  padding: var(--size-4) var(--size-5);
-  border-start-start-radius: var(--size-2);
-  border-start-end-radius: var(--size-2);
-  color: var(--semantic-page-foreground);
-  background: var(--semantic-neutral-background);
-}
-
-.resultat[data-utfall="full"] .resultat__topp {
-  color: var(--semantic-success-foreground);
-  background: var(--semantic-success-background);
-}
-
-.resultat[data-utfall="delvis"] .resultat__topp {
-  color: var(--semantic-interactive-foreground);
-  background: var(--semantic-interactive-background);
-}
-
-.resultat[data-utfall="ingen"] .resultat__topp,
-.resultat[data-utfall="avvik"] .resultat__topp {
-  color: var(--semantic-danger-foreground);
-  background: var(--semantic-danger-background);
-}
-
-.resultat[data-utfall="sent"] .resultat__topp {
-  color: var(--semantic-page-foreground);
-  background: var(--semantic-neutral-background);
-}
-
-.resultat .fs-dialog__title {
-  margin: 0;
-  color: inherit;
-}
-
-.resultat .fs-dialog__footer {
-  padding: 0 var(--size-5) var(--size-5);
-  margin-block-start: 0;
-}
+/* Utfallet står som et eget felt øverst, med dialogens egne farger:
+   `data-color` på dialogen og en `header`-del rundt overskriften. */
 
 .resultat .fs-dialog__body {
   display: flex;
   flex-direction: column;
   gap: var(--size-4);
-  padding: var(--size-5);
 }
 
 .resultat__poeng {

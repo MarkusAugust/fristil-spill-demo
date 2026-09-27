@@ -85,28 +85,38 @@ const rader = fasit
   : []
 
 const igjen = meg ? tilstand.grenseUtenSvar - meg.runderUtenSvar : 0
-const boks = fs.dialog({ titleId: "resultat-tittel", open: vis })
+// Toppen bærer utfallet, med dialogens egne farger.
+const farge =
+  utfall === "full"
+    ? "success"
+    : utfall === "delvis"
+      ? "info"
+      : utfall === "ingen" || utfall === "avvik"
+        ? "danger"
+        : "neutral"
+const boks = fs.dialog({ titleId: "resultat-tittel", open: vis, color: farge })
 const { class: dialogKlasse, ...dialog } = boks.dialog
+const { class: undertekstKlasse, ...undertekst } = boks.subtitle
 ---
 
 {
   vis && meg && fasit ? (
-    <fs-dialog id="resultat" {...boks.host}>
+    <fs-dialog id="resultat" open="">
       <dialog {...dialog} class={`${dialogKlasse} resultat`} data-utfall={utfall}>
-        <div class="resultat__topp">
+        <div {...boks.header}>
           <h2 {...boks.title}>{overskrift}</h2>
           {utfall === "sent" ? (
-            <p class="resultat__forklaring">
+            <p {...undertekst} class={`${undertekstKlasse} resultat__forklaring`}>
               Saken lå alt på bordet da du møtte. Ingen poeng denne runden, og du er med
               fra neste sak.
             </p>
           ) : utfall === "avvik" ? (
-            <p class="resultat__forklaring">
+            <p {...undertekst} class={`${undertekstKlasse} resultat__forklaring`}>
               Saken ble ikke behandlet innen fristen. Avviket er varslet til
               statsforvalteren, og runden gir null poeng.
             </p>
           ) : (
-            <p class="resultat__poeng">
+            <p {...undertekst} class={`${undertekstKlasse} resultat__poeng`}>
               <strong>{vurdering?.poeng ?? 0}</strong> av {full} poeng
             </p>
           )}

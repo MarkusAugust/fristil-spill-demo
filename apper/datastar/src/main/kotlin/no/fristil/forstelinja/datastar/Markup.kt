@@ -53,10 +53,9 @@ fun venteside(): String =
 fun velkomst(tema: String? = null): String =
   """
   <fs-dialog id="velkomst" open>
-    <dialog class="fs-dialog velkomst" aria-labelledby="velkomst-tittel"
-            open>
-      <div class="velkomst__topp">
-        <h2 class="fs-dialog__title" id="velkomst-tittel">Velkommen til Førstelinja</h2>
+    <dialog class="fs-dialog velkomst" data-color="brand" open>
+      <div class="fs-dialog__header">
+        <h2>Velkommen til Førstelinja</h2>
       </div>
 
       <div class="fs-dialog__body">
@@ -634,24 +633,20 @@ private fun sakskort(sak: SakUt): String =
     <h2 class="fs-heading sakskort__tittel" data-size="m">${sak.tittel.trygg()}</h2>
     <p class="fs-paragraph sakskort__ingress">${sak.sammendrag.trygg()}</p>
 
-    <!-- Fanene: serveren skriver roller, kobling og hvilken som er valgt.
-         Komponenten flytter valget når brukeren blar, og derfor står
-         `aria-selected` og `tabindex` i bevaringslista. -->
+    <!-- Fanene: en rad med knapper og ett panel per knapp. Komponenten setter
+         rollene, id-ene og koblingen, og flytter valget når brukeren blar. -->
     <fs-tabs class="sakskort__faner">
-      <div class="fs-tabs__list" role="tablist" aria-label="Saken">
-        <button id="f-0" role="tab" type="button" aria-selected="true" aria-controls="p-0"
-                tabindex="0">Søknaden</button>
-        <button id="f-1" role="tab" type="button" aria-selected="false" aria-controls="p-1"
-                tabindex="-1">Søkeren</button>
+      <div class="fs-tabs__list" aria-label="Saken">
+        <button type="button">Søknaden</button>
+        <button type="button">Søkeren</button>
       </div>
 
-      <div id="p-0" class="fs-tabs__panel" role="tabpanel" aria-labelledby="f-0" tabindex="0">
+      <div class="fs-tabs__panel">
         <p class="fs-paragraph sakskort__tekst">${sak.tekst.trygg()}</p>
         <p class="sakskort__signatur">Med vennlig hilsen<br>${sak.soker.navn.trygg()}</p>
       </div>
 
-      <div id="p-1" class="fs-tabs__panel" role="tabpanel" aria-labelledby="f-1" tabindex="0"
-           hidden>
+      <div class="fs-tabs__panel">
         <table class="fs-table">
           <tbody>
             <tr><th scope="row">Navn</th><td>${sak.soker.navn.trygg()}</td></tr>
@@ -738,20 +733,19 @@ private fun vedtakskort(tilstand: Tilstand, kommuner: List<String>, feil: List<F
     }
 
   val kommunevalg =
-    kommuner.withIndex().joinToString("\n") { (nr, navn) ->
-      "<li class=\"fs-suggestion__option\" id=\"kommune-option-$nr\" role=\"option\" " +
-        "aria-selected=\"false\">${navn.trygg()}</li>"
+    kommuner.joinToString("\n") { navn -> "<li>${navn.trygg()}</li>"
     }
 
   val feiloppsummering =
     if (feil.isEmpty()) {
-      """<fs-error-summary class="fs-error-summary" role="alert" tabindex="-1" id="feilboks" hidden></fs-error-summary>"""
+      """<fs-error-summary id="feilboks" hidden></fs-error-summary>"""
     } else {
       """
-      <!-- Serveren skriver hele boksen, også overskriften og lista.
-           Komponenten flytter bare fokus hit og tar klikkene på lenkene. -->
-      <fs-error-summary class="fs-error-summary" role="alert" tabindex="-1" id="feilboks">
-        <h3 class="fs-error-summary__title">Du må rette ${feil.size} feil</h3>
+      <!-- Serveren skriver overskriften og lista. Komponenten gir boksen
+           klassen, rollen og tabbestoppen, flytter fokus hit og tar
+           klikkene på lenkene. -->
+      <fs-error-summary id="feilboks">
+        <h3>Du må rette ${feil.size} feil</h3>
         <ul class="fs-list">
           ${feil.joinToString("\n") { """<li><a href="#${it.felt}">${it.melding.trygg()}</a></li>""" }}
         </ul>
@@ -806,33 +800,31 @@ private fun vedtakskort(tilstand: Tilstand, kommuner: List<String>, feil: List<F
           ${feilmelding(feil, "hjemmel", "hjemmel-feil")}
         </fs-field>
 
-        <!-- Hjelpen til hjemlene. Serveren skriver koblingen mellom
-             knappen og panelet; komponenten plasserer det, lukker det, og
-             setter tilbake at det er åpent når en patch river det bort.
-             Serveren vet jo ikke om vinduet er åpent. -->
+        <!-- Hjelpen til hjemlene. En knapp og et panel; komponenten kobler
+             dem, plasserer panelet, lukker det, og setter tilbake at det er
+             åpent når en patch river det bort. Serveren vet jo ikke om
+             vinduet er åpent. -->
         <fs-popover class="hjelpelenke" placement="bottom-start">
-          <button type="button" class="fs-button" data-variant="ghost"
-                  aria-expanded="false" aria-controls="hjemmelhjelp">Hva betyr hjemlene?</button>
-          <div class="fs-popover" id="hjemmelhjelp" popover="manual">
+          <button type="button" class="fs-button" data-variant="ghost">Hva betyr hjemlene?</button>
+          <div class="fs-popover">
             <ul class="fs-list hjemmelhjelp__liste" tabindex="0">
               $hjemmelforklaringer
             </ul>
           </div>
         </fs-popover>
 
-        <!-- Kommunefeltet. Serveren sender hele lista, komponenten
-             filtrerer mens du skriver og tar piltastene. Finner du ikke
-             kommunen, er det fordi den ikke finnes lenger. -->
+        <!-- Kommunefeltet. Serveren sender hele lista, komponenten setter
+             rollene og koblingen, filtrerer mens du skriver og tar
+             piltastene. Finner du ikke kommunen, er det fordi den ikke
+             finnes lenger. -->
         <fs-suggestion>
           <label class="fs-label" for="kommune">Bekreft kommunen søkeren hører til</label>
           <div class="fs-suggestion__field">
-            <input class="fs-input" id="kommune" name="kommune" type="text" role="combobox"
-                   autocomplete="off" aria-autocomplete="list" aria-expanded="false"
-                   aria-controls="kommune-list"
+            <input class="fs-input" id="kommune" name="kommune" type="text"
                    aria-describedby="kommune-hjelp kommune-status${if (feil.any { it.felt == "kommune" }) " kommune-feil" else ""}"
                    data-bind:kommune
                    $ugyldigKommune>
-            <ul class="fs-suggestion__list" id="kommune-list" role="listbox" hidden>
+            <ul class="fs-suggestion__list">
               $kommunevalg
             </ul>
             <p class="fs-suggestion__empty" hidden>Ingen treff. Finnes kommunen fortsatt?</p>
@@ -1062,33 +1054,41 @@ fun resultatdialog(tilstand: Tilstand): String {
         )
         .joinToString("\n")
 
+  // Toppen bærer utfallet, med dialogens egne farger.
+  val farge =
+    when (utfall) {
+      "full" -> """ data-color="success""""
+      "delvis" -> """ data-color="info""""
+      "ingen", "avvik" -> """ data-color="danger""""
+      else -> ""
+    }
+
   val innledning =
     when (utfall) {
       "sent" ->
         """
-        <p class="resultat__forklaring">
+        <p class="fs-dialog__subtitle resultat__forklaring">
           Saken lå alt på bordet da du møtte. Ingen poeng denne runden, og du
           er med fra neste sak.
         </p>"""
       "avvik" ->
         """
-        <p class="resultat__forklaring">
+        <p class="fs-dialog__subtitle resultat__forklaring">
           Saken ble ikke behandlet innen fristen. Avviket er varslet til
           statsforvalteren, og runden gir null poeng.
         </p>"""
       else ->
         """
-        <p class="resultat__poeng">
+        <p class="fs-dialog__subtitle resultat__poeng">
           <strong>${vurdering?.poeng ?: 0}</strong> av ${tilstand.poeng.fullPott} poeng
         </p>"""
     }
 
   return """
     <fs-dialog id="resultat" open>
-      <dialog class="fs-dialog resultat" aria-labelledby="resultat-tittel"
-              data-utfall="$utfall" open>
-        <div class="resultat__topp">
-          <h2 class="fs-dialog__title" id="resultat-tittel">${overskrift.trygg()}</h2>
+      <dialog class="fs-dialog resultat" data-utfall="$utfall"$farge open>
+        <div class="fs-dialog__header">
+          <h2>${overskrift.trygg()}</h2>
           $innledning
         </div>
 

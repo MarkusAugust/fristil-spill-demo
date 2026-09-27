@@ -7,6 +7,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
+private const val CDN_ROT = "https://cdn.jsdelivr.net/npm/@fristil/designsystem@$FRISTIL_VERSJON"
+
 /**
  * At markupen holder Fristils kontrakt.
  *
@@ -259,7 +261,7 @@ class MarkupTest {
     val html = side(tilstand, "Kari")
 
     assertTrue(STILARK.all { it.startsWith("https://cdn.jsdelivr.net/npm/@fristil/designsystem@") })
-    assertTrue(html.contains("defineFsField"), "komponentene må registreres")
+    assertTrue(html.contains("defineFs()"), "komponentene må registreres, i ett kall")
     assertTrue(html.contains(FRISTIL_VERSJON), "versjonen skal være pinnet")
 
     // Testen heter «hentes fra CDN» og skal derfor dekke hver adresse på
@@ -279,45 +281,16 @@ class MarkupTest {
   }
 
   @Test
-  fun `hver klasse markupen bruker har et stilark`() {
-    // Uten dette kan en komponent tas i bruk uten at CSS-en følger med, og
-    // da ser den ut som nettleserens egen. Radioknappene og feltsettet sto
-    // slik en stund uten at noe sa fra.
-    val html = side(tilstand, "Kari", listOf("Bergen")) + brett(tilstand, "Kari", listOf("Bergen"))
+  fun `stilarket er den samlede fila, lenket én gang`() {
+    // Før sto det tjueåtte lenker her, fem av dem bare for å hente i første
+    // runde det `field.css` ellers hentet i den andre. `dist/fristil.css` er
+    // alt flatet ut, så hver klasse markupen bruker har et stilark av seg
+    // selv, og det er ingenting å telle opp.
+    val html = side(tilstand, "Kari", listOf("Bergen"))
 
-    val brukt =
-      Regex("""class="([^"]*)"""")
-        .findAll(html)
-        .flatMap { it.groupValues[1].split(" ") }
-        .filter { it.startsWith("fs-") }
-        .toSet() +
-        Regex("""<(fs-[a-z-]+)""").findAll(html).map { it.groupValues[1] }.toSet()
-
-    val lastet = STILARK.joinToString(" ")
-
-    // `field.css` samler ledetekst, felt, hjelpetekst og feilmelding.
-    val samlet =
-      setOf(
-        "fs-label",
-        "fs-input",
-        "fs-help-text",
-        "fs-error-text",
-        "fs-legend",
-        // Raden rundt en radioknapp står i radio.css, sammen med knappen.
-        "fs-radio-row",
-        // Rullefeltet rundt en bred tabell står i table.css.
-        "fs-table-scroll",
-      )
-
-    // `fs-tabs__list` hører i `tabs.css`. Delen etter `__` er en del av
-    // komponenten, ikke en komponent for seg.
-    val uten =
-      brukt.filterNot { klasse ->
-        klasse in samlet ||
-          lastet.contains(klasse.removePrefix("fs-").substringBefore("__") + ".css")
-      }
-
-    assertEquals(emptyList(), uten, "disse klassene har ingen stilark")
+    assertEquals(listOf("$CDN_ROT/dist/fristil.css"), STILARK)
+    val fraCdn = Regex("<link rel=\"stylesheet\" href=\"([^\"]*)\"").findAll(html).map { it.groupValues[1] }.filter { it.contains("cdn.jsdelivr") }.toList()
+    assertEquals(listOf("$CDN_ROT/dist/fristil.css"), fraCdn, "ett stilark fra CDN, resten er appens egne")
   }
 
   @Test
@@ -481,7 +454,8 @@ class MarkupTest {
     // står.
     val flat = html.replace(Regex("""\s+"""), " ")
     assertTrue(flat.contains("varslet til statsforvalteren"), "avviket skal ha en følge")
-    assertTrue(html.contains("""data-utfall="avvik""""), "dialogen skal fargelegges som avvik")
+    assertTrue(html.contains("""data-color="danger""""), "dialogen skal fargelegges som avvik")
+    assertTrue(html.contains("""data-utfall="avvik""""), "utfallet skal stå som datakrok")
   }
 
   @Test
@@ -524,56 +498,20 @@ class MarkupTest {
   }
 
   @Test
-  fun `hver komponent som lastes er faktisk i bruk`() {
-    // `fs-toast` sto i lista uten at noen kalte `.show()`, og `divider.css`
-    // uten at noen brukte `.fs-divider`. En demo som later som den bruker
-    // flere komponenter enn den gjør, beviser ikke noe.
-    val html = side(tilstand, "Kari", listOf("Bergen")) + brett(tilstand, "Kari", listOf("Bergen"))
-
-    for ((fil, _) in KOMPONENTER) {
-      val tagg = fil.substringAfterLast("/").removeSuffix(".js")
-      assertTrue(html.contains("<$tagg"), "$tagg registreres, men står ikke i markupen")
-    }
-  }
-
-  @Test
-  fun `hvert stilark som lastes er faktisk i bruk`() {
-    // `session-timeout.css` ble lastet lenge etter at komponenten var ute.
-    // Et stilark ingen bruker er dødvekt over nettet og en påstand om at
-    // demoen viser fram mer enn den gjør.
-    //
-    // Alle tre fasene må med: varselboksen står bare i oppgjøret, og
-    // sluttlista bare på sluttskjermen.
+  fun `komponentene registreres i ett kall, og hver av dem står i markupen`() {
+    // `defineFs()` registrerer alle ni. Det som fortsatt skal stemme er at
+    // demoen bruker dem den sier den viser fram: hver av de sju denne appen
+    // bruker står i markupen i en av fasene.
     val oppgjor = oppgjorMed(Vurdering(true, true, true, true, 25), Svar("avslatt", "§ 12-3", "Bergen", "fodselsdato"))
     val html =
       side(tilstand, "Kari", listOf("Bergen")) +
         brett(tilstand, "Kari", listOf("Bergen")) +
-        brett(oppgjor, "Kari") +
-        brett(oppgjor.copy(fase = "slutt"), "Kari")
+        brett(oppgjor, "Kari")
 
-    val brukt =
-      Regex("""class="([^"]*)"""")
-        .findAll(html)
-        .flatMap { it.groupValues[1].split(" ") }
-        .filter { it.startsWith("fs-") }
-        .map { it.removePrefix("fs-").substringBefore("__") }
-        .toSet() +
-        Regex("""<(fs-[a-z-]+)""").findAll(html).map { it.groupValues[1].removePrefix("fs-") }.toSet()
-
-    // Disse er bunter eller grunnlag, og har ingen egen klasse i markupen.
-    //
-    // `textarea` står her selv om spillet ikke har et tekstområde: det er en
-    // av de seks `field.css` importerer, så nettleseren henter det uansett.
-    // Å skrive det ut i lista flytter det bare til første runde, og gjør
-    // kostnaden synlig ett sted framfor å skjule den i en `@import`.
-    val alltid =
-      setOf("tokens", "field", "label", "input", "textarea", "help-text", "error-text")
-
-    val ubrukte =
-      STILARK.map { it.substringAfterLast("/").removeSuffix(".css") }
-        .filterNot { it in alltid || brukt.any { k -> k == it || k.startsWith("$it-") } }
-
-    assertEquals(emptyList(), ubrukte, "disse stilarkene brukes ikke")
+    assertEquals(listOf("$CDN_ROT/dist/register.js" to "defineFs"), KOMPONENTER)
+    for (tagg in listOf("fs-field", "fs-tabs", "fs-popover", "fs-dialog", "fs-connection-status", "fs-error-summary", "fs-suggestion")) {
+      assertTrue(html.contains("<$tagg"), "$tagg står ikke i markupen")
+    }
   }
 
   @Test

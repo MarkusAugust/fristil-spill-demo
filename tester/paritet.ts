@@ -287,7 +287,10 @@ for (const app of APPER) {
       const treff = await side
         .waitForFunction(
           () => {
-            const liste = document.getElementById("kommune-list")
+            // Gjennom koblingen, ikke en id skrevet av: Kotlin-appen skriver bar
+            // struktur, og der er det komponenten som gir lista id-en sin.
+            const felt = document.getElementById("kommune")
+            const liste = document.getElementById(felt?.getAttribute("aria-controls") ?? "")
             if (!liste || liste.hidden) return null
             const synlige = [
               ...liste.querySelectorAll<HTMLElement>("[role='option']"),

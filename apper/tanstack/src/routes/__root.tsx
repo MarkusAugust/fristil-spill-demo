@@ -1,13 +1,5 @@
-import {
-  defineFsConnectionStatus,
-  defineFsDialog,
-  defineFsErrorSummary,
-  defineFsField,
-  defineFsPopover,
-  defineFsSuggestion,
-  defineFsTabs,
-  fs,
-} from "@fristil/designsystem"
+import { fs } from "@fristil/designsystem"
+import { defineFs } from "@fristil/designsystem/register"
 import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router"
 import { createServerFn } from "@tanstack/react-start"
 import { getCookie } from "@tanstack/react-start/server"
@@ -15,6 +7,17 @@ import { useEffect } from "react"
 
 import "../stil"
 import { KAPSEL_TEMA, type Tema, erTema } from "../tema"
+
+/*
+ * Web-komponentene registreres ved import, ikke i en effekt.
+ *
+ * En effekt kjører etter første tegning, så elementene i markupen var vanlige
+ * `HTMLElement` i det React tegnet dem, og den første meldingen fra
+ * hendelsesstrømmen kom i gapet: «reportSuccess is not a function».
+ * `defineFs()` registrerer alle ni, gjør ingenting på serveren, og kan
+ * derfor stå her, i en modul som kjøres begge steder.
+ */
+defineFs()
 
 /**
  * Temaet, hentet på serveren.
@@ -85,29 +88,6 @@ const PANELTEKST = {
 
 function Skall() {
   const tema = Route.useLoaderData()
-  /*
-   * Web-komponentene registreres i nettleseren, etter at HTML-en står der.
-   *
-   * Én kalle per komponent, og ikke en samlefunksjon: registreringen er det
-   * eneste som drar koden inn i bunten, så en app som ikke bruker
-   * forslagsfeltet skal heller ikke sende det.
-   *
-   * Importen er statisk, ikke dynamisk. Den kan være det: modulene i Fristil
-   * kan lastes på en server, og `defineFs*` gjør ingenting uten
-   * `customElements`. Med en dynamisk import var det et lite gap der siden
-   * sto med elementene, men uten oppførsel, og i drift rakk første melding
-   * fra hendelsesstrømmen å komme inn i det gapet: «reportSuccess is not a
-   * function». Lokalt var filene der med en gang, så det viste seg aldri.
-   */
-  useEffect(() => {
-    defineFsField()
-    defineFsTabs()
-    defineFsPopover()
-    defineFsSuggestion()
-    defineFsErrorSummary()
-    defineFsDialog()
-    defineFsConnectionStatus()
-  }, [])
 
   /*
    * Panelet startes etter hydreringen, og verten rendres av React.

@@ -180,6 +180,7 @@ bun run vakthund  # at Datastar-utgaven kommer seg etter en strøm som dør
 bun run skall     # at hilsenen ikke legger seg over rammene i skallet
 bun run fristilbruk  # at appene bruker Fristil slik dokumentasjonen sier
 bun run klasselikhet # at de tre utgavene bruker de samme klassene
+bun run markup    # at HTML-en appene sender stemmer med Fristil
 bun run sloyfe    # at én spiller i tre utgaver ikke setter spilltjeneren i sving
 ```
 
@@ -198,6 +199,14 @@ er den verdiløs.
 fra returverdien og fra navnene som henger på funksjonen, og feller enhver
 `fs-`-klasse skrevet for hånd der det finnes en bunter eller en vei til en
 import. Datastar-appen er med vilje utenfor: Kotlin kan ikke kalle `fs`.
+
+`tester/markup.ts` henter forsiden fra hver utgave, melder seg på og henter
+brettet, og kjører Fristils egen diagnostikk over begge, den samme som
+editorutvidelsen: elementer som ikke
+finnes, attributter elementet ikke har, verdier utenfor lista og klasser
+skrevet feil. Malene i Kotlin-appen er strenger, og Astro og React skriver
+JSX, så ingen editor ser HTML-en som faktisk sendes. Første kjøring fant at
+Astro skriver `open` på `<fs-dialog>` som `open="true"`.
 
 `tester/klasselikhet.ts` samler `fs-`-klassene i DOM-en i hver utgave og
 krever likt sett. Den finnes fordi `paritet.ts` ikke så at temavelgeren i én
