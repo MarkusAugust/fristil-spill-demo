@@ -299,6 +299,18 @@ try {
       if (!forslagVist) si("forslagslista viste ingen treff på «Inder»")
       await samle()
 
+      /*
+       * Og resultatet, når runden er gjort opp.
+       *
+       * Dialogen kom bare med når testen tilfeldigvis landet i et oppgjør,
+       * og da bare i den ene utgaven det skjedde i. `.fs-dialog__subtitle`
+       * ble meldt som «finnes bare i datastar» i to av fem kjøringer, mens
+       * alle tre skriver den. Ventingen koster resten av runden, og
+       * resultatdialogen er nettopp komponenten demoen fikk inn i Fristil.
+       */
+      await kvittering.waitFor({ timeout: RUNDEVINDU })
+      await lukkKvittering()
+
       fullfort.add(app.navn)
     } catch (e) {
       /*

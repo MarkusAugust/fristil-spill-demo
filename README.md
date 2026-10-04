@@ -229,7 +229,9 @@ finnes ikke før du har meldt deg på og fattet et vedtak, så et oppslag på
 forsiden så bare rundt tjue av de 38 klassene. Den fatter også et tomt vedtak
 først, som skal avvises: uten det rendres verken feilmeldingene eller
 feiloppsummeringen, og valideringen er nettopp der de tre utgavene gjør mest
-ulikt.
+ulikt. Og den venter på resultatdialogen når runden er gjort opp. Før kom
+dialogen bare med når testen landet i et oppgjør, og da bare i den ene
+utgaven, så sjekken feilet i to av fem kjøringer uten at noe var galt.
 
 Klassene samles med en `MutationObserver` som settes inn før noe skript på
 siden kjører, siden kvitteringen lukkes igjen og forslagslista bare tegnes
