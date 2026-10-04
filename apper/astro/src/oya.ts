@@ -118,8 +118,6 @@ type Puls = {
   fristMs: number
   naMs: number
   harSvart: boolean
-  medPaSaken: number
-  svartAv: number
   tavle: TavleRad[]
 }
 
@@ -167,13 +165,23 @@ if (brett) {
     const kropp = document.querySelector("[data-tavle]")
     if (kropp) kropp.innerHTML = tavlekropp(puls.tavle, puls.fase !== "runde")
 
+    /*
+     * Tellingen leses av tavla, som i sidetegningen og de to andre appene.
+     * Den sto på spilltjenerens `harSvart`, som bare teller dem som var med
+     * da saken kom på bordet. Den som meldte seg på midt i runden, kan
+     * levere og står som «Levert» på tavla, men telte ikke, og i skallet
+     * sto Astro på «0 av 5» mens de to andre viste «2 av 5».
+     */
     const levert = document.querySelector<HTMLElement>("[data-levert]")
     if (levert) {
-      const alle = puls.svartAv >= puls.tavle.length
+      const paVakt = puls.tavle.length
+      const antall = puls.tavle.filter((r) => r.harSvart).length
+      const alle = antall >= paVakt
+      levert.hidden = paVakt <= 1
       levert.dataset.alle = String(alle)
       levert.textContent = alle
         ? "Alle har levert. Oppgjøret kommer straks."
-        : `${puls.svartAv} av ${puls.tavle.length} saksbehandlere har levert.`
+        : `${antall} av ${paVakt} saksbehandlere har levert.`
     }
   })
 

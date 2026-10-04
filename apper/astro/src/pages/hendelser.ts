@@ -40,8 +40,6 @@ export const GET: APIRoute = ({ cookies }) => {
               fristMs: t.fristMs,
               naMs: t.naMs,
               harSvart: t.meg?.harSvart ?? false,
-              medPaSaken: t.medPaSaken,
-              svartAv: t.harSvart,
               tavle: t.tavle,
             }),
           )

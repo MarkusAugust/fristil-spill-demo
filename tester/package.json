@@ -8,6 +8,7 @@
     "markup": "bun run markup.ts",
     "panel": "bun run panel.ts",
     "paritet": "bun run paritet.ts",
+    "samtidig": "bun run samtidig.ts",
     "skall": "bun run skall.ts",
     "sloyfe": "bun run sloyfe.ts",
     "tema": "bunx @fristil/designsystem@0.28.0 tema ../felles/fristil.tema.json --ut=../felles/tema.css",

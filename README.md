@@ -175,6 +175,7 @@ cd apper/spilltjener && ./gradlew test && ./gradlew installDist
 ./kjor.sh rask
 cd tester && bun install
 bun run paritet   # at de tre utgavene oppfører seg likt
+bun run samtidig  # at tre spillere i tre utgaver ser den samme tavla
 bun run panel     # at panelet forteller sant om hva som kom over ledningen
 bun run vakthund  # at Datastar-utgaven kommer seg etter en strøm som dør
 bun run skall     # at hilsenen ikke legger seg over rammene i skallet
@@ -204,6 +205,13 @@ variabelen finnes i Fristil eller er definert av appen selv. Der er Kotlin
 med. En `var()` mot et token som ikke finnes, gjør hele erklæringen ugyldig
 uten et ord, og det hadde skjedd fire ganger før 0.22 døpte om alle tokenene
 på én gang.
+
+`tester/samtidig.ts` melder på én spiller i hver utgave, samtidig, og lar dem
+levere én om gangen. Etter hvert steg skal alle tre vise den samme telleren
+over hvem som har levert. `paritet.ts` kjører utgavene etter hverandre og så
+derfor ikke at Astro hang igjen i skallet: øya talte med spilltjenerens
+`harSvart`, som bare teller dem som var med da saken kom på bordet, mens de
+to andre teller radene på tavla. To av spillerne møter derfor midt i runden.
 
 `tester/markup.ts` henter forsiden fra hver utgave, melder seg på og henter
 brettet, og kjører Fristils egen diagnostikk over begge, den samme som

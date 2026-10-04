@@ -27,9 +27,17 @@ const { class: tabellKlasse, ...tabell } = fs.table()
 
 <h2 {...fs.heading({ size: "s" })}>På vakt nå</h2>
 
+{/* Avsnittet står der i hele runden, også med én på vakt, så øya har noe
+    å skrive i når nestemann melder seg på. Før kom det bare med to eller
+    flere, og den som sto alene fikk aldri se telleren før neste side. */}
 {
-  !oppgjor && paVakt > 1 && (
-    <p class="vedtakskort__svart" data-alle={String(levert >= paVakt)} data-levert>
+  !oppgjor && (
+    <p
+      class="vedtakskort__svart"
+      data-alle={String(levert >= paVakt)}
+      data-levert
+      hidden={paVakt <= 1}
+    >
       {levert >= paVakt
         ? "Alle har levert. Oppgjøret kommer straks."
         : `${levert} av ${paVakt} saksbehandlere har levert.`}
