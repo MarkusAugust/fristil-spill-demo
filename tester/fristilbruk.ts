@@ -184,9 +184,16 @@ let tokenfiler = 0
 const lesTokens = (m: string): void => {
   for (const o of readdirSync(m, { withFileTypes: true })) {
     if (
-      ["node_modules", "dist", "build", ".astro", ".output", ".gradle"].includes(
-        o.name,
-      )
+      [
+        "node_modules",
+        "dist",
+        "build",
+        ".astro",
+        ".output",
+        ".gradle",
+        ".kotlin",
+        ".tanstack",
+      ].includes(o.name)
     )
       continue
     const p = join(m, o.name)
@@ -196,7 +203,11 @@ const lesTokens = (m: string): void => {
       const t = readFileSync(p, "utf8")
         .replace(/\/\*[\s\S]*?\*\//g, "")
         .replace(/^\s*\/\/.*$/gm, "")
-      for (const d of t.matchAll(/(--[\w-]+)\s*:/g)) definert.add(d[1])
+      // Også det et skript setter: `setProperty("--x", …)` og `"--x":` i
+      // et stilobjekt, som `--spill-rist` og fargene på nedtellingen.
+      for (const d of t.matchAll(/(--[\w-]+)["']?\s*:/g)) definert.add(d[1])
+      for (const d of t.matchAll(/setProperty\(\s*["'](--[\w-]+)/g))
+        definert.add(d[1])
       for (const v of t.matchAll(/var\(\s*(--[\w-]+)\s*\)/g))
         bruk.push({
           fil: p.slice(join(import.meta.dir, "..").length + 1),
