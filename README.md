@@ -533,17 +533,24 @@ Kommandoen pinner versjonen av Fristil den kjører. Skrift og form kom i 0.12.0,
 og `bunx @fristil/designsystem` uten versjon ville hentet den nyeste som
 tilfeldigvis er publisert.
 
-Oppskriften setter **skrift og form, og lar fargene stå**. Grunnen er verdt å
-vite: Fristils innebygde palett *er* Skatteetatens. Alle 36 palettvariablene
-deres finnes i Fristil med nøyaktig samme verdi, og av de femten semantiske
-fargetokenene Skatteetaten har, er fjorten like. Å kjøre fargene deres gjennom generatoren ville derfor
-flyttet dem bort fra der de skal være, siden skalaene regnes om i OKLCH fra
-merkefargen: `#1362ae` kommer ut som `#1e6ab7`.
+Oppskriften setter **skrift og form, og lar fargene stå**. Fristils
+standardfarger er regnet ut av Skatteetatens kulører, og å oppgi deres egne
+til generatoren gir de samme verdiene tilbake: `--aksent=#1362ae` gir den
+samme aksentfamilien som ingen farge i det hele tatt, og det samme gjelder
+fare, advarsel og besøkt. Det å sette dem i oppskriften ville bare vært
+støy.
 
-Den ene semantiske fargen som avviker, avviker med vilje. Skatteetatens
-`--semantic-warning-foreground` er `#9f7509`, som gir 4,18:1 mot hvit og 3,63:1
-mot deres egen advarselsflate. Kravet for vanlig tekst er 4,5:1. Fristils
-`#896508` gir 5,35:1 og 4,64:1.
+Verdiene er likevel ikke Skatteetatens lenger. Fra Fristil 0.22 er en farge
+et punkt i en matrise av familie og rolle, og lysheten hører til rollen:
+kuløren er merkets, men tallet er regnet fram for å holde kontrasten. Den
+blå knappen er `#226dba`, ikke Skatteetatens `#1362ae`. Det er prisen for en
+kontrast som holder uansett merkefarge, og den er verdt det for en demo av
+designsystemet.
+
+Topplinja er unntaket. Den er spillets eget ansikt og skal være den samme
+mørkeblå i begge temaer, mens hver farge i matrisen snur med temaet. De tre
+fargene står derfor som egne variabler øverst i `felles/brett.css`, med
+Skatteetatens verdier.
 
 | Hva temaet setter | Verdi | Hvorfor |
 | --- | --- | --- |

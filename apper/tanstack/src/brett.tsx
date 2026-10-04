@@ -536,16 +536,16 @@ function Vedtakskort({
                 </li>
               ))}
             </ul>
-            <p {...forslag.empty} hidden={treff.length > 0}>
+            <p {...forslag.empty}>
               Ingen treff. Finnes kommunen fortsatt?
             </p>
             <span {...forslag.status} />
           </div>
-          <p {...forslag.help}>
+          <p {...fs.helpText()} {...forslag.help}>
             Begynn å skrive, så kommer forslagene. Finner du den ikke, la feltet stå tomt.
           </p>
           {feilPa("kommune") && (
-            <p {...forslag.error}>{feilPa("kommune")!.melding}</p>
+            <p {...fs.errorText()} {...forslag.error}>{feilPa("kommune")!.melding}</p>
           )}
         </fs-suggestion>
 

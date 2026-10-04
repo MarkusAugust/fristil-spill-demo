@@ -6,7 +6,7 @@
       "name": "forstelinja-astro",
       "dependencies": {
         "@astrojs/node": "^11.1.6",
-        "@fristil/designsystem": "0.18.0",
+        "@fristil/designsystem": "0.28.0",
         "astro": "^7.3.4",
       },
       "devDependencies": {
@@ -163,7 +163,7 @@
 
     "@esbuild/win32-x64": ["@esbuild/win32-x64@0.28.2", "", { "os": "win32", "cpu": "x64" }, "sha512-5ebpxr3nWMzrL/rnUI755Jkuee0bHL/Gq0WTF9lvcpv73wAp5eu8MfBUgWK9bhWvZjj7yX8etf/8tI8Ney695g=="],
 
-    "@fristil/designsystem": ["@fristil/designsystem@0.18.0", "", { "bin": { "fristil": "dist/cli.js" } }, "sha512-F15ccPGpEm3iJ1wH3H3pXPBv9qp1kV9o7zr9EQAFgWvjq0jgtDeYKQjPcyIWXS7UXaKze6brRgeP+kCTRu5NSg=="],
+    "@fristil/designsystem": ["@fristil/designsystem@0.28.0", "", { "bin": { "fristil": "dist/cli.js" } }, "sha512-4rS3mgiLCcbMgOwyjotLJg5wOvFNtI1+H4oYsw5STyMMeJKDf1QcmLbH1zR36slbL2P4UxIrwP6har7t+Fh/QA=="],
 
     "@img/colour": ["@img/colour@1.1.0", "", {}, "sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ=="],
 
