@@ -199,6 +199,11 @@ er den verdiløs.
 fra returverdien og fra navnene som henger på funksjonen, og feller enhver
 `fs-`-klasse skrevet for hånd der det finnes en bunter eller en vei til en
 import. Datastar-appen er med vilje utenfor: Kotlin kan ikke kalle `fs`.
+Den leser også hver `var(--…)` i appene og `felles/`, og krever at
+variabelen finnes i Fristil eller er definert av appen selv. Der er Kotlin
+med. En `var()` mot et token som ikke finnes, gjør hele erklæringen ugyldig
+uten et ord, og det hadde skjedd fire ganger før 0.22 døpte om alle tokenene
+på én gang.
 
 `tester/markup.ts` henter forsiden fra hver utgave, melder seg på og henter
 brettet, og kjører Fristils egen diagnostikk over begge, den samme som
@@ -213,6 +218,11 @@ krever likt sett. Den finnes fordi `paritet.ts` ikke så at temavelgeren i én
 utgave mistet `fs-toggle-group` og ble en kolonne uten ramme: den fant
 fortsatt tre knapper med riktig tekst, så alle de andre vaktpostene var
 grønne mens skjermen var synlig ødelagt.
+
+Den sammenligner også felt for felt, nøklet på ledeteksten. Ett sett for hele
+siden så ikke at hjelpeteksten under kommunefeltet manglet `fs-help-text` i
+to av tre utgaver, fordi klassen fantes på andre felt i de samme utgavene.
+Teksten var stor og mørk i TanStack og Astro og liten og grå i Datastar.
 
 Den spiller en hel runde, og det må den. Skjemaet, kvitteringen og oppgjøret
 finnes ikke før du har meldt deg på og fattet et vedtak, så et oppslag på
