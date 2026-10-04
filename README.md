@@ -226,7 +226,7 @@ Teksten var stor og mørk i TanStack og Astro og liten og grå i Datastar.
 
 Den spiller en hel runde, og det må den. Skjemaet, kvitteringen og oppgjøret
 finnes ikke før du har meldt deg på og fattet et vedtak, så et oppslag på
-forsiden så bare rundt tjue av de 38 klassene. Den fatter også et tomt vedtak
+forsiden så bare rundt tjue av de 38 klassene det fantes da. Den fatter også et tomt vedtak
 først, som skal avvises: uten det rendres verken feilmeldingene eller
 feiloppsummeringen, og valideringen er nettopp der de tre utgavene gjør mest
 ulikt. Og den venter på resultatdialogen når runden er gjort opp. Før kom
@@ -551,9 +551,11 @@ til generatoren gir de samme verdiene tilbake: `--aksent=#1362ae` gir den
 samme aksentfamilien som ingen farge i det hele tatt, og det samme gjelder
 fare og besøkt. Det å sette dem i oppskriften ville bare vært støy.
 
-Advarsel avviker, og med vilje. Skatteetatens `#9f7509` gir 4,18:1 mot hvit,
-og kravet for vanlig tekst er 4,5:1. Fristils standard er regnet av
-`#896508`, og den fargen holder.
+Advarsel er unntaket. Fristils standard er regnet av `#896508` og ikke av
+Skatteetatens `#9f7509`. Fram til 0.22 var det et kontrasthensyn, siden
+deres farge ga 4,18:1 mot hvit. Med matrisen holder kontrasten uansett, og
+`--advarsel=#9f7509` ville bare gitt en litt annen familie, med fyll
+`#8a6500` mot `#896508`. Forskjellen er for liten til å ta inn i oppskriften.
 
 Verdiene er likevel ikke Skatteetatens lenger. Fra Fristil 0.22 er en farge
 et punkt i en matrise av familie og rolle, og lysheten hører til rollen:

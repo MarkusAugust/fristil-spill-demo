@@ -154,7 +154,7 @@ for (const attributt of AVSKREVNE) {
  * ganger: `--semantic-surface-background` og `--semantic-page-subtle` ga
  * gjennomsiktige flater, `--semantic-info-*` en ramme som aldri ble tegnet,
  * og `--semantic-page-muted` i skallet var aldri et token. Så kom 0.22, der
- * `--palette-*`, `--semantic-*` og `--size-*` forsvant med ett, og nesten
+ * `--palette-*`, `--semantic-*` og `--size-*` forsvant med ett, og over
  * 200 steder i `brett.css` og skallet ville sluttet å virke i stillhet.
  *
  * Det som finnes, er det pakkens samlede stilark definerer, og det appenes
@@ -217,9 +217,11 @@ const lesTokens = (m: string): void => {
   }
 }
 for (const k of KILDER) lesTokens(k)
-if (tokenfiler < 20 || definert.size < 100)
+// Gulvet står på bruken: slutter regexen eller kommentarfjerningen å
+// treffe, går sjekken ellers grønt på null påstander.
+if (tokenfiler < 20 || bruk.length < 100)
   funn.push(
-    `leste ${tokenfiler} filer og ${definert.size} definerte variabler, så tokensjekken sier ikke noe. Stemmer stiene?`,
+    `leste ${tokenfiler} filer og fant ${bruk.length} var(), så tokensjekken sier ikke noe. Stemmer stiene?`,
   )
 const ukjente = new Map<string, number>()
 for (const { fil, navn } of bruk)

@@ -14,7 +14,7 @@ import { chromium } from "playwright"
  * bevisst forskjell i et demospill som handler om at de er like, finnes ikke.
  *
  * **Den spiller en hel runde.** Første utgave gjorde ett oppslag på forsiden,
- * og så dermed rundt tjue av de 38 klassene: skjemaet, kvitteringen og
+ * og så dermed rundt tjue av de 38 klassene som fantes da: skjemaet, kvitteringen og
  * oppgjøret kommer først etter at du har meldt deg på og fattet et vedtak.
  * Omtrent halve systemet var altså utenfor den vaktposten som skulle se hele
  * det. Tallet var ikke stabilt heller, siden panelet bygges et øyeblikk etter

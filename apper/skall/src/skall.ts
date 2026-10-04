@@ -153,7 +153,7 @@ const SIDE = `<!doctype html>
 
   .ramme__lenke {
     font-size: var(--font-size-xs);
-    color: var(--fs-color-accent-fill);
+    color: var(--fs-color-accent-text);
   }
 
   iframe {
