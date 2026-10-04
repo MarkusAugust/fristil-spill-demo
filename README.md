@@ -199,7 +199,7 @@ er den verdiløs.
 fra returverdien og fra navnene som henger på funksjonen, og feller enhver
 `fs-`-klasse skrevet for hånd der det finnes en bunter eller en vei til en
 import. Datastar-appen er med vilje utenfor: Kotlin kan ikke kalle `fs`.
-Den leser også hver `var(--…)` i appene og `felles/`, og krever at
+Den leser også hver `var(--…)` uten reserve i appene og `felles/`, og krever at
 variabelen finnes i Fristil eller er definert av appen selv. Der er Kotlin
 med. En `var()` mot et token som ikke finnes, gjør hele erklæringen ugyldig
 uten et ord, og det hadde skjedd fire ganger før 0.22 døpte om alle tokenene
@@ -549,8 +549,11 @@ Oppskriften setter **skrift og form, og lar fargene stå**. Fristils
 standardfarger er regnet ut av Skatteetatens kulører, og å oppgi deres egne
 til generatoren gir de samme verdiene tilbake: `--aksent=#1362ae` gir den
 samme aksentfamilien som ingen farge i det hele tatt, og det samme gjelder
-fare, advarsel og besøkt. Det å sette dem i oppskriften ville bare vært
-støy.
+fare og besøkt. Det å sette dem i oppskriften ville bare vært støy.
+
+Advarsel avviker, og med vilje. Skatteetatens `#9f7509` gir 4,18:1 mot hvit,
+og kravet for vanlig tekst er 4,5:1. Fristils standard er regnet av
+`#896508`, og den fargen holder.
 
 Verdiene er likevel ikke Skatteetatens lenger. Fra Fristil 0.22 er en farge
 et punkt i en matrise av familie og rolle, og lysheten hører til rollen:

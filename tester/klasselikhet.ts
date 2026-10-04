@@ -233,7 +233,13 @@ try {
            * sjekken så. Valideringen er nettopp der de tre utgavene gjør mest
            * ulikt: Datastar får en patch fra serveren, Astro laster siden på
            * nytt, og React tegner om i nettleseren.
+           *
+           * Kommunefeltet får et navn som ikke er en kommune. Et tomt felt er
+           * gyldig, så uten det ble feilmeldingen under kommunefeltet aldri
+           * rendret, og at den manglet `fs-error-text` i to utgaver kunne
+           * ikke felles.
            */
+          await side.locator("#kommune").fill("Inder", { timeout: 10_000 })
           await side.getByRole("button", { name: "Fatt vedtak" }).click({ timeout: 10_000 })
           await side
             .locator(".fs-error-summary, fs-error-summary:not([hidden])")
@@ -409,12 +415,17 @@ if (sammenlignes.length < 2) {
         )
     }
   }
-  // Skjemaet har fem felt og påmeldingen ett. Færre betyr at ledetekstene
-  // ikke lenger ble funnet, og da sammenligner sjekken ingenting.
-  if (feltSammenlignet < 5)
+  // Seks felt har ledetekst: navnet, temavelgeren og de fire i skjemaet.
+  // Færre betyr at en ledetekst ikke lenger ble funnet i alle utgavene, og
+  // da står det feltet utenfor sammenligningen uten et ord. Kommunefeltet
+  // er det sjekken ble skrevet for, og kreves ved navn.
+  if (feltSammenlignet < 6)
     funn.push(
-      `bare ${feltSammenlignet} felt fantes i alle utgavene, så sammenligningen felt for felt sier ikke noe`,
+      `bare ${feltSammenlignet} av 6 felt fantes i alle utgavene, så sammenligningen felt for felt sier ikke alt`,
     )
+  const KOMMUNEFELT = "Bekreft kommunen søkeren hører til"
+  if (sammenlignes.some((a) => !perFelt.get(a.navn)?.has(KOMMUNEFELT)))
+    funn.push(`fant ikke kommunefeltet, «${KOMMUNEFELT}», i alle utgavene`)
 }
 
 if (funn.length > 0) {

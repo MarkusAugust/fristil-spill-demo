@@ -728,6 +728,19 @@ body:has(.fs-connection-status__bar) .topplinje {
    ------------------------------------------------------------------ */
 
 /*
+ * Nettleserens egne flater, som rullefelt og nedtrekkslister, følger
+ * systemet når spilleren ikke har valgt. Fristil satte `color-scheme` på
+ * `:root` til og med 0.22, og nå bare der `data-theme` står. Uten linja
+ * under får en mørk maskin lyse rullefelt på en mørk side.
+ *
+ * `:not([data-theme])` og ikke bare `:root`: regelen står utenfor Fristils
+ * lag og ville slått pakkens `color-scheme: dark` når spilleren har valgt.
+ */
+:root:not([data-theme]) {
+  color-scheme: light dark;
+}
+
+/*
  * I mørkt tema snus forholdet: sideflaten er den mørkeste, og kortene
  * løftes. Samme regel begge veier ville gitt kort som er mørkere enn
  * siden.
@@ -738,19 +751,6 @@ body:has(.fs-connection-status__bar) .topplinje {
  * halvvirksom: et mørkt valg på en lys maskin ville snudd tokenene uten å
  * snu disse to reglene.
  */
-/*
- * Nettleserens egne flater, som rullefelt og nedtrekkslister, følger
- * systemet når spilleren ikke har valgt. Fristil satte `color-scheme` på
- * `:root` til og med 0.22, og nå bare der `data-theme` står. Uten linja
- * under fikk en mørk maskin lyse rullefelt på en mørk side.
- *
- * `:not([data-theme])` og ikke bare `:root`: regelen står utenfor Fristils
- * lag og ville slått pakkens `color-scheme: dark` når spilleren har valgt.
- */
-:root:not([data-theme]) {
-  color-scheme: light dark;
-}
-
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) body {
     background: var(--fs-color-neutral-canvas);
@@ -1033,8 +1033,9 @@ body:has(.fs-connection-status__bar) .topplinje {
   color: var(--fs-color-accent-text);
 }
 
-/* Merkelappen arver fargen på den valgte raden. Sto den dempede fargen igjen,
-   ble den 3,45:1 mot den lyse flaten, altså under kravet på 4,5:1. */
+/* Merkelappen arver fargen på den valgte raden. Med tokenene før Fristil
+   0.22 ble den dempede fargen 3,45:1 mot den lyse flaten, under kravet på
+   4,5:1. Matrisen holder kravet, men raden står fortsatt i én farge. */
 .panel__linje[aria-current="true"] .panel__linjelapp,
 .panel__linje[data-hendelse]:hover .panel__linjelapp {
   color: inherit;
@@ -1078,8 +1079,8 @@ body:has(.fs-connection-status__bar) .topplinje {
  *
  * Fargene sto en gang som `--semantic-info-*`, og de tokenene finnes ikke i
  * Fristil. En ugyldig `var()` gjør hele regelen ugyldig, så `outline` ble
- * `none` og markeringen tegnet aldri noe. Fristil har ingen «info»-status;
- * det som er framhevet og aktivt heter `interactive`.
+ * `none` og markeringen tegnet aldri noe. Fristil har ingen «info»-status,
+ * og det som er framhevet og aktivt er aksentfamilien, `--fs-color-accent-*`.
  */
 .panel-lyser {
   outline: 2px solid var(--fs-color-accent-fill);
