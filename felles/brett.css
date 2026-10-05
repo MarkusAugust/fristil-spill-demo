@@ -1124,8 +1124,23 @@ body:has(.fs-connection-status__bar) .topplinje {
     overflow: visible;
   }
 
+  /*
+   * Her har panelet bare et tak, og ingen fast høyde. `min-block-size: 0`
+   * fra den brede utgaven lot da rutenettet krympe radene under innholdet
+   * når alt til sammen var høyere enn taket, og loggen la seg oppå «Hvordan»
+   * framfor at panelet rullet. På en telefon skjedde det så snart loggen
+   * hadde noen linjer.
+   */
+  .panel__del--hva,
+  .panel__del--logg {
+    min-block-size: auto;
+  }
+
+  /* Fast høyde, og ikke bare en minstehøyde: med `auto` over ville
+     nyttelasten ellers blitt like høy som alt som kom over ledningen. */
   .panel__nyttelast {
-    min-block-size: 9rem;
+    flex: none;
+    block-size: 9rem;
   }
 
   .panelvert {
