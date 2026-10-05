@@ -102,8 +102,10 @@ async function sjekk(navn: string, motor: BrowserType) {
 
     const nye = hentinger.slice(forHentinger)
     if (nye.length > 0) {
-      // Nådetiden er femten sekunder, og igjen-tallet rundes til nærmeste
-      // sekund. Ett sekunds slakk tar høyde for det.
+      // Varselet kommer femten sekunder etter at klokka viser null, og siden
+      // hentes to sekunder senere. Klokka viser null et halvt sekund før
+      // fristen, fordi tallet rundes. Grensen på fjorten er derfor godt under
+      // det riktige, og godt over de fire sekundene tikk-tellingen ga.
       const etter = (nye[0] - frist) / 1000
       if (etter < 14) {
         si(
@@ -132,7 +134,12 @@ async function sjekk(navn: string, motor: BrowserType) {
   }
 }
 
-await Promise.all([sjekk("Chromium", chromium), sjekk("WebKit", webkit)])
+// `allSettled`: kaster den ene, skal funnene fra den andre fortsatt komme
+// fram, og begge nettleserne lukkes.
+const utfall = await Promise.allSettled([sjekk("Chromium", chromium), sjekk("WebKit", webkit)])
+for (const [i, u] of utfall.entries()) {
+  if (u.status === "rejected") funn.push(`${["Chromium", "WebKit"][i]}: testen stoppet. ${u.reason}`)
+}
 
 if (funn.length > 0) {
   console.error(`Fant ${funn.length} avvik:\n${funn.map((f) => `  - ${f}`).join("\n")}`)

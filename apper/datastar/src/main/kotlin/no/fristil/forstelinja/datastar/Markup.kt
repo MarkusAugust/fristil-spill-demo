@@ -314,29 +314,51 @@ fun side(
        * forrige hadde startet. Over et mobilnett rakk siden sjelden å komme
        * fram på et kvart sekund, så telefonen sto og blinket med fire
        * lastinger i sekundet til fanen ble lukket.
+       *
+       * Én gang betyr ikke én gang for alltid. Blir lastingen avbrutt, eller
+       * kommer siden tilbake fra nettleserens bakoverhurtigbuffer med
+       * skriptet slik det sto, skal vakthunden våkne igjen. Derfor husker den
+       * når den hentet, og ikke bare at den gjorde det.
+       *
+       * Tida er `performance.now()` og ikke veggklokka. Den kan ikke hoppe
+       * når telefonen retter klokka si etter en blund.
        */
       const NAADE_SEKUNDER = 15
+      const NY_HENTING_SEKUNDER = 30
       let sisteFrist = 0
       let utloptFra = 0
       let varslet = false
-      let henter = false
+      let hentetVed = 0
+
+      const glem = () => {
+        utloptFra = 0
+        varslet = false
+      }
+
+      addEventListener("pageshow", (e) => {
+        if (e.persisted) {
+          glem()
+          hentetVed = 0
+        }
+      })
 
       const vakthund = (frist, igjen) => {
         if (frist !== sisteFrist) {
           sisteFrist = frist
-          utloptFra = 0
-          varslet = false
+          glem()
+          hentetVed = 0
           return
         }
         // En skjult fane får strømmen sin lukket av Datastar, og åpnet igjen
-        // når den vises. Da skal den få hele nådetiden på å ta seg inn.
+        // når den vises. Da skal den få hele nådetiden på å ta seg inn, og
+        // varselet skal komme på nytt om den ikke gjør det.
         if (igjen > 0 || document.visibilityState !== "visible") {
-          utloptFra = 0
+          glem()
           return
         }
-        if (henter) return
 
-        const na = Date.now()
+        const na = performance.now()
+        if (hentetVed > 0 && na - hentetVed < NY_HENTING_SEKUNDER * 1000) return
         if (utloptFra === 0) utloptFra = na
         const overtid = (na - utloptFra) / 1000
 
@@ -348,7 +370,8 @@ fun side(
           if (typeof samband?.reportFailure === "function") samband.reportFailure()
         }
         if (overtid >= NAADE_SEKUNDER + 2) {
-          henter = true
+          hentetVed = na
+          glem()
           location.reload()
         }
       }
