@@ -205,17 +205,19 @@ const sammeRunde = async () => {
  */
 const SKALL = process.env.SKALL_URL ?? "http://localhost:8084"
 const treSpillereIEnNettleser = async () => {
-  // Bare lokalt. Rammene finnes på portnummer, og i drift har utgavene hvert
-  // sitt domene, der kapslene aldri var delt. Sier fra når den hoppes over,
-  // så en grønn kjøring ikke later som den sjekket noe.
-  if (!["localhost", "127.0.0.1"].includes(new URL(SKALL).hostname)) {
-    console.log(`Hopper over tre spillere i én nettleser: ${SKALL} er ikke lokalt.`)
+  /*
+   * Bare mot `localhost`. Rammene finnes på portnummer, og i drift har
+   * utgavene hvert sitt domene, der kapslene aldri var delt. Heller ikke mot
+   * 127.0.0.1: skallet bygger rammene mot `localhost`, og fra 127.0.0.1 er
+   * de et annet nettsted. Da sender nettleseren ikke en `SameSite=Lax`-kapsel
+   * til dem, og ingen påmelding i rammene blir husket. Sier fra når den
+   * hoppes over, så en grønn kjøring ikke later som den sjekket noe.
+   */
+  if (new URL(SKALL).hostname !== "localhost") {
+    console.log(`Hopper over tre spillere i én nettleser: ${SKALL} er ikke localhost.`)
     return
   }
   const kontekst = await nettleser.newContext({ viewport: { width: 1900, height: 1100 } })
-  // Én kapsel for `localhost` gjelder alle portene, nettopp det denne delen
-  // handler om.
-  await kontekst.addCookies([{ name: "forstelinja-test", value: "1", url: SKALL }])
   const skall = await kontekst.newPage()
   skall.setDefaultTimeout(20_000)
   await skall.goto(SKALL)
@@ -224,16 +226,40 @@ const treSpillereIEnNettleser = async () => {
   const adresser = await skall.$$eval("iframe", (rammer) =>
     rammer.map((r) => (r as HTMLIFrameElement).src),
   )
+  /*
+   * Testkapselen settes på rammenes egne adresser, ikke på skallets. Det er
+   * dit påmeldingen går, og den kommer først etterpå. Uten kapselen blir
+   * testspillerne meldt på som ekte, med plass i den evige topplista om
+   * vakta tar slutt underveis.
+   */
+  await kontekst.addCookies(
+    adresser.map((url) => ({ name: "forstelinja-test", value: "1", url })),
+  )
   const ramme = (navn: keyof typeof APPER) => {
     const port = new URL(APPER[navn]).port
     const adresse = adresser.find((a) => new URL(a).port === port)
     return skall.frames().find((f) => adresse && f.url().startsWith(adresse))
   }
+  /*
+   * Rammene er `loading="lazy"`, og finnes ikke nødvendigvis ennå når
+   * skallet selv er ferdig lastet, verken første gang eller etter en ny
+   * lasting. Et oppslag uten venting ga «ingen (deg)» i alle tre. Finnes
+   * rammen ikke etter 15 sekunder, sier feilen nettopp det.
+   */
+  const ventPaRamme = async (navn: keyof typeof APPER) => {
+    const slutt = Date.now() + 15_000
+    let f = ramme(navn)
+    while (!f && Date.now() < slutt) {
+      await skall.waitForTimeout(100)
+      f = ramme(navn)
+    }
+    if (!f) throw new Error(`fant ikke rammen til ${navn} i skallet`)
+    return f
+  }
   const navnFor = { datastar: "Skall Datastar", tanstack: "Skall TanStack", astro: "Skall Astro" }
   try {
     for (const navn of NAVN) {
-      const f = ramme(navn)
-      if (!f) throw new Error(`fant ikke rammen til ${navn} i skallet`)
+      const f = await ventPaRamme(navn)
       await f.getByLabel("Navnet ditt").fill(navnFor[navn])
       await f.getByRole("button", { name: "Begynn vakta" }).click()
       // «(deg)» og ikke bare navnet: navnet kommer til alle via strømmen, og
@@ -246,24 +272,14 @@ const treSpillereIEnNettleser = async () => {
     }
     await skall.reload()
     for (const navn of NAVN) {
-      /*
-       * Rammene er `loading="lazy"`, og etter lastingen finnes de ikke
-       * nødvendigvis ennå når skallet selv er ferdig. Et oppslag uten venting
-       * ga «ingen (deg)» i alle tre. Vent på rammen, og så på raden.
-       */
-      const slutt = Date.now() + 15_000
-      let f = ramme(navn)
-      while (!f && Date.now() < slutt) {
-        await skall.waitForTimeout(100)
-        f = ramme(navn)
-      }
-      const rad = f?.locator("#tavle tr", { hasText: "(deg)" })
+      const f = await ventPaRamme(navn)
+      const rad = f.locator("#tavle tr", { hasText: "(deg)" })
       await rad
-        ?.filter({ hasText: navnFor[navn] })
+        .filter({ hasText: navnFor[navn] })
         .waitFor({ timeout: 10_000 })
         .catch(() => {})
       const meg = await rad
-        ?.first()
+        .first()
         .textContent({ timeout: 1000 })
         .catch(() => null)
       if (!meg?.includes(navnFor[navn]))
