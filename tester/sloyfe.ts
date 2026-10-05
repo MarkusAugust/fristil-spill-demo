@@ -5,9 +5,10 @@ import { chromium } from "playwright"
  *
  * Det skjer når du bytter utgave med lenka i topplinja, som bærer
  * spilleren med seg, og lar den gamle fanen stå. Det skjedde også i skallet
- * så lenge de tre utgavene delte én kapsel lokalt. Hver app henter tilstanden på nytt for hver hendelse, og sa
- * hver henting fra hvilken utgave spilleren satt i, flyttet spilltjeneren
- * henne fram og tilbake og sendte en hendelse for hver flytting. Én
+ * så lenge de tre utgavene delte én kapsel lokalt. Hver app henter
+ * tilstanden på nytt for hver hendelse, og sa hver henting fra hvilken
+ * utgave spilleren satt i, flyttet spilltjeneren henne fram og tilbake og
+ * sendte en hendelse for hver flytting. Én
  * påmelding ga da over sju tusen hendelser i sekundet, og spillet sto
  * stille.
  *

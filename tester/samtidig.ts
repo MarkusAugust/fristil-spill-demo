@@ -206,8 +206,12 @@ const sammeRunde = async () => {
 const SKALL = process.env.SKALL_URL ?? "http://localhost:8084"
 const treSpillereIEnNettleser = async () => {
   // Bare lokalt. Rammene finnes på portnummer, og i drift har utgavene hvert
-  // sitt domene, der kapslene aldri var delt.
-  if (new URL(SKALL).hostname !== "localhost") return
+  // sitt domene, der kapslene aldri var delt. Sier fra når den hoppes over,
+  // så en grønn kjøring ikke later som den sjekket noe.
+  if (!["localhost", "127.0.0.1"].includes(new URL(SKALL).hostname)) {
+    console.log(`Hopper over tre spillere i én nettleser: ${SKALL} er ikke lokalt.`)
+    return
+  }
   const kontekst = await nettleser.newContext({ viewport: { width: 1900, height: 1100 } })
   // Én kapsel for `localhost` gjelder alle portene, nettopp det denne delen
   // handler om.
@@ -242,11 +246,25 @@ const treSpillereIEnNettleser = async () => {
     }
     await skall.reload()
     for (const navn of NAVN) {
-      const f = ramme(navn)
-      const meg = await f
-        ?.locator("#tavle tr", { hasText: "(deg)" })
-        .first()
-        .textContent({ timeout: 10_000 })
+      /*
+       * Rammene er `loading="lazy"`, og etter lastingen finnes de ikke
+       * nødvendigvis ennå når skallet selv er ferdig. Et oppslag uten venting
+       * ga «ingen (deg)» i alle tre. Vent på rammen, og så på raden.
+       */
+      const slutt = Date.now() + 15_000
+      let f = ramme(navn)
+      while (!f && Date.now() < slutt) {
+        await skall.waitForTimeout(100)
+        f = ramme(navn)
+      }
+      const rad = f?.locator("#tavle tr", { hasText: "(deg)" })
+      await rad
+        ?.filter({ hasText: navnFor[navn] })
+        .waitFor({ timeout: 10_000 })
+        .catch(() => {})
+      const meg = await rad
+        ?.first()
+        .textContent({ timeout: 1000 })
         .catch(() => null)
       if (!meg?.includes(navnFor[navn]))
         funn.push(

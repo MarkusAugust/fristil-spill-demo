@@ -124,7 +124,7 @@ fun side(
   val imports = KOMPONENTER.joinToString("\n      ") { (fil, fn) -> """import { $fn } from "$fil"; $fn();""" }
   // Temaet kommer fra kapselen, så serveren kan skrive det selv. Da blinker
   // ikke siden lyst for den som har valgt mørkt, og valget følger med til de
-  // to andre utgavene, som leser den samme kapselen.
+  // to andre utgavene lokalt, der de leser den samme kapselen.
   val temaAttributt = if (tema == "light" || tema == "dark") """ data-theme="$tema"""" else ""
 
   return """

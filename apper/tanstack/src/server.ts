@@ -19,7 +19,6 @@ import { valider } from "./validering"
  */
 const start = createStartHandler(defaultStreamHandler)
 
-
 /** Og den som bærer fargetemaet. */
 const KAPSEL_TEMA = "forstelinja-tema"
 

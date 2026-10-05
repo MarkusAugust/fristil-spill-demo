@@ -12,7 +12,6 @@ import { KOMMUNER } from "../kommuner"
 import { KAPSEL, tilstand } from "../spilltjener"
 import type { Skjermbilde } from "../tilstand"
 
-
 /**
  * Første skjermbilde, hentet på serveren.
  *

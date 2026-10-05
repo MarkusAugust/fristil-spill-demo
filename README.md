@@ -277,16 +277,19 @@ sin vei ut: `EventSource` kobler til igjen av seg selv, og Astro henter en ny
 side når runden er en annen enn den siden ble tegnet med.
 
 `tester/sloyfe.ts` åpner de tre utgavene som samme spiller, slik det blir når
-du bytter utgave med lenka i topplinja og lar den gamle fanen stå, holder en egen strøm mot spilltjeneren, utløser én hendelse og krever
-at strømmen blir stille igjen. Den finnes fordi hver app hentet tilstanden på
-nytt for hver hendelse og sa fra hvilken utgave spilleren satt i, og
+du bytter utgave med lenka i topplinja og lar den gamle fanen stå, holder
+en egen strøm mot spilltjeneren, utløser én hendelse og krever at strømmen
+blir stille igjen. Den finnes fordi hver app hentet tilstanden på nytt for
+hver hendelse og sa fra hvilken utgave spilleren satt i, og
 spilltjeneren sendte en hendelse for hver flytting. Med én spiller i to
 utgaver fødte hver hendelse en ny, og spillet druknet i tusenvis av
 hendelser i sekundet. Den ser på ledningen og ikke på skjermen, fordi
 skjermene så helt normale ut mens det sto på.
 
 Utgaven meldes derfor bare på dokumentlastinger, og den siste vinner. Står du
-i to utgaver samtidig, sier tavla den du sist lastet en side i.
+i to utgaver samtidig, sier tavla den du sist lastet en side i. Står en av
+dem i Astro, er det Astro etter hvert rundeskifte, fordi Astro-utgaven
+henter en ny side ved hver runde.
 
 `tester/panel.ts` krever at «Med hva» i panelet viser det utgaven faktisk
 sender: HTML over hendelsesstrømmen i Datastar, JSON i de to andre, med
