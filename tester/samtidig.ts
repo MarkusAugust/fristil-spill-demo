@@ -18,6 +18,11 @@ import { chromium, type Page } from "playwright"
  * og så leverer de én om gangen. Etter hvert steg skal alle tre vise den
  * samme teksten, og tallet skal ha gått opp med én.
  *
+ * De som møter sent, skriver navnet sitt før runden skifter, og trykker
+ * først etterpå. Navnet skal stå der fortsatt. I Datastar og Astro var det
+ * borte etter et faseskifte, mens TanStack beholdt det, og det var også
+ * grunnen til at denne testen en stund feilet av og til.
+ *
  *     ./kjor.sh rask
  *     cd tester && bun run samtidig
  */
@@ -42,12 +47,12 @@ const beskriv = (tekster: string[]) =>
   NAVN.map((n, i) => `${n} «${tekster[i]}»`).join(", ")
 
 /**
- * Åpner siden og lukker hilsenen, men melder ikke på.
+ * Åpner siden, lukker hilsenen og skriver navnet, men melder ikke på.
  *
  * Delt fra påmeldingen fordi lastingen og hilsenen tok tjue sekunder for to
  * utgaver, og med runder på 30 sekunder var runden over før løpet kom i gang.
  */
-const gjorKlar = async (navn: keyof typeof APPER) => {
+const gjorKlar = async (navn: keyof typeof APPER, spillernavn = `Samtidig ${navn}`) => {
   const url = APPER[navn]
   const kontekst = await nettleser.newContext()
   // Kapselen holder testspilleren ute av den evige topplista, som i
@@ -68,17 +73,30 @@ const gjorKlar = async (navn: keyof typeof APPER) => {
     () => document.querySelector("#velkomst dialog")?.matches(":modal") === true,
   )
   await side.getByRole("button", { name: "Jeg merker nok forskjellen" }).click()
+  // Med fokus i feltet, slik en som skriver har det.
+  await side.getByLabel("Navnet ditt").click()
+  await side.getByLabel("Navnet ditt").pressSequentially(spillernavn)
   return side
 }
 
+/**
+ * Sjekker at navnet fortsatt står i feltet, og fyller det inn igjen om
+ * ikke, så resten av løpet kommer fram.
+ */
+const navnetStar = async (navn: string, side: Page, ventet: string) => {
+  const verdi = await side.getByLabel("Navnet ditt").inputValue()
+  if (verdi !== ventet) {
+    funn.push(`${navn}: navnet i påmeldingen var «${verdi}» etter faseskiftet, ventet «${ventet}»`)
+    await side.getByLabel("Navnet ditt").fill(ventet)
+  }
+}
+
 /*
- * Navnet fylles inn rett før klikket. Datastar tegner skjemaet på nytt ved
- * hver hendelse, så et navn fylt inn i ventetiden var borte, påmeldingen
- * feilet, og tavla, som står der uansett, så ut som en kvittering.
  * Påmeldingen er først tatt imot når spilleren står på tavla som «(deg)».
+ * Tavla står der uansett, så å vente på den alene sa ingenting: en
+ * påmelding som feilet, så ut som en kvittering.
  */
 const meldPa = async (navn: keyof typeof APPER, side: Page) => {
-  await side.getByLabel("Navnet ditt").fill(`Samtidig ${navn}`)
   await side.getByRole("button", { name: "Begynn vakta" }).click()
   await side.locator("#tavle").getByText(`Samtidig ${navn}`).waitFor()
   await side.locator("#tavle").getByText("(deg)").waitFor()
@@ -141,9 +159,15 @@ const klokka = async () =>
     naMs: number
   }
 
+/*
+ * Null også når fristen er passert. Spilltjeneren flytter fasen på neste
+ * tikk, så et øyeblikk står fasen som «runde» med frist i fortiden. Det
+ * negative tallet ble lest som starten på en ny runde, og løpet begynte i
+ * det runden tok slutt.
+ */
 const gjenstar = async () => {
   const t = await klokka()
-  return t.fase === "runde" ? t.fristMs - t.naMs : 0
+  return t.fase === "runde" ? Math.max(0, t.fristMs - t.naMs) : 0
 }
 
 /*
@@ -163,10 +187,13 @@ const sammeRunde = async () => {
 }
 
 try {
-  const [astro, datastar, tanstack] = await Promise.all([
+  // `venter` er en Astro-side som bare skriver navnet og aldri melder seg
+  // på, så Astro også har noen som står i feltet når runden skifter.
+  const [astro, datastar, tanstack, venter] = await Promise.all([
     gjorKlar("astro"),
     gjorKlar("datastar"),
     gjorKlar("tanstack"),
+    gjorKlar("astro", "Venter i Astro"),
   ])
   await meldPa("astro", astro)
 
@@ -182,6 +209,12 @@ try {
   for (let i = 0; i < VENT && (await gjenstar()) === 0; i++) await astro.waitForTimeout(250)
   if ((await gjenstar()) === 0) throw new Error("fant ingen ny runde å starte i")
 
+  // Vent til sidene har tegnet den nye runden, og se at navnet overlevde.
+  for (const side of [datastar, tanstack, venter])
+    await side.locator(".topplinje__fase").getByText(/^Runde/).waitFor()
+  await navnetStar("datastar", datastar, "Samtidig datastar")
+  await navnetStar("tanstack", tanstack, "Samtidig tanstack")
+  await navnetStar("astro", venter, "Venter i Astro")
   await sammeRunde()
   // De to andre møter midt i runden.
   await Promise.all([meldPa("datastar", datastar), meldPa("tanstack", tanstack)])

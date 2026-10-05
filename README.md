@@ -213,6 +213,11 @@ derfor ikke at Astro hang igjen i skallet: øya talte med spilltjenerens
 `harSvart`, som bare teller dem som var med da saken kom på bordet, mens de
 to andre teller radene på tavla. To av spillerne møter derfor midt i runden.
 
+De skriver navnet sitt før runden skifter og trykker først etterpå, og
+navnet skal stå der fortsatt. I Datastar og Astro var det borte etter et
+faseskifte, mens TanStack beholdt det: Datastar tegnet skjemaet på nytt med
+malens tomme felt, og Astro hentet en ny side.
+
 `tester/markup.ts` henter forsiden fra hver utgave, melder seg på og henter
 brettet, og kjører Fristils egen diagnostikk over begge, den samme som
 editorutvidelsen: elementer som ikke

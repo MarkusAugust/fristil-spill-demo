@@ -109,6 +109,47 @@ document.querySelector<HTMLButtonElement>("[data-apne-resultat]")?.addEventListe
   document.getElementById("resultat")?.setAttribute("open", "")
 })
 
+/* --- Navnet over en ny side --------------------------------------- */
+
+/*
+ * Ved et faseskifte henter øya en ny side, og et navn halvveis skrevet i
+ * påmeldingen var borte. TanStack beholdt det, så det var nettopp en
+ * forskjell demoen sier at du ikke skal se. Navnet legges i
+ * `sessionStorage` rett før, og settes tilbake når siden er lastet. Det
+ * gjelder bare én lasting: nøkkelen fjernes med en gang den er lest.
+ *
+ * Lagringen kan mangle eller kaste i et privat vindu, og da mister brukeren
+ * navnet som før, men ingenting annet går i stykker.
+ */
+const NAVNENOKKEL = "forstelinja-navn"
+const navnefelt = () =>
+  document.querySelector<HTMLInputElement>('form[action="/bli-med"] input[name="navn"]')
+
+try {
+  const lagret = sessionStorage.getItem(NAVNENOKKEL)
+  sessionStorage.removeItem(NAVNENOKKEL)
+  const felt = navnefelt()
+  if (lagret && felt && !felt.value) {
+    const { verdi, fokus } = JSON.parse(lagret) as { verdi: string; fokus: boolean }
+    felt.value = verdi
+    if (fokus) {
+      felt.focus()
+      felt.setSelectionRange(verdi.length, verdi.length)
+    }
+  }
+} catch {}
+
+const taVarePaNavnet = () => {
+  const felt = navnefelt()
+  if (!felt?.value) return
+  try {
+    sessionStorage.setItem(
+      NAVNENOKKEL,
+      JSON.stringify({ verdi: felt.value, fokus: document.activeElement === felt }),
+    )
+  } catch {}
+}
+
 /* --- Strømmen ----------------------------------------------------- */
 
 type Puls = {
@@ -154,6 +195,7 @@ if (brett) {
       puls.sakId !== brett.dataset.sak ||
       String(puls.harSvart) !== brett.dataset.svart
     ) {
+      taVarePaNavnet()
       location.replace("/")
       return
     }
