@@ -261,7 +261,7 @@ try {
        *
        * Panelet observerer resten av siden, så et element som dukker opp og
        * forsvinner ute på brettet ville blitt notert som en oppdatering, og
-       * testen ville forurenset akkurat det den måler.
+       * testen ville forurenset akkurat det den sjekker.
        */
       const vert = document.querySelector(".panelvert") ?? document.body
       const element = document.createElement("div")
@@ -344,8 +344,20 @@ try {
     const side = await kontekst.newPage()
     await side.goto(app.url, { waitUntil: "domcontentloaded" })
 
-    const hilsen = side.getByRole("button", { name: "Jeg merker nok forskjellen" })
-    if (await hilsen.isVisible().catch(() => false)) await hilsen.click()
+    // Hilsenen blir modal først når komponenten er lastet, og til da er
+    // panelknappen ikke dekket ennå. Vent på den, som i delen over.
+    await side
+      .waitForFunction(
+        () =>
+          document.querySelector("#velkomst dialog")?.matches(":modal") ===
+          true,
+        undefined,
+        { timeout: 15000 },
+      )
+      .catch(() => si("velkomsthilsenen ble aldri en modal dialog"))
+    await side
+      .getByRole("button", { name: "Jeg merker nok forskjellen" })
+      .click()
 
     await side.getByRole("button", { name: "Hva skjedde?" }).click()
     const harLinjer = await side
@@ -361,7 +373,7 @@ try {
         const r = del.getBoundingClientRect()
         return {
           navn:
-            del.querySelector("h2")?.textContent?.replace(/\s+/g, " ").replace(/\s*\?$/, "").trim() ??
+            del.querySelector("h2")?.textContent?.replace(/\s+/g, " ").trim().replace(/\s*\?$/, "") ??
             del.className,
           topp: r.top,
           bunn: r.bottom,
