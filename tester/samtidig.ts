@@ -194,6 +194,68 @@ const sammeRunde = async () => {
   runden = naa
 }
 
+/**
+ * Tre spillere i én nettleser, én i hver ramme i skallet.
+ *
+ * Lokalt står de tre utgavene på samme vert med hver sin port, og
+ * nettleseren skiller ikke kapsler på port. Da de tre delte kapselen
+ * `spiller`, overtok den som meldte seg på sist de to andre rammene neste
+ * gang de hentet siden: August ble til Pål. Hver ramme skal beholde sin
+ * egen spiller, også etter en ny lasting.
+ */
+const SKALL = process.env.SKALL_URL ?? "http://localhost:8084"
+const treSpillereIEnNettleser = async () => {
+  const kontekst = await nettleser.newContext({ viewport: { width: 1900, height: 1100 } })
+  await kontekst.addCookies([{ name: "forstelinja-test", value: "1", url: SKALL }])
+  for (const port of ["8081", "8082", "8083"])
+    await kontekst.addCookies([
+      { name: "forstelinja-test", value: "1", url: `http://localhost:${port}` },
+    ])
+  const skall = await kontekst.newPage()
+  skall.setDefaultTimeout(20_000)
+  await skall.goto(SKALL)
+  // Adressene fra skallets egne rammer: `frame.url()` er tom til rammen har
+  // lastet, se `skall.ts`.
+  const adresser = await skall.$$eval("iframe", (rammer) =>
+    rammer.map((r) => (r as HTMLIFrameElement).src),
+  )
+  const ramme = (navn: keyof typeof APPER) => {
+    const port = new URL(APPER[navn]).port
+    const adresse = adresser.find((a) => new URL(a).port === port)
+    return skall.frames().find((f) => adresse && f.url().startsWith(adresse))
+  }
+  const navnFor = { datastar: "Skall Datastar", tanstack: "Skall TanStack", astro: "Skall Astro" }
+  try {
+    for (const navn of NAVN) {
+      const f = ramme(navn)
+      if (!f) throw new Error(`fant ikke rammen til ${navn} i skallet`)
+      await f.getByLabel("Navnet ditt").fill(navnFor[navn])
+      await f.getByRole("button", { name: "Begynn vakta" }).click()
+      await f.locator("#tavle").getByText(navnFor[navn]).waitFor()
+    }
+    await skall.reload()
+    await skall.waitForTimeout(1500)
+    for (const navn of NAVN) {
+      const f = ramme(navn)
+      const meg = await f
+        ?.locator("#tavle tr", { hasText: "(deg)" })
+        .first()
+        .textContent({ timeout: 10_000 })
+        .catch(() => null)
+      if (!meg?.includes(navnFor[navn]))
+        funn.push(
+          `skallet: ${navn}-rammen viste «${meg?.replace(/\s+/g, " ").trim() ?? "ingen (deg)"}» etter en ny lasting, ventet ${navnFor[navn]}`,
+        )
+    }
+  } finally {
+    for (const navn of NAVN)
+      await ramme(navn)
+        ?.evaluate(() => fetch("/ga-av", { method: "POST" }).then(() => undefined))
+        .catch(() => {})
+    await kontekst.close()
+  }
+}
+
 try {
   // `venter` er en Astro-side som bare skriver navnet og aldri melder seg
   // på, så Astro også har noen som står i feltet når runden skifter.
@@ -270,6 +332,8 @@ try {
         `etter at ${navn} leverte, sto det «${naa[0]}» i alle tre, ventet ${levert} levert. Spilltjeneren: ${await spilltjenersTavle()}`,
       )
   }
+
+  await treSpillereIEnNettleser()
 } catch (e) {
   // Fire linjer, så en lokator som gikk ut på tid sier hvilken den var.
   funn.push(

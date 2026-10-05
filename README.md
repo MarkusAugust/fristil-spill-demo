@@ -218,6 +218,14 @@ navnet skal stå der fortsatt. I Datastar og Astro var det borte etter et
 faseskifte, mens TanStack beholdt det: Datastar tegnet skjemaet på nytt med
 malens tomme felt, og Astro hentet en ny side.
 
+Til slutt melder den på tre spillere i én nettleser, én i hver ramme i
+skallet, og laster rammene på nytt. Hver skal beholde sin egen spiller.
+Lokalt står utgavene på samme vert, og nettleseren skiller ikke kapsler på
+port. Da alle tre het `spiller`, overtok den som meldte seg på sist de andre
+rammene. Kapslene heter nå `spiller-datastar`, `spiller-tanstack` og
+`spiller-astro`, og lokalt oppfører skallet seg som i drift, der hver utgave
+har sitt eget domene.
+
 `tester/markup.ts` henter forsiden fra hver utgave, melder seg på og henter
 brettet, og kjører Fristils egen diagnostikk over begge, den samme som
 editorutvidelsen: elementer som ikke

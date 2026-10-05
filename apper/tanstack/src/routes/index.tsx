@@ -12,8 +12,8 @@ import { KOMMUNER } from "../kommuner"
 import { tilstand } from "../spilltjener"
 import type { Skjermbilde } from "../tilstand"
 
-/** Navnet på kapselen som sier hvem som sitter der. */
-export const KAPSEL = "spiller"
+/** Navnet på kapselen som sier hvem som sitter der. Det samme som i `server.ts`. */
+export const KAPSEL = "spiller-tanstack"
 
 /**
  * Første skjermbilde, hentet på serveren.

@@ -111,7 +111,13 @@ hendelser = 0
 const nettleser = await chromium.launch()
 const kontekst = await nettleser.newContext()
 await kontekst.addCookies([
-  { name: "spiller", value: spiller, domain: "localhost", path: "/" },
+  // Hver utgave har sin egen kapsel, så den samme spilleren må stå i alle tre.
+  ...["spiller-datastar", "spiller-tanstack", "spiller-astro"].map((name) => ({
+    name,
+    value: spiller,
+    domain: "localhost",
+    path: "/",
+  })),
   { name: "forstelinja-test", value: "1", domain: "localhost", path: "/" },
 ])
 
