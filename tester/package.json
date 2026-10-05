@@ -11,11 +11,11 @@
     "samtidig": "bun run samtidig.ts",
     "skall": "bun run skall.ts",
     "sloyfe": "bun run sloyfe.ts",
-    "tema": "bunx @fristil/designsystem@0.28.0 tema ../felles/fristil.tema.json --ut=../felles/tema.css",
+    "tema": "bunx @fristil/designsystem@0.29.0 tema ../felles/fristil.tema.json --ut=../felles/tema.css",
     "vakthund": "bun run vakthund.ts"
   },
   "devDependencies": {
-    "@fristil/designsystem": "0.28.0",
+    "@fristil/designsystem": "0.29.0",
     "playwright": "^1.60.0"
   }
 }

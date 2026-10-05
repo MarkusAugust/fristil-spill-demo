@@ -11,7 +11,7 @@
  */
 
 /** Versjonen av Fristil skallet henter tokens fra. Samme som appene bruker. */
-const FRISTIL = "0.28.0"
+const FRISTIL = "0.29.0"
 
 /**
  * Temaet, den samme fila som de tre appene serverer.
@@ -79,7 +79,7 @@ const SIDE = `<!doctype html>
     min-block-size: 100vh;
     display: flex;
     flex-direction: column;
-    font-family: var(--font-family-base, system-ui, sans-serif);
+    font-family: var(--fs-font-family-base, system-ui, sans-serif);
     color: var(--fs-color-neutral-text-strong);
     /* Sideflaten med et snev av tekstfargen i seg, som i brett.css. Her sto
        det en gang semantic-page-subtle, et token som ikke finnes, og da er
@@ -104,7 +104,7 @@ const SIDE = `<!doctype html>
 
   h1 {
     margin: 0;
-    font-size: var(--font-size-m);
+    font-size: var(--fs-font-size-m);
     font-weight: 600;
     letter-spacing: 0.01em;
   }
@@ -112,7 +112,7 @@ const SIDE = `<!doctype html>
   header p {
     margin: 0;
     max-inline-size: 60ch;
-    font-size: var(--font-size-s);
+    font-size: var(--fs-font-size-s);
     color: var(--fs-color-neutral-text-subtle);
   }
 
@@ -142,17 +142,17 @@ const SIDE = `<!doctype html>
   }
 
   .ramme__navn {
-    font-size: var(--font-size-s);
+    font-size: var(--fs-font-size-s);
     font-weight: 600;
   }
 
   .ramme__om {
-    font-size: var(--font-size-xs);
+    font-size: var(--fs-font-size-xs);
     color: var(--fs-color-neutral-text-subtle);
   }
 
   .ramme__lenke {
-    font-size: var(--font-size-xs);
+    font-size: var(--fs-font-size-xs);
     color: var(--fs-color-accent-text);
   }
 

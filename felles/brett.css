@@ -29,11 +29,11 @@
 
 body {
   margin: 0;
-  /* Skriften kommer fra temaet, som setter `--font-family-base`. Reserven er
+  /* Skriften kommer fra temaet, som setter `--fs-font-family-base`. Reserven er
      her fordi Fristil arver skrift med vilje: uten et tema er det
      nettleserens egen, og den er en serif. */
   font-family: var(
-    --font-family-base,
+    --fs-font-family-base,
     system-ui,
     -apple-system,
     "Segoe UI",
@@ -105,19 +105,19 @@ body:has(.fs-connection-status__bar) .topplinje {
   /* `<h1>` har egne marger fra nettleseren, og de skilte navnet fra
      etatsnavnet under. */
   margin: 0;
-  font-size: var(--font-size-xl);
+  font-size: var(--fs-font-size-xl);
   font-weight: 600;
   letter-spacing: 0.01em;
 }
 
 .topplinje__etat {
-  font-size: var(--font-size-xs);
+  font-size: var(--fs-font-size-xs);
   color: color-mix(in oklab, var(--spill-topp-tekst) 75%, transparent);
 }
 
 .topplinje__fase {
   margin: 0;
-  font-size: var(--font-size-m);
+  font-size: var(--fs-font-size-m);
   font-weight: 600;
 }
 
@@ -130,7 +130,7 @@ body:has(.fs-connection-status__bar) .topplinje {
 }
 
 .topplinje__merkelapp {
-  font-size: var(--font-size-xxs);
+  font-size: var(--fs-font-size-xxs);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: color-mix(in oklab, var(--spill-topp-tekst) 75%, transparent);
@@ -178,7 +178,7 @@ body:has(.fs-connection-status__bar) .topplinje {
 
 .topplinje .nedtelling {
   color: var(--spill-frist-start);
-  font-size: var(--font-size-mega);
+  font-size: var(--fs-font-size-mega);
   font-weight: 600;
   line-height: 1;
   /* Tallene skal ikke hoppe sidelengs mens sekundene går. */
@@ -193,7 +193,7 @@ body:has(.fs-connection-status__bar) .topplinje {
   margin: 0;
   padding-inline-start: var(--fs-spacing-3);
   border-inline-start: 1px solid color-mix(in oklab, var(--spill-topp-tekst) 30%, transparent);
-  font-size: var(--font-size-s);
+  font-size: var(--fs-font-size-s);
 }
 
 .topplinje__meg .fs-avatar {
@@ -203,7 +203,7 @@ body:has(.fs-connection-status__bar) .topplinje {
 
 .topplinje__stack {
   padding: var(--fs-spacing-0-5) var(--fs-spacing-2);
-  font-size: var(--font-size-xs);
+  font-size: var(--fs-font-size-xs);
   border: 1px solid color-mix(in oklab, var(--spill-topp-tekst) 45%, transparent);
   border-radius: var(--fs-spacing-1);
 }
@@ -223,7 +223,7 @@ body:has(.fs-connection-status__bar) .topplinje {
 }
 
 .temavelger .fs-toggle-group__option {
-  font-size: var(--font-size-xs);
+  font-size: var(--fs-font-size-xs);
   color: color-mix(in oklab, var(--spill-topp-tekst) 85%, transparent);
   background: transparent;
   border-inline-start-color: color-mix(in oklab, var(--spill-topp-tekst) 45%, transparent);
@@ -246,7 +246,7 @@ body:has(.fs-connection-status__bar) .topplinje {
   flex-wrap: wrap;
   align-items: center;
   gap: var(--fs-spacing-1);
-  font-size: var(--font-size-xs);
+  font-size: var(--fs-font-size-xs);
 }
 
 .utgavevelger__lenke,
@@ -334,12 +334,12 @@ body:has(.fs-connection-status__bar) .topplinje {
 .velkomst__om {
   flex: 1 1 auto;
   color: var(--fs-color-neutral-text-subtle);
-  font-size: var(--font-size-s);
+  font-size: var(--fs-font-size-s);
 }
 
 .velkomst__fotnote {
   margin-block-start: var(--fs-spacing-2);
-  font-size: var(--font-size-s);
+  font-size: var(--fs-font-size-s);
   color: var(--fs-color-neutral-text-subtle);
 }
 
@@ -377,7 +377,7 @@ body:has(.fs-connection-status__bar) .topplinje {
 }
 
 .sakskort__status {
-  font-size: var(--font-size-xs);
+  font-size: var(--fs-font-size-xs);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--fs-color-neutral-text-subtle);
@@ -389,7 +389,7 @@ body:has(.fs-connection-status__bar) .topplinje {
 
 .sakskort__ingress {
   margin: 0;
-  font-size: var(--font-size-l);
+  font-size: var(--fs-font-size-l);
   line-height: 1.5;
   color: var(--fs-color-neutral-text-subtle);
 }
@@ -402,7 +402,7 @@ body:has(.fs-connection-status__bar) .topplinje {
 .sakskort__tekst {
   max-width: 62ch;
   margin: 0;
-  font-size: var(--font-size-m);
+  font-size: var(--fs-font-size-m);
   line-height: 1.7;
 }
 
@@ -416,7 +416,7 @@ body:has(.fs-connection-status__bar) .topplinje {
 
 .vedtakskort__ingress {
   margin: 0;
-  font-size: var(--font-size-s);
+  font-size: var(--fs-font-size-s);
   color: var(--fs-color-neutral-text-subtle);
 }
 
@@ -522,7 +522,7 @@ body:has(.fs-connection-status__bar) .topplinje {
 
 .poeng {
   margin: 0;
-  font-size: var(--font-size-l);
+  font-size: var(--fs-font-size-l);
 }
 
 /*
@@ -543,8 +543,8 @@ body:has(.fs-connection-status__bar) .topplinje {
 
 .plassering__ord {
   margin: 0;
-  font-size: var(--font-size-xxl);
-  font-weight: var(--font-weight-bold);
+  font-size: var(--fs-font-size-xxl);
+  font-weight: var(--fs-font-weight-bold);
   line-height: var(--fs-line-height-heading);
 }
 
@@ -560,8 +560,8 @@ body:has(.fs-connection-status__bar) .topplinje {
   inline-size: var(--fs-spacing-6);
   block-size: var(--fs-spacing-6);
   border-radius: 50%;
-  font-size: var(--font-size-s);
-  font-weight: var(--font-weight-bold);
+  font-size: var(--fs-font-size-s);
+  font-weight: var(--fs-font-weight-bold);
   font-variant-numeric: tabular-nums;
   background: var(--fs-color-neutral-raised);
   color: var(--fs-color-neutral-text);
@@ -570,7 +570,7 @@ body:has(.fs-connection-status__bar) .topplinje {
 .medalje--stor {
   inline-size: var(--fs-spacing-12);
   block-size: var(--fs-spacing-12);
-  font-size: var(--font-size-xl);
+  font-size: var(--fs-font-size-xl);
 }
 
 .medalje[data-plass="1"] {
@@ -593,7 +593,7 @@ body:has(.fs-connection-status__bar) .topplinje {
   margin-inline-start: var(--fs-spacing-2);
   padding: 0 var(--fs-spacing-2);
   border-radius: var(--fs-spacing-4);
-  font-size: var(--font-size-xs);
+  font-size: var(--fs-font-size-xs);
   background: var(--fs-color-accent-surface);
   color: var(--fs-color-accent-text);
 }
@@ -616,7 +616,7 @@ body:has(.fs-connection-status__bar) .topplinje {
 
 .resultat__poeng {
   margin: 0;
-  font-size: var(--font-size-xl);
+  font-size: var(--fs-font-size-xl);
   color: inherit;
 }
 
@@ -667,14 +667,14 @@ body:has(.fs-connection-status__bar) .topplinje {
 .resultat__riktig {
   grid-column: 2 / -1;
   margin: 0;
-  font-size: var(--font-size-s);
+  font-size: var(--fs-font-size-s);
   color: var(--fs-color-neutral-text-subtle);
 }
 
 /* Tavla
    ------------------------------------------------------------------ */
 
-.tavle__tabell { font-size: var(--font-size-s); }
+.tavle__tabell { font-size: var(--fs-font-size-s); }
 
 .tavle__navn {
   display: flex;
@@ -699,7 +699,7 @@ body:has(.fs-connection-status__bar) .topplinje {
 
 .vedtakskort__svart {
   margin: 0;
-  font-size: var(--font-size-s);
+  font-size: var(--fs-font-size-s);
   color: var(--fs-color-neutral-text-subtle);
 }
 
@@ -712,7 +712,7 @@ body:has(.fs-connection-status__bar) .topplinje {
 
 .tavle__fot {
   margin: 0;
-  font-size: var(--font-size-xs);
+  font-size: var(--fs-font-size-xs);
   color: var(--fs-color-neutral-text-subtle);
 }
 
@@ -819,7 +819,7 @@ body:has(.fs-connection-status__bar) .topplinje {
   .topplinje__stack { justify-self: start; }
   .topplinje__meg { justify-self: end; }
 
-  .topplinje .nedtelling { font-size: var(--font-size-xl); }
+  .topplinje .nedtelling { font-size: var(--fs-font-size-xl); }
 }
 
 @media (max-width: 560px) {
@@ -940,7 +940,7 @@ body:has(.fs-connection-status__bar) .topplinje {
 .panel__hjelp {
   margin-inline-start: var(--fs-spacing-2);
   padding: 0 var(--fs-spacing-2);
-  font-size: var(--font-size-xs);
+  font-size: var(--fs-font-size-xs);
   vertical-align: middle;
 }
 
@@ -959,7 +959,7 @@ body:has(.fs-connection-status__bar) .topplinje {
 }
 
 .panel__tabell {
-  font-size: var(--font-size-xs);
+  font-size: var(--fs-font-size-xs);
 }
 
 .panel__tabell tr[aria-current="true"] {
@@ -986,20 +986,20 @@ body:has(.fs-connection-status__bar) .topplinje {
 }
 
 .panel__her {
-  font-weight: var(--font-weight-regular, 400);
+  font-weight: var(--fs-font-weight-regular, 400);
   white-space: nowrap;
 }
 
 .panel__felles {
   margin-block-start: var(--fs-spacing-2);
-  font-size: var(--font-size-xs);
+  font-size: var(--fs-font-size-xs);
 }
 
 /* Merkelappen er svaret på «med hva», og skal leses før innholdet. */
 .panel__merkelapp {
   margin-block-end: var(--fs-spacing-2);
   font-family: var(--font-family-mono, ui-monospace, monospace);
-  font-size: var(--font-size-xs);
+  font-size: var(--fs-font-size-xs);
   font-weight: 600;
   color: var(--fs-color-accent-text);
 }
@@ -1008,7 +1008,7 @@ body:has(.fs-connection-status__bar) .topplinje {
   display: flex;
   flex-direction: column;
   gap: var(--fs-spacing-1);
-  font-size: var(--font-size-s);
+  font-size: var(--fs-font-size-s);
 }
 
 .panel__linje {
@@ -1047,7 +1047,7 @@ body:has(.fs-connection-status__bar) .topplinje {
 
 .panel__linjelapp {
   font-family: var(--font-family-mono, ui-monospace, monospace);
-  font-size: var(--font-size-xs);
+  font-size: var(--fs-font-size-xs);
   color: var(--fs-color-neutral-text-subtle, inherit);
 }
 
@@ -1062,7 +1062,7 @@ body:has(.fs-connection-status__bar) .topplinje {
   margin: 0;
   padding: var(--fs-spacing-2);
   font-family: var(--font-family-mono, ui-monospace, monospace);
-  font-size: var(--font-size-xs);
+  font-size: var(--fs-font-size-xs);
   line-height: 1.5;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
