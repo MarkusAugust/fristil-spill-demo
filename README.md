@@ -206,8 +206,8 @@ med. En `var()` mot et token som ikke finnes, gjør hele erklæringen ugyldig
 uten et ord, og det hadde skjedd fire ganger før 0.22 døpte om alle tokenene
 på én gang.
 
-`tester/samtidig.ts` melder på én spiller i hver utgave, samtidig, og lar dem
-levere én om gangen. Etter hvert steg skal alle tre vise den samme telleren
+`tester/samtidig.ts` setter én spiller fra hver utgave på tavla samtidig, og
+lar dem levere én om gangen. Etter hvert steg skal alle tre vise den samme telleren
 over hvem som har levert. `paritet.ts` kjører utgavene etter hverandre og så
 derfor ikke at Astro hang igjen i skallet: øya talte med spilltjenerens
 `harSvart`, som bare teller dem som var med da saken kom på bordet, mens de

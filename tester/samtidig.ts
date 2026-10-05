@@ -84,7 +84,15 @@ const gjorKlar = async (navn: keyof typeof APPER, spillernavn = `Samtidig ${navn
  * ikke, så resten av løpet kommer fram.
  */
 const navnetStar = async (navn: string, side: Page, ventet: string) => {
-  const verdi = await side.getByLabel("Navnet ditt").inputValue()
+  // Litt tålmodighet: i Astro settes navnet tilbake av øya, som kjører
+  // først når hele siden er tolket, og topplinja kan synes før det.
+  const felt = side.getByLabel("Navnet ditt")
+  const slutt = Date.now() + 3000
+  let verdi = await felt.inputValue()
+  while (verdi !== ventet && Date.now() < slutt) {
+    await side.waitForTimeout(100)
+    verdi = await felt.inputValue()
+  }
   if (verdi !== ventet) {
     funn.push(`${navn}: navnet i påmeldingen var «${verdi}» etter faseskiftet, ventet «${ventet}»`)
     await side.getByLabel("Navnet ditt").fill(ventet)
@@ -204,10 +212,18 @@ try {
    * vakt da saken kom på bordet. Spilltjeneren spørres bare om klokka, ikke
    * om noe testen påstår.
    */
-  const VENT = 400
-  for (let i = 0; i < VENT && (await gjenstar()) > 0; i++) await astro.waitForTimeout(250)
-  for (let i = 0; i < VENT && (await gjenstar()) === 0; i++) await astro.waitForTimeout(250)
-  if ((await gjenstar()) === 0) throw new Error("fant ingen ny runde å starte i")
+  // Fristen regnes av rundelengden, ikke av et fast antall forsøk: med
+  // vanlige runder på to minutter ga hundre sekunder opp midt i runden, og
+  // navnesjekken under ble grønn uten at noe faseskifte hadde skjedd.
+  const ventTil = async (ferdig: (ms: number) => boolean, hva: string) => {
+    const slutt = Date.now() + (await gjenstar()) + 90_000
+    while (!ferdig(await gjenstar())) {
+      if (Date.now() > slutt) throw new Error(`ventet forgjeves på ${hva}`)
+      await astro.waitForTimeout(250)
+    }
+  }
+  await ventTil((ms) => ms === 0, "at runden skulle ta slutt")
+  await ventTil((ms) => ms > 0, "en ny runde")
 
   // Vent til sidene har tegnet den nye runden, og se at navnet overlevde.
   for (const side of [datastar, tanstack, venter])
