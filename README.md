@@ -276,8 +276,8 @@ forsvinner mens telefonen sover kaster aldri. De to andre utgavene har hver
 sin vei ut: `EventSource` kobler til igjen av seg selv, og Astro henter en ny
 side når runden er en annen enn den siden ble tegnet med.
 
-`tester/sloyfe.ts` åpner de tre utgavene som samme spiller, slik skallet gjør
-lokalt, holder en egen strøm mot spilltjeneren, utløser én hendelse og krever
+`tester/sloyfe.ts` åpner de tre utgavene som samme spiller, slik det blir når
+du bytter utgave med lenka i topplinja og lar den gamle fanen stå, holder en egen strøm mot spilltjeneren, utløser én hendelse og krever
 at strømmen blir stille igjen. Den finnes fordi hver app hentet tilstanden på
 nytt for hver hendelse og sa fra hvilken utgave spilleren satt i, og
 spilltjeneren sendte en hendelse for hver flytting. Med én spiller i to
@@ -285,11 +285,8 @@ utgaver fødte hver hendelse en ny, og spillet druknet i tusenvis av
 hendelser i sekundet. Den ser på ledningen og ikke på skjermen, fordi
 skjermene så helt normale ut mens det sto på.
 
-Utgaven meldes derfor bare på dokumentlastinger, og den siste vinner. Lokalt,
-der de tre portene deler kapselen, betyr det at tavla sier Astro etter hvert
-rundeskifte uansett hvilken ramme du spiller i: Astro-utgaven henter en ny
-side ved hver runde. I drift har utgavene hvert sitt domene, og da gjelder
-det ikke.
+Utgaven meldes derfor bare på dokumentlastinger, og den siste vinner. Står du
+i to utgaver samtidig, sier tavla den du sist lastet en side i.
 
 `tester/panel.ts` krever at «Med hva» i panelet viser det utgaven faktisk
 sender: HTML over hendelsesstrømmen i Datastar, JSON i de to andre, med
@@ -444,9 +441,9 @@ forskjellen.
 
 Det er hele demoen sagt som en vits, og hilsenen er samtidig valget: du
 plukker utgave der, og kan bytte når som helst fra topplinja. Du beholder
-navnet ditt og plassen din på tavla når du bytter. Lokalt fordi de tre deler
-kapselen, siden kapsler ikke bryr seg om portnummer, og i drift fordi lenka
-bærer med seg en billett i adressen.
+navnet ditt og plassen din på tavla når du bytter, fordi lenka bærer med seg
+en billett i adressen. Hver utgave har sin egen kapsel, også lokalt, der
+kapsler ikke skiller på portnummer, og billetten veksles inn i den.
 
 Valget hører altså hjemme i appen, og da tar du med deg dine egne øyne mellom
 utgavene. Skallet er noe annet enn det: det er ikke en vei inn i

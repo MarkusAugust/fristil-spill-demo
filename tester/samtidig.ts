@@ -205,12 +205,13 @@ const sammeRunde = async () => {
  */
 const SKALL = process.env.SKALL_URL ?? "http://localhost:8084"
 const treSpillereIEnNettleser = async () => {
+  // Bare lokalt. Rammene finnes på portnummer, og i drift har utgavene hvert
+  // sitt domene, der kapslene aldri var delt.
+  if (new URL(SKALL).hostname !== "localhost") return
   const kontekst = await nettleser.newContext({ viewport: { width: 1900, height: 1100 } })
+  // Én kapsel for `localhost` gjelder alle portene, nettopp det denne delen
+  // handler om.
   await kontekst.addCookies([{ name: "forstelinja-test", value: "1", url: SKALL }])
-  for (const port of ["8081", "8082", "8083"])
-    await kontekst.addCookies([
-      { name: "forstelinja-test", value: "1", url: `http://localhost:${port}` },
-    ])
   const skall = await kontekst.newPage()
   skall.setDefaultTimeout(20_000)
   await skall.goto(SKALL)
@@ -231,10 +232,15 @@ const treSpillereIEnNettleser = async () => {
       if (!f) throw new Error(`fant ikke rammen til ${navn} i skallet`)
       await f.getByLabel("Navnet ditt").fill(navnFor[navn])
       await f.getByRole("button", { name: "Begynn vakta" }).click()
-      await f.locator("#tavle").getByText(navnFor[navn]).waitFor()
+      // «(deg)» og ikke bare navnet: navnet kommer til alle via strømmen, og
+      // sier ikke at kapselen er satt. En ny lasting rett etter kunne ellers
+      // avbryte den siste påmeldingen.
+      await f
+        .locator("#tavle tr", { hasText: "(deg)" })
+        .filter({ hasText: navnFor[navn] })
+        .waitFor()
     }
     await skall.reload()
-    await skall.waitForTimeout(1500)
     for (const navn of NAVN) {
       const f = ramme(navn)
       const meg = await f

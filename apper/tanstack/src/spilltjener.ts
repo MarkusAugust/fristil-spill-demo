@@ -35,6 +35,17 @@ export async function tilstand(
 }
 
 /**
+ * Navnet på kapselen som sier hvem som sitter der.
+ *
+ * Hver utgave har sitt eget navn. Nettleseren skiller ikke kapsler på port,
+ * så lokalt delte de tre `spiller`: den som meldte seg på sist i skallet,
+ * overtok de andre rammene neste gang de hentet siden. August ble til Pål,
+ * og et vedtak fylt ut i én ramme kunne bli levert som spilleren i en annen. I
+ * drift har hver utgave sitt eget domene, og der var det aldri delt.
+ */
+export const KAPSEL = "spiller-tanstack"
+
+/**
  * Kapselen paritetstesten melder seg på med.
  *
  * En kapsel og ikke en overskrift. Testen satte først `x-fristil-test` på

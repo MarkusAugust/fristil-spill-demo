@@ -434,8 +434,7 @@ class Spill(
    * Flytter en spiller til utgaven hun sitter i nå.
    *
    * Stacken settes når du melder deg på, og sto stille etterpå. Bytter du
-   * utgave underveis, med billetten i lenka eller med den delte kapselen
-   * lokalt, sto du fortsatt oppført med den gamle appen, både på tavla og i
+   * utgave underveis, med billetten i lenka, sto du fortsatt oppført med den gamle appen, både på tavla og i
    * den evige topplista, som lagrer `spiller.stack` ved omgangsslutt.
    *
    * Hver app sier fra når den tegner et dokument for spilleren, og bare da.

@@ -13,8 +13,9 @@ const val APPNAVN = "Datastar"
  * De tre utgavene, og hvor de kjører.
  *
  * Adressene settes med miljøvariabler, slik at det samme oppsettet virker
- * lokalt og utrullet. Lokalt deler de tre kapselen, siden kapsler ikke bryr
- * seg om portnummer, og da beholder du navnet ditt når du bytter utgave.
+ * lokalt og utrullet. Du beholder navnet ditt når du bytter utgave, fordi
+ * lenka bærer en billett, `?spiller=`, som hver utgave veksler inn i sin
+ * egen kapsel.
  */
 data class Utgave(val navn: String, val rammeverk: String, val adresse: String)
 

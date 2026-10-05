@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs"
 import { createStartHandler, defaultStreamHandler } from "@tanstack/react-start/server"
 
 import { KOMMUNER } from "./kommuner"
-import { bliMed, erTest, gaAv, pulsen, svarInn, tilstand } from "./spilltjener"
+import { KAPSEL, bliMed, erTest, gaAv, pulsen, svarInn, tilstand } from "./spilltjener"
 import type { Skjermbilde } from "./tilstand"
 import { valider } from "./validering"
 
@@ -19,16 +19,6 @@ import { valider } from "./validering"
  */
 const start = createStartHandler(defaultStreamHandler)
 
-/**
- * Navnet på kapselen som sier hvem som sitter der.
- *
- * Hver utgave har sitt eget navn. Nettleseren skiller ikke kapsler på port,
- * så lokalt delte de tre `spiller`: den som meldte seg på sist i skallet,
- * overtok de andre rammene neste gang de hentet siden. August ble til Pål,
- * og et vedtak fylt ut i én ramme kunne bli levert som spilleren i en annen. I
- * drift har hver utgave sitt eget domene, og der var det aldri delt.
- */
-const KAPSEL = "spiller-tanstack"
 
 /** Og den som bærer fargetemaet. */
 const KAPSEL_TEMA = "forstelinja-tema"
