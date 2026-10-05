@@ -304,27 +304,76 @@ fun side(
        * De to andre utgavene trenger den ikke: `EventSource` kobler til
        * igjen av seg selv, og Astro henter en ny side når runden er en annen
        * enn den siden ble tegnet med.
+       *
+       * Overtiden regnes fra klokka og ikke i tikk. Den ble talt én gang per
+       * tikk, og et tikk er et kvart sekund, så femten sekunder var i
+       * virkeligheten under fire og et halvt.
+       *
+       * Og siden hentes én gang. Før kalte vakthunden `location.reload()` på
+       * hvert tikk etter nådetiden, og hvert kall avbrøt lastingen det
+       * forrige hadde startet. Over et mobilnett rakk siden sjelden å komme
+       * fram på et kvart sekund, så telefonen sto og blinket med fire
+       * lastinger i sekundet til fanen ble lukket.
+       *
+       * Én gang betyr ikke én gang for alltid. Blir lastingen avbrutt, eller
+       * kommer siden tilbake fra nettleserens bakoverhurtigbuffer med
+       * skriptet slik det sto, skal vakthunden våkne igjen. Derfor husker den
+       * når den hentet, og ikke bare at den gjorde det.
+       *
+       * Tida er `performance.now()` og ikke veggklokka. Den kan ikke hoppe
+       * når telefonen retter klokka si etter en blund.
        */
       const NAADE_SEKUNDER = 15
+      const NY_HENTING_SEKUNDER = 30
       let sisteFrist = 0
-      let overtid = 0
+      let utloptFra = 0
+      let varslet = false
+      let hentetVed = 0
+
+      const glem = () => {
+        utloptFra = 0
+        varslet = false
+      }
+
+      addEventListener("pageshow", (e) => {
+        if (e.persisted) {
+          glem()
+          hentetVed = 0
+        }
+      })
 
       const vakthund = (frist, igjen) => {
         if (frist !== sisteFrist) {
           sisteFrist = frist
-          overtid = 0
+          glem()
+          hentetVed = 0
           return
         }
-        if (igjen > 0 || document.visibilityState !== "visible") return
+        // En skjult fane får strømmen sin lukket av Datastar, og åpnet igjen
+        // når den vises. Da skal den få hele nådetiden på å ta seg inn, og
+        // varselet skal komme på nytt om den ikke gjør det.
+        if (igjen > 0 || document.visibilityState !== "visible") {
+          glem()
+          return
+        }
 
-        overtid += 1
-        if (overtid === NAADE_SEKUNDER) {
+        const na = performance.now()
+        if (hentetVed > 0 && na - hentetVed < NY_HENTING_SEKUNDER * 1000) return
+        if (utloptFra === 0) utloptFra = na
+        const overtid = (na - utloptFra) / 1000
+
+        if (overtid >= NAADE_SEKUNDER && !varslet) {
+          varslet = true
           // Si fra før vi henter siden, så det ikke ser ut som et tilfeldig
           // hopp. Linja er den samme som brukes når spilltjeneren er borte.
           const samband = document.querySelector("fs-connection-status")
           if (typeof samband?.reportFailure === "function") samband.reportFailure()
         }
-        if (overtid >= NAADE_SEKUNDER + 2) location.reload()
+        if (overtid >= NAADE_SEKUNDER + 2) {
+          hentetVed = na
+          glem()
+          location.reload()
+        }
       }
 
       setInterval(() => {
