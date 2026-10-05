@@ -175,6 +175,7 @@ cd apper/spilltjener && ./gradlew test && ./gradlew installDist
 ./kjor.sh rask
 cd tester && bun install
 bun run paritet   # at de tre utgavene oppfører seg likt
+bun run samtidig  # at tre spillere i tre utgaver ser den samme tavla
 bun run panel     # at panelet forteller sant om hva som kom over ledningen
 bun run vakthund  # at Datastar-utgaven kommer seg etter en strøm som dør
 bun run skall     # at hilsenen ikke legger seg over rammene i skallet
@@ -199,6 +200,31 @@ er den verdiløs.
 fra returverdien og fra navnene som henger på funksjonen, og feller enhver
 `fs-`-klasse skrevet for hånd der det finnes en bunter eller en vei til en
 import. Datastar-appen er med vilje utenfor: Kotlin kan ikke kalle `fs`.
+Den leser også hver `var(--…)` uten reserve i appene og `felles/`, og krever at
+variabelen finnes i Fristil eller er definert av appen selv. Der er Kotlin
+med. En `var()` mot et token som ikke finnes, gjør hele erklæringen ugyldig
+uten et ord, og det hadde skjedd fire ganger før 0.22 døpte om alle tokenene
+på én gang.
+
+`tester/samtidig.ts` setter én spiller fra hver utgave på tavla samtidig, og
+lar dem levere én om gangen. Etter hvert steg skal alle tre vise den samme telleren
+over hvem som har levert. `paritet.ts` kjører utgavene etter hverandre og så
+derfor ikke at Astro hang igjen i skallet: øya talte med spilltjenerens
+`harSvart`, som bare teller dem som var med da saken kom på bordet, mens de
+to andre teller radene på tavla. To av spillerne møter derfor midt i runden.
+
+De skriver navnet sitt før runden skifter og trykker først etterpå, og
+navnet skal stå der fortsatt. I Datastar og Astro var det borte etter et
+faseskifte, mens TanStack beholdt det: Datastar tegnet skjemaet på nytt med
+malens tomme felt, og Astro hentet en ny side.
+
+Til slutt melder den på tre spillere i én nettleser, én i hver ramme i
+skallet, og laster rammene på nytt. Hver skal beholde sin egen spiller.
+Lokalt står utgavene på samme vert, og nettleseren skiller ikke kapsler på
+port. Da alle tre het `spiller`, overtok den som meldte seg på sist de andre
+rammene. Kapslene heter nå `spiller-datastar`, `spiller-tanstack` og
+`spiller-astro`, og lokalt oppfører skallet seg som i drift, der hver utgave
+har sitt eget domene.
 
 `tester/markup.ts` henter forsiden fra hver utgave, melder seg på og henter
 brettet, og kjører Fristils egen diagnostikk over begge, den samme som
@@ -214,12 +240,19 @@ utgave mistet `fs-toggle-group` og ble en kolonne uten ramme: den fant
 fortsatt tre knapper med riktig tekst, så alle de andre vaktpostene var
 grønne mens skjermen var synlig ødelagt.
 
+Den sammenligner også felt for felt, nøklet på ledeteksten. Ett sett for hele
+siden så ikke at hjelpeteksten under kommunefeltet manglet `fs-help-text` i
+to av tre utgaver, fordi klassen fantes på andre felt i de samme utgavene.
+Teksten var stor og mørk i TanStack og Astro og liten og grå i Datastar.
+
 Den spiller en hel runde, og det må den. Skjemaet, kvitteringen og oppgjøret
 finnes ikke før du har meldt deg på og fattet et vedtak, så et oppslag på
-forsiden så bare rundt tjue av de 38 klassene. Den fatter også et tomt vedtak
+forsiden så bare rundt tjue av de 38 klassene det fantes da. Den fatter også et tomt vedtak
 først, som skal avvises: uten det rendres verken feilmeldingene eller
 feiloppsummeringen, og valideringen er nettopp der de tre utgavene gjør mest
-ulikt.
+ulikt. Og den venter på resultatdialogen når runden er gjort opp. Før kom
+dialogen bare med når testen landet i et oppgjør, og da bare i den ene
+utgaven, så sjekken feilet i to av fem kjøringer uten at noe var galt.
 
 Klassene samles med en `MutationObserver` som settes inn før noe skript på
 siden kjører, siden kvitteringen lukkes igjen og forslagslista bare tegnes
@@ -243,20 +276,20 @@ forsvinner mens telefonen sover kaster aldri. De to andre utgavene har hver
 sin vei ut: `EventSource` kobler til igjen av seg selv, og Astro henter en ny
 side når runden er en annen enn den siden ble tegnet med.
 
-`tester/sloyfe.ts` åpner de tre utgavene som samme spiller, slik skallet gjør
-lokalt, holder en egen strøm mot spilltjeneren, utløser én hendelse og krever
-at strømmen blir stille igjen. Den finnes fordi hver app hentet tilstanden på
-nytt for hver hendelse og sa fra hvilken utgave spilleren satt i, og
+`tester/sloyfe.ts` åpner de tre utgavene som samme spiller, slik det blir når
+du bytter utgave med lenka i topplinja og lar den gamle fanen stå, holder
+en egen strøm mot spilltjeneren, utløser én hendelse og krever at strømmen
+blir stille igjen. Den finnes fordi hver app hentet tilstanden på nytt for
+hver hendelse og sa fra hvilken utgave spilleren satt i, og
 spilltjeneren sendte en hendelse for hver flytting. Med én spiller i to
 utgaver fødte hver hendelse en ny, og spillet druknet i tusenvis av
 hendelser i sekundet. Den ser på ledningen og ikke på skjermen, fordi
 skjermene så helt normale ut mens det sto på.
 
-Utgaven meldes derfor bare på dokumentlastinger, og den siste vinner. Lokalt,
-der de tre portene deler kapselen, betyr det at tavla sier Astro etter hvert
-rundeskifte uansett hvilken ramme du spiller i: Astro-utgaven henter en ny
-side ved hver runde. I drift har utgavene hvert sitt domene, og da gjelder
-det ikke.
+Utgaven meldes derfor bare på dokumentlastinger, og den siste vinner. Står du
+i to utgaver samtidig, sier tavla den du sist lastet en side i. Står en av
+dem i Astro, er det Astro etter hvert rundeskifte, fordi Astro-utgaven
+henter en ny side ved hver runde.
 
 `tester/panel.ts` krever at «Med hva» i panelet viser det utgaven faktisk
 sender: HTML over hendelsesstrømmen i Datastar, JSON i de to andre, med
@@ -411,9 +444,9 @@ forskjellen.
 
 Det er hele demoen sagt som en vits, og hilsenen er samtidig valget: du
 plukker utgave der, og kan bytte når som helst fra topplinja. Du beholder
-navnet ditt og plassen din på tavla når du bytter. Lokalt fordi de tre deler
-kapselen, siden kapsler ikke bryr seg om portnummer, og i drift fordi lenka
-bærer med seg en billett i adressen.
+navnet ditt og plassen din på tavla når du bytter, fordi lenka bærer med seg
+en billett i adressen. Hver utgave har sin egen kapsel, også lokalt, der
+kapsler ikke skiller på portnummer, og billetten veksles inn i den.
 
 Valget hører altså hjemme i appen, og da tar du med deg dine egne øyne mellom
 utgavene. Skallet er noe annet enn det: det er ikke en vei inn i
@@ -533,17 +566,29 @@ Kommandoen pinner versjonen av Fristil den kjører. Skrift og form kom i 0.12.0,
 og `bunx @fristil/designsystem` uten versjon ville hentet den nyeste som
 tilfeldigvis er publisert.
 
-Oppskriften setter **skrift og form, og lar fargene stå**. Grunnen er verdt å
-vite: Fristils innebygde palett *er* Skatteetatens. Alle 36 palettvariablene
-deres finnes i Fristil med nøyaktig samme verdi, og av de femten semantiske
-fargetokenene Skatteetaten har, er fjorten like. Å kjøre fargene deres gjennom generatoren ville derfor
-flyttet dem bort fra der de skal være, siden skalaene regnes om i OKLCH fra
-merkefargen: `#1362ae` kommer ut som `#1e6ab7`.
+Oppskriften setter **skrift og form, og lar fargene stå**. Fristils
+standardfarger er regnet ut av Skatteetatens kulører, og å oppgi deres egne
+til generatoren gir de samme verdiene tilbake: `--aksent=#1362ae` gir den
+samme aksentfamilien som ingen farge i det hele tatt, og det samme gjelder
+fare og besøkt. Det å sette dem i oppskriften ville bare vært støy.
 
-Den ene semantiske fargen som avviker, avviker med vilje. Skatteetatens
-`--semantic-warning-foreground` er `#9f7509`, som gir 4,18:1 mot hvit og 3,63:1
-mot deres egen advarselsflate. Kravet for vanlig tekst er 4,5:1. Fristils
-`#896508` gir 5,35:1 og 4,64:1.
+Advarsel er unntaket. Fristils standard er regnet av `#896508` og ikke av
+Skatteetatens `#9f7509`. Fram til 0.22 var det et kontrasthensyn, siden
+deres farge ga 4,18:1 mot hvit. Med matrisen holder kontrasten uansett, og
+`--advarsel=#9f7509` ville bare gitt en litt annen familie, med fyll
+`#8a6500` mot `#896508`. Forskjellen er for liten til å ta inn i oppskriften.
+
+Verdiene er likevel ikke Skatteetatens lenger. Fra Fristil 0.22 er en farge
+et punkt i en matrise av familie og rolle, og lysheten hører til rollen:
+kuløren er merkets, men tallet er regnet fram for å holde kontrasten. Den
+blå knappen er `#226dba`, ikke Skatteetatens `#1362ae`. Det er prisen for en
+kontrast som holder uansett merkefarge, og den er verdt det for en demo av
+designsystemet.
+
+Topplinja er unntaket. Den er spillets eget ansikt og skal være den samme
+mørkeblå i begge temaer, mens hver farge i matrisen snur med temaet. De tre
+fargene står derfor som egne variabler øverst i `felles/brett.css`, med
+Skatteetatens verdier.
 
 | Hva temaet setter | Verdi | Hvorfor |
 | --- | --- | --- |

@@ -124,7 +124,7 @@ fun side(
   val imports = KOMPONENTER.joinToString("\n      ") { (fil, fn) -> """import { $fn } from "$fil"; $fn();""" }
   // Temaet kommer fra kapselen, så serveren kan skrive det selv. Da blinker
   // ikke siden lyst for den som har valgt mørkt, og valget følger med til de
-  // to andre utgavene, som leser den samme kapselen.
+  // to andre utgavene lokalt, der de leser den samme kapselen.
   val temaAttributt = if (tema == "light" || tema == "dark") """ data-theme="$tema"""" else ""
 
   return """
@@ -579,9 +579,13 @@ fun blimed(tilstand: Tilstand? = null): String {
            revet den bort, og setter den tilbake. Malen slipper dermed å
            kjenne til attributtene i det hele tatt, og den kan ikke gå stille
            i stykker av at Fristil endrer hva komponenten setter. -->
+      <!-- `data-bind:navn` er det eneste Datastar-attributtet her. Ved et
+           faseskifte tegnes hele brettet på nytt, og uten signalet fikk
+           feltet malens tomme verdi: et navn halvveis skrevet var borte.
+           Skjemaet sendes fortsatt som en vanlig innsending. -->
       <fs-field>
         <label class="fs-label">Navnet ditt</label>
-        <input class="fs-input" name="navn" type="text" required>
+        <input class="fs-input" name="navn" type="text" required data-bind:navn>
         <p class="fs-help-text">Vises på tavla for alle.</p>
       </fs-field>
 

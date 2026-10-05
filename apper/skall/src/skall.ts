@@ -11,7 +11,7 @@
  */
 
 /** Versjonen av Fristil skallet henter tokens fra. Samme som appene bruker. */
-const FRISTIL = "0.18.0"
+const FRISTIL = "0.29.0"
 
 /**
  * Temaet, den samme fila som de tre appene serverer.
@@ -69,37 +69,42 @@ const SIDE = `<!doctype html>
      tokens, slik at kanten rundt rammene ikke sier noe annet enn innholdet. */
   * { box-sizing: border-box; }
 
+  /* Skallet har ingen temavelger og følger systemet. Fristil setter ikke
+     lenger \`color-scheme\` på rota, så uten denne fikk en mørk maskin lyse
+     rullefelt rundt rammene. */
+  :root { color-scheme: light dark; }
+
   body {
     margin: 0;
     min-block-size: 100vh;
     display: flex;
     flex-direction: column;
-    font-family: var(--font-family-base, system-ui, sans-serif);
-    color: var(--semantic-page-foreground);
+    font-family: var(--fs-font-family-base, system-ui, sans-serif);
+    color: var(--fs-color-neutral-text-strong);
     /* Sideflaten med et snev av tekstfargen i seg, som i brett.css. Her sto
        det en gang semantic-page-subtle, et token som ikke finnes, og da er
        hele regelen ugyldig og flaten gjennomsiktig. */
     background: color-mix(
       in oklab,
-      var(--semantic-page-foreground) 5%,
-      var(--semantic-page-background)
+      var(--fs-color-neutral-text-strong) 5%,
+      var(--fs-color-neutral-canvas)
     );
   }
 
   header {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--size-3);
+    gap: var(--fs-spacing-3);
     align-items: baseline;
     justify-content: space-between;
-    padding: var(--size-3) var(--size-5);
-    border-block-end: 1px solid var(--semantic-divider-30);
-    background: var(--semantic-page-background);
+    padding: var(--fs-spacing-3) var(--fs-spacing-5);
+    border-block-end: 1px solid var(--fs-color-neutral-border-subtle);
+    background: var(--fs-color-neutral-canvas);
   }
 
   h1 {
     margin: 0;
-    font-size: var(--font-size-m);
+    font-size: var(--fs-font-size-m);
     font-weight: 600;
     letter-spacing: 0.01em;
   }
@@ -107,8 +112,8 @@ const SIDE = `<!doctype html>
   header p {
     margin: 0;
     max-inline-size: 60ch;
-    font-size: var(--font-size-s);
-    color: var(--semantic-page-muted);
+    font-size: var(--fs-font-size-s);
+    color: var(--fs-color-neutral-text-subtle);
   }
 
   .rammer {
@@ -116,7 +121,7 @@ const SIDE = `<!doctype html>
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 1px;
-    background: var(--semantic-divider-30);
+    background: var(--fs-color-neutral-border-subtle);
     min-block-size: 0;
   }
 
@@ -124,31 +129,31 @@ const SIDE = `<!doctype html>
     display: flex;
     flex-direction: column;
     min-inline-size: 0;
-    background: var(--semantic-page-background);
+    background: var(--fs-color-neutral-canvas);
   }
 
   .ramme__topp {
     display: flex;
-    gap: var(--size-2);
+    gap: var(--fs-spacing-2);
     align-items: baseline;
     justify-content: space-between;
-    padding: var(--size-2) var(--size-3);
-    border-block-end: 1px solid var(--semantic-divider-30);
+    padding: var(--fs-spacing-2) var(--fs-spacing-3);
+    border-block-end: 1px solid var(--fs-color-neutral-border-subtle);
   }
 
   .ramme__navn {
-    font-size: var(--font-size-s);
+    font-size: var(--fs-font-size-s);
     font-weight: 600;
   }
 
   .ramme__om {
-    font-size: var(--font-size-xs);
-    color: var(--semantic-page-muted);
+    font-size: var(--fs-font-size-xs);
+    color: var(--fs-color-neutral-text-subtle);
   }
 
   .ramme__lenke {
-    font-size: var(--font-size-xs);
-    color: var(--semantic-interactive-main);
+    font-size: var(--fs-font-size-xs);
+    color: var(--fs-color-accent-text);
   }
 
   iframe {

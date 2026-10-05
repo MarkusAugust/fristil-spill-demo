@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs"
 import { createStartHandler, defaultStreamHandler } from "@tanstack/react-start/server"
 
 import { KOMMUNER } from "./kommuner"
-import { bliMed, erTest, gaAv, pulsen, svarInn, tilstand } from "./spilltjener"
+import { KAPSEL, bliMed, erTest, gaAv, pulsen, svarInn, tilstand } from "./spilltjener"
 import type { Skjermbilde } from "./tilstand"
 import { valider } from "./validering"
 
@@ -18,9 +18,6 @@ import { valider } from "./validering"
  * virke uten JavaScript, og `/hendelser` er en strøm som står åpen.
  */
 const start = createStartHandler(defaultStreamHandler)
-
-/** Navnet på kapselen som sier hvem som sitter der. */
-const KAPSEL = "spiller"
 
 /** Og den som bærer fargetemaet. */
 const KAPSEL_TEMA = "forstelinja-tema"

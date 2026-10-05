@@ -13,8 +13,9 @@ const val APPNAVN = "Datastar"
  * De tre utgavene, og hvor de kjører.
  *
  * Adressene settes med miljøvariabler, slik at det samme oppsettet virker
- * lokalt og utrullet. Lokalt deler de tre kapselen, siden kapsler ikke bryr
- * seg om portnummer, og da beholder du navnet ditt når du bytter utgave.
+ * lokalt og utrullet. Du beholder navnet ditt når du bytter utgave, fordi
+ * lenka bærer en billett, `?spiller=`, som hver utgave veksler inn i sin
+ * egen kapsel.
  */
 data class Utgave(val navn: String, val rammeverk: String, val adresse: String)
 
@@ -59,7 +60,7 @@ val UTGAVER =
   )
 
 /** Versjonen av designsystemet siden henter fra CDN. */
-const val FRISTIL_VERSJON = "0.18.0"
+const val FRISTIL_VERSJON = "0.29.0"
 
 private const val CDN = "https://cdn.jsdelivr.net/npm/@fristil/designsystem@$FRISTIL_VERSJON"
 

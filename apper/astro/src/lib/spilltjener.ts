@@ -18,7 +18,8 @@ const ADRESSE = process.env.SPILLTJENER ?? "http://127.0.0.1:8080"
  * Det skal bare skje på en dokumentlasting, aldri fra hentingen strømmen
  * utløser. Spilltjeneren sender en hendelse for hver flytting, og sa alle
  * hentingene fra, ble det en sløyfe: står den samme spilleren i to utgaver
- * samtidig, som i skallet, flyttet hver hendelse henne fram og tilbake, og
+ * samtidig, som når du bytter utgave og lar den gamle fanen stå,
+ * flyttet hver hendelse henne fram og tilbake, og
  * hver flytting fødte en hendelse til. Spilltjeneren druknet i tusenvis av
  * hendelser i sekundet, og spillet sto stille.
  */

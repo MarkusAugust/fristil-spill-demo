@@ -9,11 +9,8 @@ import {
 import { Skjerm } from "../brett"
 import { Route as rotRuta } from "./__root"
 import { KOMMUNER } from "../kommuner"
-import { tilstand } from "../spilltjener"
+import { KAPSEL, tilstand } from "../spilltjener"
 import type { Skjermbilde } from "../tilstand"
-
-/** Navnet på kapselen som sier hvem som sitter der. */
-export const KAPSEL = "spiller"
 
 /**
  * Første skjermbilde, hentet på serveren.

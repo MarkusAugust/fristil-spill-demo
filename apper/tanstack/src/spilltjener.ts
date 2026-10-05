@@ -18,7 +18,8 @@ const ADRESSE = process.env.SPILLTJENER ?? "http://127.0.0.1:8080"
  * Det skal bare skje på en dokumentlasting, aldri fra hentingen strømmen
  * utløser. Spilltjeneren sender en hendelse for hver flytting, og sa alle
  * hentingene fra, ble det en sløyfe: står den samme spilleren i to utgaver
- * samtidig, som i skallet, flyttet hver hendelse henne fram og tilbake, og
+ * samtidig, som når du bytter utgave og lar den gamle fanen stå,
+ * flyttet hver hendelse henne fram og tilbake, og
  * hver flytting fødte en hendelse til. Spilltjeneren druknet i tusenvis av
  * hendelser i sekundet, og spillet sto stille.
  */
@@ -33,6 +34,17 @@ export async function tilstand(
   if (!svar.ok) throw new Error(`Spilltjeneren svarte ${svar.status}`)
   return (await svar.json()) as Tilstand
 }
+
+/**
+ * Navnet på kapselen som sier hvem som sitter der.
+ *
+ * Hver utgave har sitt eget navn. Nettleseren skiller ikke kapsler på port,
+ * så lokalt delte de tre `spiller`: den som meldte seg på sist i skallet,
+ * overtok de andre rammene neste gang de hentet siden. August ble til Pål,
+ * og et vedtak fylt ut i én ramme kunne bli levert som spilleren i en annen. I
+ * drift har hver utgave sitt eget domene, og der var det aldri delt.
+ */
+export const KAPSEL = "spiller-tanstack"
 
 /**
  * Kapselen paritetstesten melder seg på med.

@@ -14,7 +14,7 @@ import { chromium } from "playwright"
  * bevisst forskjell i et demospill som handler om at de er like, finnes ikke.
  *
  * **Den spiller en hel runde.** Første utgave gjorde ett oppslag på forsiden,
- * og så dermed rundt tjue av de 38 klassene: skjemaet, kvitteringen og
+ * og så dermed rundt tjue av de 38 klassene som fantes da: skjemaet, kvitteringen og
  * oppgjøret kommer først etter at du har meldt deg på og fattet et vedtak.
  * Omtrent halve systemet var altså utenfor den vaktposten som skulle se hele
  * det. Tallet var ikke stabilt heller, siden panelet bygges et øyeblikk etter
@@ -90,6 +90,19 @@ const RUNDEVINDU = Number(process.env.RUNDE_MS ?? 120_000) + 60_000
 const funn: string[] = []
 const nettleser = await chromium.launch()
 const sett = new Map<string, Set<string>>()
+/*
+ * Og klassene felt for felt, nøklet på ledeteksten.
+ *
+ * Ett sett for hele siden så ikke at hjelpeteksten og feilmeldingen under
+ * kommunefeltet manglet `fs-help-text` og `fs-error-text` i TanStack og
+ * Astro. `fs.suggestion().help` gir bare en id, og klassen må komme fra
+ * `fs.helpText()` ved siden av. Begge klassene fantes på andre felt i de
+ * samme utgavene, så settet for siden var likt, mens teksten under feltet
+ * var stor og mørk i to av tre.
+ *
+ * Nøkkelen er det brukeren leser, `<label>` eller `<legend>`, og ikke en id.
+ */
+const perFelt = new Map<string, Map<string, Set<string>>>()
 const fullfort = new Set<string>()
 
 try {
@@ -108,6 +121,8 @@ try {
     side.setDefaultTimeout(20_000)
 
     const klasser = new Set<string>()
+    const felter = new Map<string, Set<string>>()
+    perFelt.set(app.navn, felter)
     /** Henter det observatøren har sett så langt. Astro laster på nytt, og da
      *  begynner den forfra, så dette gjøres ved hvert steg. */
     const samle = async () => {
@@ -115,6 +130,25 @@ try {
         .evaluate(() => [...((window as unknown as { __fsKlasser?: Set<string> }).__fsKlasser ?? [])])
         .catch(() => [] as string[]))
         klasser.add(k)
+      const naa = await side
+        .evaluate(() =>
+          [...document.querySelectorAll("fs-field, fs-suggestion, fieldset")].map(
+            (vert) => {
+              const tekst = vert.querySelector("label, legend")?.textContent ?? ""
+              const ks = new Set<string>()
+              for (const el of [vert, ...vert.querySelectorAll("[class]")])
+                for (const k of el.classList) if (k.startsWith("fs-")) ks.add(k)
+              return [tekst.replace(/\s+/g, " ").trim(), [...ks]] as const
+            },
+          ),
+        )
+        .catch(() => [] as (readonly [string, string[]])[])
+      for (const [tekst, ks] of naa) {
+        if (!tekst) continue
+        const s = felter.get(tekst) ?? new Set<string>()
+        for (const k of ks) s.add(k)
+        felter.set(tekst, s)
+      }
     }
 
     /*
@@ -199,7 +233,13 @@ try {
            * sjekken så. Valideringen er nettopp der de tre utgavene gjør mest
            * ulikt: Datastar får en patch fra serveren, Astro laster siden på
            * nytt, og React tegner om i nettleseren.
+           *
+           * Kommunefeltet får et navn som ikke er en kommune. Et tomt felt er
+           * gyldig, så uten det ble feilmeldingen under kommunefeltet aldri
+           * rendret, og at den manglet `fs-error-text` i to utgaver kunne
+           * ikke felles.
            */
+          await side.locator("#kommune").fill("Inder", { timeout: 10_000 })
           await side.getByRole("button", { name: "Fatt vedtak" }).click({ timeout: 10_000 })
           await side
             .locator(".fs-error-summary, fs-error-summary:not([hidden])")
@@ -264,6 +304,18 @@ try {
         )
       if (!forslagVist) si("forslagslista viste ingen treff på «Inder»")
       await samle()
+
+      /*
+       * Og resultatet, når runden er gjort opp.
+       *
+       * Dialogen kom bare med når testen tilfeldigvis landet i et oppgjør,
+       * og da bare i den ene utgaven det skjedde i. `.fs-dialog__subtitle`
+       * ble meldt som «finnes bare i datastar» i to av fem kjøringer, mens
+       * alle tre skriver den. Ventingen koster resten av runden, og
+       * resultatdialogen er nettopp komponenten demoen fikk inn i Fristil.
+       */
+      await kvittering.waitFor({ timeout: RUNDEVINDU })
+      await lukkKvittering()
 
       fullfort.add(app.navn)
     } catch (e) {
@@ -341,6 +393,39 @@ if (sammenlignes.length < 2) {
           .join(", ")}`,
       )
   }
+
+  // Felt for felt, men bare felt alle de sammenlignede har. Et felt som
+  // mangler helt, er `paritet.ts` sin sak.
+  const ledetekster = new Set(
+    sammenlignes.flatMap((a) => [...(perFelt.get(a.navn)?.keys() ?? [])]),
+  )
+  let feltSammenlignet = 0
+  for (const tekst of [...ledetekster].sort()) {
+    const sett = sammenlignes.map((a) => perFelt.get(a.navn)?.get(tekst))
+    if (sett.some((x) => !x)) continue
+    feltSammenlignet += 1
+    for (const klasse of [...new Set(sett.flatMap((x) => [...x!]))].sort()) {
+      const har = sammenlignes.filter((_, i) => sett[i]!.has(klasse)).map((a) => a.navn)
+      if (har.length !== sammenlignes.length)
+        funn.push(
+          `feltet «${tekst}»: .${klasse} finnes bare i ${har.join(", ")}, ikke i ${sammenlignes
+            .map((a) => a.navn)
+            .filter((n) => !har.includes(n))
+            .join(", ")}`,
+        )
+    }
+  }
+  // Seks felt har ledetekst: navnet, temavelgeren og de fire i skjemaet.
+  // Færre betyr at en ledetekst ikke lenger ble funnet i alle utgavene, og
+  // da står det feltet utenfor sammenligningen uten et ord. Kommunefeltet
+  // er det sjekken ble skrevet for, og kreves ved navn.
+  if (feltSammenlignet < 6)
+    funn.push(
+      `bare ${feltSammenlignet} av 6 felt fantes i alle utgavene, så sammenligningen felt for felt sier ikke alt`,
+    )
+  const KOMMUNEFELT = "Bekreft kommunen søkeren hører til"
+  if (sammenlignes.some((a) => !perFelt.get(a.navn)?.has(KOMMUNEFELT)))
+    funn.push(`fant ikke kommunefeltet, «${KOMMUNEFELT}», i alle utgavene`)
 }
 
 if (funn.length > 0) {

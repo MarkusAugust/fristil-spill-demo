@@ -3,15 +3,16 @@ import { chromium } from "playwright"
 /**
  * At én spiller i flere utgaver samtidig ikke setter spilltjeneren i sving.
  *
- * Det er skallet: tre rammer, og lokalt deler de tre portene på localhost
- * den samme kapselen, så den som melder seg på i én ramme er samme spiller i
- * alle tre. Hver app henter tilstanden på nytt for hver hendelse, og sa
- * hver henting fra hvilken utgave spilleren satt i, flyttet spilltjeneren
- * henne fram og tilbake og sendte en hendelse for hver flytting. Én
+ * Det skjer når du bytter utgave med lenka i topplinja, som bærer
+ * spilleren med seg, og lar den gamle fanen stå. Det skjedde også i skallet
+ * så lenge de tre utgavene delte én kapsel lokalt. Hver app henter
+ * tilstanden på nytt for hver hendelse, og sa hver henting fra hvilken
+ * utgave spilleren satt i, flyttet spilltjeneren henne fram og tilbake og
+ * sendte en hendelse for hver flytting. Én
  * påmelding ga da over sju tusen hendelser i sekundet, og spillet sto
  * stille.
  *
- * Testen gjør det skallet gjør: åpner de tre utgavene som samme spiller,
+ * Testen åpner de tre utgavene som samme spiller,
  * holder en egen strøm mot spilltjeneren, utløser én hendelse, og krever at
  * strømmen blir stille igjen. Den ser på ledningen og ikke på skjermen,
  * fordi det er ledningen som gikk galt: skjermene så helt normale ut.
@@ -25,10 +26,8 @@ import { chromium } from "playwright"
 const SPILLTJENER = process.env.SPILLTJENER_URL ?? "http://127.0.0.1:8080"
 
 /*
- * `localhost` for alle tre, som i skallet. Paritetstesten bruker
- * `127.0.0.1` for to av dem, og det er nettopp det som skiller: kapselen
- * gjelder per vertsnavn, og det er den delte kapselen som gir én spiller i
- * tre utgaver.
+ * `localhost` for alle tre, og den samme spilleren i hver utgaves kapsel,
+ * satt lenger ned. Det er det billetten i lenka gir når du bytter utgave.
  *
  * Astro står sist med vilje. Den henter siden på nytt ved hvert fasebytte
  * og melder utgaven igjen, så sto den først, kunne et fasebytte under de
@@ -111,7 +110,13 @@ hendelser = 0
 const nettleser = await chromium.launch()
 const kontekst = await nettleser.newContext()
 await kontekst.addCookies([
-  { name: "spiller", value: spiller, domain: "localhost", path: "/" },
+  // Hver utgave har sin egen kapsel, så den samme spilleren må stå i alle tre.
+  ...["spiller-datastar", "spiller-tanstack", "spiller-astro"].map((name) => ({
+    name,
+    value: spiller,
+    domain: "localhost",
+    path: "/",
+  })),
   { name: "forstelinja-test", value: "1", domain: "localhost", path: "/" },
 ])
 

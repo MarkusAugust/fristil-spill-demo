@@ -146,6 +146,94 @@ for (const attributt of AVSKREVNE) {
     )
 }
 
+/*
+ * Og tokenene: hver `var(--…)` skal peke på noe som finnes.
+ *
+ * En `var()` uten reserve mot en variabel som ikke finnes, gjør hele
+ * erklæringen ugyldig, og ingenting sier fra. Feilen har stått her fire
+ * ganger: `--semantic-surface-background` og `--semantic-page-subtle` ga
+ * gjennomsiktige flater, `--semantic-info-*` en ramme som aldri ble tegnet,
+ * og `--semantic-page-muted` i skallet var aldri et token. Så kom 0.22, der
+ * `--palette-*`, `--semantic-*` og `--size-*` forsvant med ett, og over
+ * 200 steder i `brett.css` og skallet ville sluttet å virke i stillhet.
+ *
+ * Det som finnes, er det pakkens samlede stilark definerer, og det appenes
+ * egne filer definerer selv, som `--spill-frist-start`. En `var()` med
+ * reserve er tatt med vilje og står utenfor, og det samme gjør kommentarene,
+ * der de gamle navnene står igjen som historie.
+ */
+const KILDER = [
+  join(import.meta.dir, "..", "felles"),
+  join(import.meta.dir, "..", "apper"),
+]
+const FRISTIL_CSS = join(
+  import.meta.dir,
+  "node_modules",
+  "@fristil",
+  "designsystem",
+  "dist",
+  "fristil.css",
+)
+const definert = new Set(
+  [...readFileSync(FRISTIL_CSS, "utf8").matchAll(/(--[\w-]+)\s*:/g)].map(
+    (m) => m[1],
+  ),
+)
+const bruk: { fil: string; navn: string }[] = []
+let tokenfiler = 0
+const lesTokens = (m: string): void => {
+  for (const o of readdirSync(m, { withFileTypes: true })) {
+    if (
+      [
+        "node_modules",
+        "dist",
+        "build",
+        ".astro",
+        ".output",
+        ".gradle",
+        ".kotlin",
+        ".tanstack",
+      ].includes(o.name)
+    )
+      continue
+    const p = join(m, o.name)
+    if (o.isDirectory()) lesTokens(p)
+    else if (/\.(css|tsx?|jsx?|astro|kt)$/.test(o.name)) {
+      tokenfiler += 1
+      const t = readFileSync(p, "utf8")
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/^\s*\/\/.*$/gm, "")
+      // Også det et skript setter: `setProperty("--x", …)` og `"--x":` i
+      // et stilobjekt, som `--spill-rist` og fargene på nedtellingen.
+      for (const d of t.matchAll(/(--[\w-]+)["']?\s*:/g)) definert.add(d[1])
+      for (const d of t.matchAll(/setProperty\(\s*["'](--[\w-]+)/g))
+        definert.add(d[1])
+      for (const v of t.matchAll(/var\(\s*(--[\w-]+)\s*\)/g))
+        bruk.push({
+          fil: p.slice(join(import.meta.dir, "..").length + 1),
+          navn: v[1],
+        })
+    }
+  }
+}
+for (const k of KILDER) lesTokens(k)
+// Gulvet står på bruken: slutter regexen eller kommentarfjerningen å
+// treffe, går sjekken ellers grønt på null påstander.
+if (tokenfiler < 20 || bruk.length < 100)
+  funn.push(
+    `leste ${tokenfiler} filer og fant ${bruk.length} var(), så tokensjekken sier ikke noe. Stemmer stiene?`,
+  )
+const ukjente = new Map<string, number>()
+for (const { fil, navn } of bruk)
+  if (!definert.has(navn)) {
+    const n = `${fil}: var(${navn})`
+    ukjente.set(n, (ukjente.get(n) ?? 0) + 1)
+  }
+for (const [n, c] of ukjente)
+  funn.push(
+    `${n} finnes verken i Fristil eller i appen (${c} ${c === 1 ? "sted" : "steder"})`,
+  )
+
 if (funn.length > 0) {
   console.error(
     `Fant ${funn.length} avvik:\n${funn

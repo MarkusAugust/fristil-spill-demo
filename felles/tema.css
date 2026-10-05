@@ -1,26 +1,17 @@
-/*
- * Generert av @fristil/designsystem. Rediger oppskriften, ikke denne fila.
- *
- * Overstyrer verdiene i tokens.css. Det som ikke står i oppskriften, står
- * fortsatt der.
- *
- * Laget er erklært etter «fristil», så temaet vinner over pakkens
- * standardverdier uansett hvilken rekkefølge stilarkene lastes i. Din egen
- * CSS er usortert, og vinner fortsatt over begge.
- */
+/* Generert av @fristil/designsystem. Rediger oppskriften, ikke denne fila. */
 
 @layer fristil, fristil-tema;
 
 @layer fristil-tema {
   :root {
-    --font-family-base: Helvetica, Arial, sans-serif;
-    --font-weight-regular: 400;
-    --font-weight-medium: 500;
-    --font-weight-semibold: 600;
-    --font-weight-bold: 700;
-    --semantic-line-height-default: 1.666;
-    --semantic-line-height-heading: 1.333;
-    --semantic-line-height-article: 1.666;
+    --fs-font-family-base: Helvetica, Arial, sans-serif;
+    --fs-font-weight-regular: 400;
+    --fs-font-weight-medium: 500;
+    --fs-font-weight-semibold: 600;
+    --fs-font-weight-bold: 700;
+    --fs-line-height-default: 1.666;
+    --fs-line-height-heading: 1.333;
+    --fs-line-height-article: 1.666;
     --fs-button-radius: 2.75rem;
     --fs-pagination-radius: 2.75rem;
     --fs-skip-link-radius: 2.75rem;
@@ -43,6 +34,6 @@
   }
 
   :root {
-    font-family: var(--font-family-base);
+    font-family: var(--fs-font-family-base);
   }
 }
