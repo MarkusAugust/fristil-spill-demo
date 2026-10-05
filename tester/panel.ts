@@ -1,4 +1,4 @@
-import { chromium } from "playwright"
+import { chromium, devices, webkit } from "playwright"
 
 /**
  * At panelet forteller sant om hva som kom over ledningen.
@@ -319,6 +319,71 @@ try {
   // Uten `finally` sto en Chromium igjen og kjørte, og ingen funn ble skrevet
   // ut, den dagen en `click()` eller `fill()` kastet.
   await nettleser.close()
+}
+
+/*
+ * Det samme panelet på en telefon, i WebKit.
+ *
+ * Under 860 piksler står de tre delene under hverandre, og panelet har bare
+ * et tak og ingen fast høyde. WebKit krympet da radene under innholdet så
+ * snart alt til sammen var høyere enn taket, og på en iPhone lå loggen oppå
+ * «Hvordan». Chromium gjør ikke det, og sjekkene over går i full bredde i
+ * Chromium, så de så ingenting.
+ *
+ * Spørsmålet er det brukeren ser: om noe står oppå noe annet. Hver del skal
+ * være så høy som innholdet sitt og begynne under den forrige. Størrelsen er
+ * det en iPhone 15 viser med nettleserens linjer på plass. Med hele skjermen
+ * fikk alt plass under taket, og sjekken var grønn med feilen i.
+ */
+const telefon = await webkit.launch()
+
+try {
+  for (const app of APPER) {
+    const si = (melding: string) => funn.push(`${app.navn}, telefon: ${melding}`)
+    const kontekst = await telefon.newContext({ ...devices["iPhone 15"] })
+    const side = await kontekst.newPage()
+    await side.goto(app.url, { waitUntil: "domcontentloaded" })
+
+    const hilsen = side.getByRole("button", { name: "Jeg merker nok forskjellen" })
+    if (await hilsen.isVisible().catch(() => false)) await hilsen.click()
+
+    await side.getByRole("button", { name: "Hva skjedde?" }).click()
+    const harLinjer = await side
+      .locator(".panel__linje")
+      .first()
+      .waitFor({ timeout: 20000 })
+      .then(() => true)
+      .catch(() => false)
+    if (!harLinjer) si("loggen fikk aldri en linje")
+
+    const deler = await side.evaluate(() =>
+      [...document.querySelectorAll<HTMLElement>("#panel > *")].map((del) => {
+        const r = del.getBoundingClientRect()
+        return {
+          navn:
+            del.querySelector("h2")?.textContent?.replace(/\s+/g, " ").replace(/\s*\?$/, "").trim() ??
+            del.className,
+          topp: r.top,
+          bunn: r.bottom,
+          hoyde: r.height,
+          innhold: del.scrollHeight,
+        }
+      }),
+    )
+    if (deler.length < 3) si(`fant ${deler.length} deler i panelet, ventet tre`)
+    for (const [i, del] of deler.entries()) {
+      if (del.innhold > del.hoyde + 2)
+        si(
+          `«${del.navn}» er ${Math.round(del.hoyde)} piksler høy med ${del.innhold} piksler innhold, og resten renner ut over delen under`,
+        )
+      const neste = deler[i + 1]
+      if (neste && neste.topp < del.bunn - 1) si(`«${neste.navn}» ligger oppå «${del.navn}»`)
+    }
+
+    await kontekst.close()
+  }
+} finally {
+  await telefon.close()
 }
 
 if (funn.length > 0) {
