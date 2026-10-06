@@ -176,6 +176,7 @@ async function sjekkGjenoppkobling(navn: string, motor: BrowserType) {
     const side = await kontekst.newPage()
 
     const hentinger: number[] = []
+    let sluttetVed = 0
     await side.route("**/hendelser*", async (rute) => {
       hentinger.push(Date.now())
       if (hentinger.length > 1) {
@@ -204,24 +205,37 @@ async function sjekkGjenoppkobling(navn: string, motor: BrowserType) {
         contentType: "text/event-stream",
         body: 'event: datastar-patch-elements\ndata: elements <div id="samband" hidden data-nede="false"></div>\n\n',
       })
+      sluttetVed = Date.now()
     })
 
     await side.goto(url, { waitUntil: "domcontentloaded" })
     await side.locator(".nedtelling[data-klokke]").waitFor({ timeout: 20000 })
 
+    // Seks sekunder fra strømmen sluttet, ikke fra siden kom: Datastar og
+    // Fristil hentes fra CDN i en kald nettleser, og det er ikke appens
+    // ventetid. Tretti sekunder er grensen for hele løpet.
     const start = Date.now()
-    while (hentinger.length < 2 && Date.now() - start < 6000) {
+    while (hentinger.length < 2 && Date.now() - start < 30000) {
+      if (sluttetVed > 0 && Date.now() - sluttetVed > 6000) break
       await side.waitForTimeout(250)
     }
     if (hentinger.length < 2) {
-      si("strømmen sluttet pent, og siden åpnet den ikke igjen på seks sekunder. Da står klokka på null til vakthunden tar siden.")
+      si(
+        sluttetVed > 0
+          ? "strømmen sluttet pent, og siden åpnet den ikke igjen på seks sekunder. Da står klokka på null til vakthunden tar siden."
+          : "siden åpnet aldri strømmen på tretti sekunder.",
+      )
       return
     }
 
     // Den nye strømmen svarer med hele brettet med en gang. Et sekund er
-    // rikelig lokalt, og linja skal da ikke lenger si «nede».
+    // rikelig lokalt, og linja skal da ikke lenger si «nede». Det er
+    // teksten brukeren ser som sjekkes, ikke komponentens attributt.
     await side.waitForTimeout(1500)
-    const nede = await side.locator('fs-connection-status [data-state="offline"]').count()
+    const nede = await side
+      .getByRole("status")
+      .filter({ hasText: "Sambandet til etaten er nede" })
+      .count()
     if (nede > 0) {
       si("sambandslinja står på «nede» etter at strømmen var tilbake og brettet kom. En patch som kommer fram skal telle som et levende samband.")
     }

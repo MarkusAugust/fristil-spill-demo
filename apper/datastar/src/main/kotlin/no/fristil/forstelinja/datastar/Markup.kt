@@ -278,15 +278,26 @@ fun side(
 
         if (type === "retrying" || type === "retries-failed" || type === "error") {
           samband.reportFailure()
-        } else if (type === "started" || String(type).startsWith("datastar-patch-")) {
+        } else if (type === "started") {
           // Og ikke `finished`: en SSE-strøm som står åpen blir aldri
           // ferdig, så `finished` ville bare kommet når noe var galt.
-          //
+          samband.reportSuccess()
+        } else if (String(type).startsWith("datastar-patch-")) {
           // Hver patch som kommer fram teller også. `started` sendes én gang
           // per `@get`, ikke per forsøk, så etter en gjenoppkobling var det
           // ingenting som sa at sambandet var tilbake: linja sto på «nede»
           // med et brett som oppdaterte seg som normalt.
-          samband.reportSuccess()
+          //
+          // Men først etter at patchen er morfet inn. Denne lytteren er
+          // registrert under parsingen og kjører før Datastars egen, som
+          // er den som morfer. Er patchen serverens eget merke om at
+          // spilltjeneren er borte, skal linja ikke først si «tilbake» og
+          // så «nede» i samme omgang. En mikrooppgave køet her kjører etter
+          // morfingen, og da står merket oppdatert.
+          queueMicrotask(() => {
+            if (merke?.dataset.nede === "true") return
+            samband.reportSuccess()
+          })
         }
       })
 

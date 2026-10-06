@@ -40,9 +40,11 @@ private const val KAPSEL = "spiller-datastar"
  * Hvor ofte strømmen ned til nettleseren sier fra at den lever, når ingenting
  * skjer i spillet. Hvorfor står ved hjerteslaget i `/hendelser`.
  *
- * Overstyrbar så en test slipper å vente et kvart minutt per slag.
+ * Overstyrbar med en miljøvariabel, som rundelengdene i spilltjeneren, men
+ * aldri under et sekund: et slag per omdreining er ingen puls.
  */
-val HJERTESLAG_MS: Long = System.getenv("HJERTESLAG_MS")?.toLongOrNull() ?: 15_000L
+val HJERTESLAG_MS: Long =
+  (System.getenv("HJERTESLAG_MS")?.toLongOrNull() ?: 15_000L).coerceAtLeast(1_000L)
 
 /**
  * Flere biter i ett event. Hver bit er et helt element med egen `id`, og
@@ -373,9 +375,11 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
              *
              * Datastar hopper over kommentarer, og panelet noterer bare rammer
              * med `data:`, så ingen ser slaget. Mellomtjenerne og telefonen
-             * ser trafikk, og en nettleser som er borte uten et ord blir
-             * synlig for oss her: skrivingen kaster, og strømmen ryddes i
-             * stedet for å stå til neste faseskifte.
+             * ser trafikk. Og en nettleser som har lukket forbindelsen blir
+             * synlig for oss ved neste slag: skrivingen kaster, og strømmen
+             * ryddes i stedet for å stå til neste faseskifte. En som bare er
+             * stille, som en telefon som sover, blir det først når TCP gir
+             * opp sendingene sine, men også det er tidligere enn aldri.
              *
              * Femten sekunder er det Streamlords egen driftsside anbefaler,
              * «under hvert tidsavbrudd vi har møtt».

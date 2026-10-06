@@ -27,3 +27,6 @@ PLAN.md
 # Editorer
 .idea/
 .vscode/
+
+# Stream Inspector i editoren, lokal oppsett
+.streamlord/
