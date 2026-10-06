@@ -284,8 +284,9 @@ hele tatt må bite. Strømmen skal aldri være stille i mer enn femten sekunder:
 serveren sender et hjerteslag, en kommentarlinje Datastar hopper over, så
 ingenting mellom serveren og telefonen gir opp en forbindelse som ser død ut.
 Og slutter strømmen pent, med et svar som bare er ferdig, skal Datastar åpne
-den igjen med en gang. Slik slutter en forbindelse som er gitt opp underveis,
-og med standardinnstillingen regnes et ferdig svar som nettopp det: ferdig.
+den igjen etter et sekund. Slik kan en forbindelse som er gitt opp underveis
+slutte, og med standardinnstillingen regnes et ferdig svar som nettopp det:
+ferdig.
 På en iPhone i drift sto klokka på null i femten sekunder i hver runde, til
 vakthunden hentet siden, mens de to andre utgavene gikk rett videre. Fra en
 Mac overlevde den samme strømmen to minutters stillhet mot Railway, så det
@@ -502,7 +503,8 @@ Den henter Fristil **fra CDN, uten npm**. Det er sporet «Uten byggverktøy» i 
 
 Strømmen ned til nettleseren har et hjerteslag hvert femtende sekund, en
 kommentarlinje som holder forbindelsen i live når ingenting skjer i spillet.
-`HJERTESLAG_MS` overstyrer takten, og går aldri under et sekund.
+`HJERTESLAG_MS` i Datastar-appen overstyrer takten, og går aldri under et
+sekund.
 
 Fire ting kostet tid, og alle fire er notert i koden:
 

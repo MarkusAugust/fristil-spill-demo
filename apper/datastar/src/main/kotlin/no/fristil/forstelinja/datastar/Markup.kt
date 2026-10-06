@@ -158,8 +158,8 @@ fun side(
 
          `retry: 'always'`: Datastar kobler ellers til igjen bare når
          lesingen kaster. En strøm som slutter pent, med et vanlig
-         avsluttet svar, regnes som ferdig, og slik avslutter en telefon
-         eller en mellomtjener en forbindelse den har gitt opp: uten en
+         avsluttet svar, regnes som ferdig, og slik kan en telefon eller
+         en mellomtjener avslutte en forbindelse den har gitt opp: uten en
          feil. Da sto siden med en klokke på null til vakthunden hentet
          den. Med `always` er en slutt uten 204 eller omdirigering en
          grunn til å prøve igjen, og serveren sender hele brettet på nytt

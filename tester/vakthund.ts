@@ -22,7 +22,7 @@ import { type BrowserType, chromium, webkit } from "playwright"
  *
  * - at siden henter seg inn igjen når strømmen er borte uten et ord, med
  *   vakthunden i siden,
- * - at en strøm som slutter pent blir åpnet igjen med en gang, uten
+ * - at en strøm som slutter pent blir åpnet igjen etter et sekund, uten
  *   vakthunden. En forbindelse som blir gitt opp underveis slutter slik:
  *   ikke med en feil, men med et svar som bare er ferdig,
  * - at strømmen aldri er stille lenge. Et hjerteslag hvert femtende sekund
@@ -167,6 +167,11 @@ async function sjekk(navn: string, motor: BrowserType) {
  * «retrying» når den prøver igjen, og «started» bare én gang per `@get`,
  * så uten at hver patch teller som et levende samband, sto linja på «nede»
  * over et brett som oppdaterte seg som normalt.
+ *
+ * Den første strømmen sier dessuten «nede» før den slutter, slik en strøm
+ * gjør når spilltjeneren er borte. Den nye strømmen vet ingenting om det,
+ * og må selv si at sambandet står: uten det sto linja på «nede» for godt
+ * hver gang en strøm ble byttet ut mens spilltjeneren alt var tilbake.
  */
 async function sjekkGjenoppkobling(navn: string, motor: BrowserType) {
   const si = (melding: string) => funn.push(`${navn}: ${melding}`)
@@ -185,8 +190,8 @@ async function sjekkGjenoppkobling(navn: string, motor: BrowserType) {
         await rute.continue().catch(() => {})
         return
       }
-      // Første gang: ett gyldig svar, og så er serveren ferdig. Ingen feil,
-      // bare slutt.
+      // Første gang: ett gyldig svar som sier «nede», og så er serveren
+      // ferdig. Ingen feil, bare slutt.
       //
       // Men ikke før sambandslinja er registrert. Komponentene kommer fra
       // CDN i et modulskript, og slutter strømmen før de er oppe, har siden
@@ -205,7 +210,7 @@ async function sjekkGjenoppkobling(navn: string, motor: BrowserType) {
       await rute.fulfill({
         status: 200,
         contentType: "text/event-stream",
-        body: 'event: datastar-patch-elements\ndata: elements <div id="samband" hidden data-nede="false"></div>\n\n',
+        body: 'event: datastar-patch-elements\ndata: elements <div id="samband" hidden data-nede="true"></div>\n\n',
       })
       sluttetVed = Date.now()
     })
@@ -239,7 +244,7 @@ async function sjekkGjenoppkobling(navn: string, motor: BrowserType) {
       .filter({ hasText: "Sambandet til etaten er nede" })
       .count()
     if (nede > 0) {
-      si("sambandslinja står på «nede» etter at strømmen var tilbake og brettet kom. En patch som kommer fram skal telle som et levende samband.")
+      si("sambandslinja står på «nede» etter at strømmen var tilbake og brettet kom. En ny strøm skal si at sambandet står, og en patch som kommer fram skal telle som et levende samband.")
     }
 
     await kontekst.close()

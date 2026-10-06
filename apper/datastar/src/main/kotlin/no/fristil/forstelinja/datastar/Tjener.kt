@@ -286,17 +286,25 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
         /**
          * Sier fra til nettleseren om at spilltjeneren er borte, eller tilbake.
          *
-         * Å la strømmen ryke ville vært det opplagte, men en app som ikke
-         * skriver noe, ryker aldri i det hele tatt. Skjermene ble stående
-         * helt normale og aldri oppdatert mer. Og en strøm som avsluttes pent
-         * ga, før `retry: 'always'`, heller ingen ny strøm.
+         * Å la strømmen ryke ville vært det opplagte, men en strøm som ikke
+         * feiler, ryker aldri i det hele tatt. Skjermene ble stående helt
+         * normale og aldri oppdatert mer. Og en strøm som avsluttes pent ga,
+         * før `retry: 'always'`, heller ingen ny strøm.
          *
          * Derfor sies det over strømmen i stedet, på et merke skriptet i siden
          * lytter på. Da kan strømmen bli stående, og spillet tar seg inn igjen
          * av seg selv når spilltjeneren er tilbake.
+         *
+         * Merket følger også med i hele brettet når en strøm åpnes. Merket
+         * lever i siden, strømmen gjør det ikke: skjules siden, slutter
+         * strømmen pent, eller kommer appen opp igjen etter et deploy, er det
+         * en ny strøm som ikke vet at den forrige rakk å si «nede». Da sa
+         * ingen «tilbake», og linja sto over et brett som levde.
          */
+        fun sambandMerke(nede: Boolean) = """<div id="samband" hidden data-nede="$nede"></div>"""
+
         suspend fun meldSamband(nede: Boolean) {
-          patchElements("""<div id="samband" hidden data-nede="$nede"></div>""")
+          patchElements(sambandMerke(nede))
         }
 
         suspend fun send() {
@@ -313,9 +321,8 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
 
           if (sambandNede) {
             sambandNede = false
-            meldSamband(false)
             // Alt kan ha skjedd mens vi var borte, så neste patch skal være
-            // hele brettet.
+            // hele brettet, og det bærer merket om at sambandet er tilbake.
             forrige = null
           }
 
@@ -338,7 +345,13 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
             if (forr != null && erNySak(forr, na)) tomSkjemaet()
 
             // Hele brettet. Her er det serveren som eier innholdet uansett.
-            patchElements(biter(topp(na), brett(na, na.meg?.navn, kommuner)))
+            // En ny strøm sier også at sambandet står, se `meldSamband`.
+            val deler = listOfNotNull(
+              if (forr == null) sambandMerke(false) else null,
+              topp(na),
+              brett(na, na.meg?.navn, kommuner),
+            )
+            patchElements(biter(*deler.toTypedArray()))
             return
           }
 
@@ -403,10 +416,9 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
           // Bare denne fanges. En spilltjener som er borte håndteres i
           // `send()` og når aldri hit. Alt annet, som at tegningen av
           // brettet kaster, må få strømmen til å ryke, så Datastar prøver
-          // igjen og sambandslinja sier fra. Ble det svelget her, sto
-          // nettleseren igjen med en helt normal skjerm som aldri oppdaterer
-          // seg mer. Da hjelper ingenting annet enn F5, og i et rom med ti
-          // skjermer dør alle samtidig uten at noen ser det.
+          // igjen og sambandslinja sier fra. Ble det svelget her, sluttet
+          // strømmen pent, Datastar åpnet den igjen etter et sekund, og den
+          // samme feilen gjentok seg hvert sekund uten en linje i loggen.
         } finally {
           spilltjener.avmeld(this@datastarModul)
         }
