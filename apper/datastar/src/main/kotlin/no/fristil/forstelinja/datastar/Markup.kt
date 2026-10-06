@@ -154,8 +154,17 @@ fun side(
          Uten den finnes endepunktet, men ingen abonnerer på det, og
          skjermen oppdaterer seg bare når du selv gjør noe. `data-on:load`
          er ikke et attributt i Datastar 1.0.4, og ble ignorert i stillhet,
-         uten en eneste feil i konsollen. -->
-    <body data-init="@get('/hendelser')" data-server-na="${tilstand.naMs}">
+         uten en eneste feil i konsollen.
+
+         `retry: 'always'`: Datastar kobler ellers til igjen bare når
+         lesingen kaster. En strøm som slutter pent, med et vanlig
+         avsluttet svar, regnes som ferdig, og slik avslutter en telefon
+         eller en mellomtjener en forbindelse den har gitt opp: uten en
+         feil. Da sto siden med en klokke på null til vakthunden hentet
+         den. Med `always` er en slutt uten 204 eller omdirigering en
+         grunn til å prøve igjen, og serveren sender hele brettet på nytt
+         når den nye strømmen åpnes. -->
+    <body data-init="@get('/hendelser', {retry: 'always'})" data-server-na="${tilstand.naMs}">
     <!-- Sambandslinja eier sitt eget innhold, og serveren har ingenting å
          sende for den. `data-ignore-morph` hindrer at en patch river bort en
          melding midt i visningen. -->
@@ -269,9 +278,14 @@ fun side(
 
         if (type === "retrying" || type === "retries-failed" || type === "error") {
           samband.reportFailure()
-        } else if (type === "started") {
+        } else if (type === "started" || String(type).startsWith("datastar-patch-")) {
           // Og ikke `finished`: en SSE-strøm som står åpen blir aldri
           // ferdig, så `finished` ville bare kommet når noe var galt.
+          //
+          // Hver patch som kommer fram teller også. `started` sendes én gang
+          // per `@get`, ikke per forsøk, så etter en gjenoppkobling var det
+          // ingenting som sa at sambandet var tilbake: linja sto på «nede»
+          // med et brett som oppdaterte seg som normalt.
           samband.reportSuccess()
         }
       })

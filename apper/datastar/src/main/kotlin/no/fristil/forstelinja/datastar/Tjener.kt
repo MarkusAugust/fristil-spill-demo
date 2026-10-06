@@ -12,7 +12,10 @@ import io.ktor.server.util.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.util.cio.ChannelWriteException
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 
 /**
  * Appserveren.
@@ -32,6 +35,14 @@ import kotlinx.coroutines.flow.collect
  * drift har hver utgave sitt eget domene, og der var det aldri delt.
  */
 private const val KAPSEL = "spiller-datastar"
+
+/**
+ * Hvor ofte strømmen ned til nettleseren sier fra at den lever, når ingenting
+ * skjer i spillet. Hvorfor står ved hjerteslaget i `/hendelser`.
+ *
+ * Overstyrbar så en test slipper å vente et kvart minutt per slag.
+ */
+val HJERTESLAG_MS: Long = System.getenv("HJERTESLAG_MS")?.toLongOrNull() ?: 15_000L
 
 /**
  * Flere biter i ett event. Hver bit er et helt element med egen `id`, og
@@ -343,8 +354,45 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
         spilltjener.abonner(this@datastarModul)
 
         try {
-          send()
-          spilltjener.puls.collect { send() }
+          coroutineScope {
+            /*
+             * Hjerteslaget: en kommentarlinje hvert femtende sekund, så
+             * strømmen aldri er stille lenge.
+             *
+             * Pulsen fra spilltjeneren slår bare når noe skjer, og sitter én
+             * spiller alene, skjer det ingenting på to minutter. En stille
+             * strøm er det ingen i nettleseren som savner, men alt imellom
+             * kan gi den opp. På en iPhone i drift var strømmen borte ved
+             * hvert faseskifte: klokka sto på null i femten sekunder til
+             * vakthunden hentet siden, mens de to andre utgavene gikk rett
+             * videre fordi `EventSource` kobler til igjen av seg selv. Fra
+             * en Mac overlevde den samme strømmen to minutters stillhet mot
+             * Railway, så det er noe mellom telefonen og serveren som gir
+             * opp en forbindelse uten trafikk, og gjør det uten at lesingen
+             * i Datastar kaster.
+             *
+             * Datastar hopper over kommentarer, og panelet noterer bare rammer
+             * med `data:`, så ingen ser slaget. Mellomtjenerne og telefonen
+             * ser trafikk, og en nettleser som er borte uten et ord blir
+             * synlig for oss her: skrivingen kaster, og strømmen ryddes i
+             * stedet for å stå til neste faseskifte.
+             *
+             * Femten sekunder er det Streamlords egen driftsside anbefaler,
+             * «under hvert tidsavbrudd vi har møtt».
+             */
+            val hjerteslag = launch {
+              while (true) {
+                delay(HJERTESLAG_MS)
+                comment("hjerteslag")
+              }
+            }
+            try {
+              send()
+              spilltjener.puls.collect { send() }
+            } finally {
+              hjerteslag.cancel()
+            }
+          }
         } catch (_: ChannelWriteException) {
           // Nettleseren lukket fanen midt i en skriving. Det er ikke en feil,
           // og en stakksporing for hver som går hjem gjør loggen ubrukelig.

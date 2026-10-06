@@ -276,6 +276,18 @@ forsvinner mens telefonen sover kaster aldri. De to andre utgavene har hver
 sin vei ut: `EventSource` kobler til igjen av seg selv, og Astro henter en ny
 side når runden er en annen enn den siden ble tegnet med.
 
+Den samme testen krever to ting til, som skal hindre at vakthunden i det
+hele tatt må bite. Strømmen skal aldri være stille i mer enn femten sekunder:
+serveren sender et hjerteslag, en kommentarlinje Datastar hopper over, så
+ingenting mellom serveren og telefonen gir opp en forbindelse som ser død ut.
+Og slutter strømmen pent, med et svar som bare er ferdig, skal Datastar åpne
+den igjen med en gang. Slik slutter en forbindelse som er gitt opp underveis,
+og med standardinnstillingen regnes et ferdig svar som nettopp det: ferdig.
+På en iPhone i drift sto klokka på null i femten sekunder i hver runde, til
+vakthunden hentet siden, mens de to andre utgavene gikk rett videre. Fra en
+Mac overlevde den samme strømmen to minutters stillhet mot Railway, så det
+er telefonens vei til serveren som gir opp en strøm uten trafikk.
+
 `tester/sloyfe.ts` åpner de tre utgavene som samme spiller, slik det blir når
 du bytter utgave med lenka i topplinja og lar den gamle fanen stå, holder
 en egen strøm mot spilltjeneren, utløser én hendelse og krever at strømmen

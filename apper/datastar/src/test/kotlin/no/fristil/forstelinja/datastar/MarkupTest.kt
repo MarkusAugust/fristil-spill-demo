@@ -179,7 +179,7 @@ class MarkupTest {
   fun `siden abonnerer på strømmen`() {
     // `data-on:load` finnes ikke i Datastar 1.0.4 og ble ignorert i
     // stillhet, så skjermen oppdaterte seg bare når du selv gjorde noe.
-    assertTrue(side(tilstand, "Kari").contains("""data-init="@get('/hendelser')""""))
+    assertTrue(side(tilstand, "Kari").contains("""data-init="@get('/hendelser', {retry: 'always'})""""))
   }
 
   @Test
