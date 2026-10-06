@@ -8,8 +8,9 @@ import { type BrowserType, chromium, webkit } from "playwright"
  * ikke en feil i serveren, som tikker videre fire ganger i sekundet.
  *
  * Datastar henter hendelsesstrømmen med `fetch` og leser den som en strøm.
- * Den kobler til igjen når lesingen kaster, og når strømmen slutter pent,
- * men en forbindelse som blir borte uten et ord gjør ingen av delene. Bytter
+ * Den kobler til igjen når lesingen kaster, og med `retry: 'always'` også
+ * når strømmen slutter pent, men en forbindelse som blir borte uten et ord
+ * gjør ingen av delene. Bytter
  * nettet, eller kutter en mellomtjener forbindelsen uten å si fra, står
  * siden igjen for alltid. En side som skjules er noe annet: den strømmen
  * lukker og åpner Datastar selv.
@@ -235,10 +236,14 @@ async function sjekkGjenoppkobling(navn: string, motor: BrowserType) {
       return
     }
 
-    // Den nye strømmen svarer med hele brettet med en gang. Et sekund er
-    // rikelig lokalt, og linja skal da ikke lenger si «nede». Det er
-    // teksten brukeren ser som sjekkes, ikke komponentens attributt.
-    await side.waitForTimeout(1500)
+    // Den nye strømmen svarer med hele brettet med en gang, og det
+    // brukeren ser er «nede» som blir til «Sambandet er tilbake». Det er
+    // den teksten som ventes på, ikke klokka og ikke komponentens attributt.
+    await side
+      .getByRole("status")
+      .filter({ hasText: "Sambandet er tilbake" })
+      .waitFor({ timeout: 5000 })
+      .catch(() => {})
     const nede = await side
       .getByRole("status")
       .filter({ hasText: "Sambandet til etaten er nede" })

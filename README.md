@@ -287,6 +287,7 @@ Og slutter strømmen pent, med et svar som bare er ferdig, skal Datastar åpne
 den igjen etter et sekund. Slik kan en forbindelse som er gitt opp underveis
 slutte, og med standardinnstillingen regnes et ferdig svar som nettopp det:
 ferdig.
+
 På en iPhone i drift sto klokka på null i femten sekunder i hver runde, til
 vakthunden hentet siden, mens de to andre utgavene gikk rett videre. Fra en
 Mac overlevde den samme strømmen to minutters stillhet mot Railway, så det

@@ -284,7 +284,7 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
         }
 
         /**
-         * Sier fra til nettleseren om at spilltjeneren er borte, eller tilbake.
+         * Sier fra til nettleseren om at spilltjeneren er borte.
          *
          * Å la strømmen ryke ville vært det opplagte, men en strøm som ikke
          * feiler, ryker aldri i det hele tatt. Skjermene ble stående helt
@@ -303,8 +303,8 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
          */
         fun sambandMerke(nede: Boolean) = """<div id="samband" hidden data-nede="$nede"></div>"""
 
-        suspend fun meldSamband(nede: Boolean) {
-          patchElements(sambandMerke(nede))
+        suspend fun meldSambandNede() {
+          patchElements(sambandMerke(true))
         }
 
         suspend fun send() {
@@ -314,7 +314,7 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
             } catch (e: Exception) {
               if (!sambandNede) {
                 sambandNede = true
-                meldSamband(true)
+                meldSambandNede()
               }
               return
             }
@@ -322,7 +322,7 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
           if (sambandNede) {
             sambandNede = false
             // Alt kan ha skjedd mens vi var borte, så neste patch skal være
-            // hele brettet, og det bærer merket om at sambandet er tilbake.
+            // hele brettet, og det bærer merket om at sambandet står igjen.
             forrige = null
           }
 
@@ -345,7 +345,7 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
             if (forr != null && erNySak(forr, na)) tomSkjemaet()
 
             // Hele brettet. Her er det serveren som eier innholdet uansett.
-            // En ny strøm sier også at sambandet står, se `meldSamband`.
+            // En ny strøm sier også at sambandet står, se `meldSambandNede`.
             val deler = listOfNotNull(
               if (forr == null) sambandMerke(false) else null,
               topp(na),
