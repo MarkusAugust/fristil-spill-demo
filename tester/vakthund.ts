@@ -8,13 +8,26 @@ import { type BrowserType, chromium, webkit } from "playwright"
  * ikke en feil i serveren, som tikker videre fire ganger i sekundet.
  *
  * Datastar henter hendelsesstrømmen med `fetch` og leser den som en strøm.
- * Den kobler til igjen bare når lesingen kaster, og en forbindelse som blir
- * borte uten et ord kaster aldri. Sover telefonen, bytter nettet, eller
- * kutter en mellomtjener forbindelsen, står siden igjen for alltid.
+ * Den kobler til igjen når lesingen kaster, og med `retry: 'always'` også
+ * når strømmen slutter pent, men en forbindelse som blir borte uten et ord
+ * gjør ingen av delene. Bytter
+ * nettet, eller kutter en mellomtjener forbindelsen uten å si fra, står
+ * siden igjen for alltid. En side som skjules er noe annet: den strømmen
+ * lukker og åpner Datastar selv.
  *
  * De to andre utgavene har hver sin vei ut, og trenger derfor ikke denne
  * testen: `EventSource` kobler til igjen av seg selv, og Astro-utgaven henter
  * en ny side når runden er en annen enn den siden ble tegnet med.
+ *
+ * Tre sjekker, i begge motorene:
+ *
+ * - at siden henter seg inn igjen når strømmen er borte uten et ord, med
+ *   vakthunden i siden,
+ * - at en strøm som slutter pent blir åpnet igjen etter et sekund, uten
+ *   vakthunden. En forbindelse som blir gitt opp underveis slutter slik:
+ *   ikke med en feil, men med et svar som bare er ferdig,
+ * - at strømmen aldri er stille lenge. Et hjerteslag hvert femtende sekund
+ *   er det som hindrer at den slutter i det hele tatt.
  *
  * Appen må kjøre i rask modus, ellers venter testen i to minutter på at en
  * runde skal gå ut:
@@ -134,15 +147,198 @@ async function sjekk(navn: string, motor: BrowserType) {
   }
 }
 
-// `allSettled`: kaster den ene, skal funnene fra den andre fortsatt komme
-// fram, og begge nettleserne lukkes.
-const utfall = await Promise.allSettled([sjekk("Chromium", chromium), sjekk("WebKit", webkit)])
+/**
+ * At en strøm som slutter pent blir åpnet igjen.
+ *
+ * Uten `retry` kobler Datastar til igjen bare når lesingen kaster. Et svar
+ * som er ferdig, med status 200 og et pent avsluttet innhold, regnes som
+ * nettopp det: ferdig. Det er en av måtene en strøm kan ta slutt på uten
+ * at Datastar prøver igjen, og slik slutter en forbindelse en telefon eller
+ * en mellomtjener har gitt opp. På en iPhone i drift sto klokka på null i
+ * hver runde til vakthunden hentet siden femten sekunder senere, mens de to
+ * andre utgavene gikk rett videre.
+ *
+ * Med `retry: 'always'` på `@get` er en slik slutt en grunn til å prøve
+ * igjen, og serveren sender hele brettet når den nye strømmen åpnes.
+ * Sjekken gir ett gyldig svar som slutter med en gang, og krever en ny
+ * henting innen få sekunder. Datastar venter ett sekund før det første nye
+ * forsøket.
+ *
+ * Og sambandslinja skal ikke bli stående på «nede» etterpå. Datastar sier
+ * «retrying» når den prøver igjen, og «started» bare én gang per `@get`,
+ * så uten at hver patch teller som et levende samband, sto linja på «nede»
+ * over et brett som oppdaterte seg som normalt.
+ *
+ * Den første strømmen sier dessuten «nede» før den slutter, slik en strøm
+ * gjør når spilltjeneren er borte. Den nye strømmen vet ingenting om det,
+ * og må selv si at sambandet står: uten det sto linja på «nede» for godt
+ * hver gang en strøm ble byttet ut mens spilltjeneren alt var tilbake.
+ */
+async function sjekkGjenoppkobling(navn: string, motor: BrowserType) {
+  const si = (melding: string) => funn.push(`${navn}: ${melding}`)
+  const nettleser = await motor.launch()
+
+  try {
+    const kontekst = await nettleser.newContext()
+    await kontekst.addCookies([{ name: "forstelinja-test", value: "1", url }])
+    const side = await kontekst.newPage()
+
+    const hentinger: number[] = []
+    let sluttetVed = 0
+    await side.route("**/hendelser*", async (rute) => {
+      hentinger.push(Date.now())
+      if (hentinger.length > 1) {
+        await rute.continue().catch(() => {})
+        return
+      }
+      // Første gang: ett gyldig svar som sier «nede», og så er serveren
+      // ferdig. Ingen feil, bare slutt.
+      //
+      // Men ikke før sambandslinja er registrert. Komponentene kommer fra
+      // CDN i et modulskript, og slutter strømmen før de er oppe, har siden
+      // ingen linje å sette på «nede», og sjekken av den sier ingenting.
+      // I drift slutter strømmen minutter etter lastingen, og da står linja
+      // der.
+      await side
+        .waitForFunction(
+          () =>
+            typeof (document.querySelector("fs-connection-status") as { reportFailure?: unknown } | null)
+              ?.reportFailure === "function",
+          undefined,
+          { timeout: 15000 },
+        )
+        .catch(() => si("sambandslinja kom aldri opp på femten sekunder, så sjekken av den sier ingenting."))
+      await rute.fulfill({
+        status: 200,
+        contentType: "text/event-stream",
+        body: 'event: datastar-patch-elements\ndata: elements <div id="samband" hidden data-nede="true"></div>\n\n',
+      })
+      sluttetVed = Date.now()
+    })
+
+    await side.goto(url, { waitUntil: "domcontentloaded" })
+    await side.locator(".nedtelling[data-klokke]").waitFor({ timeout: 20000 })
+
+    // Seks sekunder fra strømmen sluttet, ikke fra siden kom: Datastar og
+    // Fristil hentes fra CDN i en kald nettleser, og det er ikke appens
+    // ventetid. Tretti sekunder er grensen for hele løpet.
+    const start = Date.now()
+    while (hentinger.length < 2 && Date.now() - start < 30000) {
+      if (sluttetVed > 0 && Date.now() - sluttetVed > 6000) break
+      await side.waitForTimeout(250)
+    }
+    if (hentinger.length < 2) {
+      si(
+        sluttetVed > 0
+          ? "strømmen sluttet pent, og siden åpnet den ikke igjen på seks sekunder. Da står klokka på null til vakthunden tar siden."
+          : "siden åpnet aldri strømmen på tretti sekunder.",
+      )
+      return
+    }
+
+    // Den nye strømmen svarer med hele brettet med en gang, og det
+    // brukeren ser er «nede» som blir til «Sambandet er tilbake». Det er
+    // den teksten som ventes på, ikke klokka og ikke komponentens attributt.
+    await side
+      .getByRole("status")
+      .filter({ hasText: "Sambandet er tilbake" })
+      .waitFor({ timeout: 5000 })
+      .catch(() => {})
+    const nede = await side
+      .getByRole("status")
+      .filter({ hasText: "Sambandet til etaten er nede" })
+      .count()
+    if (nede > 0) {
+      si("sambandslinja står på «nede» etter at strømmen var tilbake og brettet kom. En ny strøm skal si at sambandet står, og en patch som kommer fram skal telle som et levende samband.")
+    }
+
+    await kontekst.close()
+  } finally {
+    await nettleser.close()
+  }
+}
+
+/**
+ * At strømmen aldri er stille lenge.
+ *
+ * Pulsen fra spilltjeneren slår bare når noe skjer, og sitter én spiller
+ * alene i en runde på to minutter, skjer det ingenting. Alt mellom serveren
+ * og telefonen kan gi opp en forbindelse som har stått stille lenge nok,
+ * og en telefon gjør det selv. Et hjerteslag hvert femtende sekund, en
+ * kommentarlinje Datastar hopper over, er det som holder strømmen åpen.
+ *
+ * Sjekken åpner strømmen med `fetch` fra siden selv og krever en linje som
+ * begynner med kolon innen tjue sekunder. Patcher teller ikke: i rask modus
+ * kommer det en for hvert faseskifte, og den sier ingenting om stillheten
+ * imellom.
+ */
+async function sjekkHjerteslag(navn: string, motor: BrowserType) {
+  const si = (melding: string) => funn.push(`${navn}: ${melding}`)
+  const nettleser = await motor.launch()
+
+  try {
+    const kontekst = await nettleser.newContext()
+    await kontekst.addCookies([{ name: "forstelinja-test", value: "1", url }])
+    const side = await kontekst.newPage()
+    await side.goto(url, { waitUntil: "domcontentloaded" })
+
+    const etter = await side.evaluate(async () => {
+      const FRIST_MS = 20000
+      const start = performance.now()
+      const svar = await fetch("/hendelser", { headers: { Accept: "text/event-stream" } })
+      const leser = svar.body?.getReader()
+      if (!leser) return null
+      const dekoder = new TextDecoder()
+      let tekst = ""
+      try {
+        while (performance.now() - start < FRIST_MS) {
+          const igjen = FRIST_MS - (performance.now() - start)
+          const bit = await Promise.race([
+            leser.read(),
+            new Promise<{ done: true; value: undefined }>((ferdig) =>
+              setTimeout(() => ferdig({ done: true, value: undefined }), igjen),
+            ),
+          ])
+          if (bit.done) break
+          tekst += dekoder.decode(bit.value, { stream: true })
+          // En kommentar er en linje som begynner med kolon. Innholdet i en
+          // patch begynner alltid med `data:` eller `event:`.
+          if (/(^|\n):/.test(tekst)) return (performance.now() - start) / 1000
+        }
+      } finally {
+        await leser.cancel().catch(() => {})
+      }
+      return null
+    })
+
+    if (etter === null) {
+      si("strømmen sto stille i tjue sekunder uten et hjerteslag. Et hjerteslag hvert femtende sekund er det som holder den åpen på en telefon.")
+    }
+
+    await kontekst.close()
+  } finally {
+    await nettleser.close()
+  }
+}
+
+// `allSettled`: kaster den ene, skal funnene fra de andre fortsatt komme
+// fram, og alle nettleserne lukkes.
+const motorer: [string, BrowserType][] = [
+  ["Chromium", chromium],
+  ["WebKit", webkit],
+]
+const sjekker = motorer.flatMap(([navn, motor]) => [
+  [`${navn}, strøm uten et ord`, sjekk(navn, motor)] as const,
+  [`${navn}, strøm som slutter pent`, sjekkGjenoppkobling(navn, motor)] as const,
+  [`${navn}, hjerteslag`, sjekkHjerteslag(navn, motor)] as const,
+])
+const utfall = await Promise.allSettled(sjekker.map(([, s]) => s))
 for (const [i, u] of utfall.entries()) {
-  if (u.status === "rejected") funn.push(`${["Chromium", "WebKit"][i]}: testen stoppet. ${u.reason}`)
+  if (u.status === "rejected") funn.push(`${sjekker[i][0]}: testen stoppet. ${u.reason}`)
 }
 
 if (funn.length > 0) {
   console.error(`Fant ${funn.length} avvik:\n${funn.map((f) => `  - ${f}`).join("\n")}`)
   process.exit(1)
 }
-console.log("Datastar-utgaven henter seg inn igjen når strømmen dør.")
+console.log("Datastar-utgaven holder strømmen i live, åpner den igjen når den slutter, og henter seg inn igjen når den dør.")

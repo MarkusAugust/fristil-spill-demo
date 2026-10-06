@@ -271,10 +271,27 @@ skallet uten at noe annet sier fra.
 seg inn igjen. Det er feilen som ser ut som at spillet har stoppet: klokka
 teller til null, og så skjer ingenting. Serveren tikker videre fire ganger i
 sekundet, så den er ikke stanset; det er forbindelsen som er borte uten et ord.
-Datastar kobler til igjen bare når lesingen kaster, og en forbindelse som
-forsvinner mens telefonen sover kaster aldri. De to andre utgavene har hver
-sin vei ut: `EventSource` kobler til igjen av seg selv, og Astro henter en ny
-side når runden er en annen enn den siden ble tegnet med.
+Datastar kobler til igjen når lesingen kaster, og med `retry: 'always'` også
+når strømmen slutter pent, men en forbindelse som forsvinner uten å si fra,
+ved et nettbytte eller en mellomtjener som gir opp, gjør ingen av delene. En
+side som skjules er noe annet: den strømmen lukker og åpner Datastar selv. De
+to andre utgavene har hver sin vei ut: `EventSource` kobler til igjen av seg
+selv, og Astro henter en ny side når runden er en annen enn den siden ble
+tegnet med.
+
+Den samme testen krever to ting til, som skal hindre at vakthunden i det
+hele tatt må bite. Strømmen skal aldri være stille i mer enn femten sekunder:
+serveren sender et hjerteslag, en kommentarlinje Datastar hopper over, så
+ingenting mellom serveren og telefonen gir opp en forbindelse som ser død ut.
+Og slutter strømmen pent, med et svar som bare er ferdig, skal Datastar åpne
+den igjen etter et sekund. Slik kan en forbindelse som er gitt opp underveis
+slutte, og med standardinnstillingen regnes et ferdig svar som nettopp det:
+ferdig.
+
+På en iPhone i drift sto klokka på null i femten sekunder i hver runde, til
+vakthunden hentet siden, mens de to andre utgavene gikk rett videre. Fra en
+Mac overlevde den samme strømmen to minutters stillhet mot Railway, så det
+er telefonens vei til serveren som gir opp en strøm uten trafikk.
 
 `tester/sloyfe.ts` åpner de tre utgavene som samme spiller, slik det blir når
 du bytter utgave med lenka i topplinja og lar den gamle fanen stå, holder
@@ -485,6 +502,11 @@ Kotlin med Ktor. Den kan ikke kalle `fs.field()`, så den skriver klassene selv 
 
 Den henter Fristil **fra CDN, uten npm**. Det er sporet «Uten byggverktøy» i Fristils egen dokumentasjon, og denne appen er beviset på at det virker fra en JVM.
 
+Strømmen ned til nettleseren har et hjerteslag hvert femtende sekund, en
+kommentarlinje som holder forbindelsen i live når ingenting skjer i spillet.
+`HJERTESLAG_MS` i Datastar-appen overstyrer takten, og går aldri under et
+sekund.
+
 Fire ting kostet tid, og alle fire er notert i koden:
 
 - **Ktor-klienten har et standard tidsavbrudd**, og en SSE-strøm blir aldri ferdig. Oppstrømsforbindelsen døde med én gang, så ingen fikk beskjed om noe.
@@ -672,11 +694,12 @@ sier fra. Mister **appserveren spilltjeneren**, er strømmen ned til
 nettleseren fortsatt i orden, og da måtte serveren si det selv: den patcher
 et skjult merke, og skriptet i siden melder det videre til komponenten.
 
-Den andre veien var ikke åpenbar. Det opplagte var å la strømmen ryke, men
-Datastar kobler bare til igjen når lesingen kaster, og en app som ikke
-skriver noe ryker aldri. Skjermene ble stående helt normale og aldri
-oppdatert mer. Prøvd ved å drepe spilltjeneren med en nettleser åpen, og
-starte den igjen: linja kommer, og spillet tar seg inn av seg selv.
+Den andre veien var ikke åpenbar. Det opplagte var å la strømmen ryke, men en
+app som ikke skriver noe ryker aldri, og før `retry: 'always'` kom til, ga en
+strøm som sluttet pent heller ingen ny strøm. Skjermene ble stående helt
+normale og aldri oppdatert mer. Prøvd ved å drepe spilltjeneren med en
+nettleser åpen, og starte den igjen: linja kommer, og spillet tar seg inn av
+seg selv.
 
 Kommunesøket er verdt en forklaring. `felles/kommuner.json` inneholder ikke
 Mosvik, som ble slått sammen med Inderøy i 2012. Søkeren i sak 2024/1902

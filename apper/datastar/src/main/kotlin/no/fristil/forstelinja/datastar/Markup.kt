@@ -154,8 +154,17 @@ fun side(
          Uten den finnes endepunktet, men ingen abonnerer på det, og
          skjermen oppdaterer seg bare når du selv gjør noe. `data-on:load`
          er ikke et attributt i Datastar 1.0.4, og ble ignorert i stillhet,
-         uten en eneste feil i konsollen. -->
-    <body data-init="@get('/hendelser')" data-server-na="${tilstand.naMs}">
+         uten en eneste feil i konsollen.
+
+         `retry: 'always'`: Datastar kobler ellers til igjen bare når
+         lesingen kaster. En strøm som slutter pent, med et vanlig
+         avsluttet svar, regnes som ferdig, og slik kan en telefon eller
+         en mellomtjener avslutte en forbindelse den har gitt opp: uten en
+         feil. Da sto siden med en klokke på null til vakthunden hentet
+         den. Med `always` er en slutt uten 204 eller omdirigering en
+         grunn til å prøve igjen, og serveren sender hele brettet på nytt
+         når den nye strømmen åpnes. -->
+    <body data-init="@get('/hendelser', {retry: 'always'})" data-server-na="${tilstand.naMs}">
     <!-- Sambandslinja eier sitt eget innhold, og serveren har ingenting å
          sende for den. `data-ignore-morph` hindrer at en patch river bort en
          melding midt i visningen. -->
@@ -273,6 +282,22 @@ fun side(
           // Og ikke `finished`: en SSE-strøm som står åpen blir aldri
           // ferdig, så `finished` ville bare kommet når noe var galt.
           samband.reportSuccess()
+        } else if (String(type).startsWith("datastar-patch-")) {
+          // Hver patch som kommer fram teller også. `started` sendes én gang
+          // per `@get`, ikke per forsøk, så etter en gjenoppkobling var det
+          // ingenting som sa at sambandet var tilbake: linja sto på «nede»
+          // med et brett som oppdaterte seg som normalt.
+          //
+          // Men først etter at patchen er morfet inn. Denne lytteren er
+          // registrert under parsingen og kjører før Datastars egen, som
+          // er den som morfer. Er patchen serverens eget merke om at
+          // spilltjeneren er borte, skal linja ikke først si «tilbake» og
+          // så «nede» i samme omgang. En mikrooppgave køet her kjører etter
+          // morfingen, og da står merket oppdatert.
+          queueMicrotask(() => {
+            if (merke?.dataset.nede === "true") return
+            samband.reportSuccess()
+          })
         }
       })
 

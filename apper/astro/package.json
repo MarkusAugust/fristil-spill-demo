@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@astrojs/node": "^11.1.6",
-    "@fristil/designsystem": "0.29.0",
+    "@fristil/designsystem": "0.30.0",
     "astro": "^7.3.4"
   },
   "devDependencies": {
