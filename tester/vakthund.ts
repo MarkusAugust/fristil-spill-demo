@@ -9,9 +9,10 @@ import { type BrowserType, chromium, webkit } from "playwright"
  *
  * Datastar henter hendelsesstrømmen med `fetch` og leser den som en strøm.
  * Den kobler til igjen når lesingen kaster, og når strømmen slutter pent,
- * men en forbindelse som blir borte uten et ord gjør ingen av delene. Sover
- * telefonen, bytter nettet, eller kutter en mellomtjener forbindelsen, står
- * siden igjen for alltid.
+ * men en forbindelse som blir borte uten et ord gjør ingen av delene. Bytter
+ * nettet, eller kutter en mellomtjener forbindelsen uten å si fra, står
+ * siden igjen for alltid. En side som skjules er noe annet: den strømmen
+ * lukker og åpner Datastar selv.
  *
  * De to andre utgavene har hver sin vei ut, og trenger derfor ikke denne
  * testen: `EventSource` kobler til igjen av seg selv, og Astro-utgaven henter
@@ -148,9 +149,9 @@ async function sjekk(navn: string, motor: BrowserType) {
 /**
  * At en strøm som slutter pent blir åpnet igjen.
  *
- * Datastar kobler til igjen av seg selv bare når lesingen kaster. Et svar
+ * Uten `retry` kobler Datastar til igjen bare når lesingen kaster. Et svar
  * som er ferdig, med status 200 og et pent avsluttet innhold, regnes som
- * nettopp det: ferdig. Det er den ene måten en strøm kan ta slutt på uten
+ * nettopp det: ferdig. Det er en av måtene en strøm kan ta slutt på uten
  * at Datastar prøver igjen, og slik slutter en forbindelse en telefon eller
  * en mellomtjener har gitt opp. På en iPhone i drift sto klokka på null i
  * hver runde til vakthunden hentet siden femten sekunder senere, mens de to

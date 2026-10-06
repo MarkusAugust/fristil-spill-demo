@@ -380,8 +380,8 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
              * stille, som en telefon som sover, blir det først når TCP gir
              * opp sendingene sine, men også det er tidligere enn aldri.
              *
-             * Femten sekunder er det Streamlords egen driftsside anbefaler,
-             * «under hvert tidsavbrudd vi har møtt».
+             * Femten sekunder er det Streamlords egen driftsside anbefaler:
+             * under hvert standard tidsavbrudd de har møtt.
              */
             val hjerteslag = launch {
               while (true) {
@@ -400,12 +400,13 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
           // Nettleseren lukket fanen midt i en skriving. Det er ikke en feil,
           // og en stakksporing for hver som går hjem gjør loggen ubrukelig.
           //
-          // Bare denne fanges. En feil oppstrøms, altså at spilltjeneren er
-          // borte, må få strømmen til å ryke, så Datastar prøver igjen og
-          // sambandslinja sier fra. Ble den svelget her, sto nettleseren
-          // igjen med en helt normal skjerm som aldri oppdaterer seg mer. Da
-          // hjelper ingenting annet enn F5, og i et rom med ti skjermer dør
-          // alle samtidig uten at noen ser det.
+          // Bare denne fanges. En spilltjener som er borte håndteres i
+          // `send()` og når aldri hit. Alt annet, som at tegningen av
+          // brettet kaster, må få strømmen til å ryke, så Datastar prøver
+          // igjen og sambandslinja sier fra. Ble det svelget her, sto
+          // nettleseren igjen med en helt normal skjerm som aldri oppdaterer
+          // seg mer. Da hjelper ingenting annet enn F5, og i et rom med ti
+          // skjermer dør alle samtidig uten at noen ser det.
         } finally {
           spilltjener.avmeld(this@datastarModul)
         }

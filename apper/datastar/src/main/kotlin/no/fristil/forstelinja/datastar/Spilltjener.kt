@@ -198,8 +198,9 @@ class Spilltjener(private val adresse: String) {
       // strøm som ikke skriver ryker aldri. Skjermene ble stående helt
       // normale og aldri oppdatert mer, uten at noen kunne se det. Med
       // pulsen prøver hver strøm å hente tilstanden, det kallet feiler, og
-      // strømmen ryker slik den skal: Datastar kobler til igjen, og
-      // sambandslinja sier fra.
+      // strømmen sier fra med merket `#samband`, se `meldSamband` i
+      // Tjener.kt. Sambandslinja viser det, og strømmen blir stående til
+      // spilltjeneren er tilbake.
       puls.tryEmit(Unit)
       delay(2000)
     }
