@@ -8,9 +8,10 @@ import { type BrowserType, chromium, webkit } from "playwright"
  * ikke en feil i serveren, som tikker videre fire ganger i sekundet.
  *
  * Datastar henter hendelsesstrømmen med `fetch` og leser den som en strøm.
- * Den kobler til igjen bare når lesingen kaster, og en forbindelse som blir
- * borte uten et ord kaster aldri. Sover telefonen, bytter nettet, eller
- * kutter en mellomtjener forbindelsen, står siden igjen for alltid.
+ * Den kobler til igjen når lesingen kaster, og når strømmen slutter pent,
+ * men en forbindelse som blir borte uten et ord gjør ingen av delene. Sover
+ * telefonen, bytter nettet, eller kutter en mellomtjener forbindelsen, står
+ * siden igjen for alltid.
  *
  * De to andre utgavene har hver sin vei ut, og trenger derfor ikke denne
  * testen: `EventSource` kobler til igjen av seg selv, og Astro-utgaven henter
@@ -199,7 +200,7 @@ async function sjekkGjenoppkobling(navn: string, motor: BrowserType) {
           undefined,
           { timeout: 15000 },
         )
-        .catch(() => {})
+        .catch(() => si("sambandslinja kom aldri opp på femten sekunder, så sjekken av den sier ingenting."))
       await rute.fulfill({
         status: 200,
         contentType: "text/event-stream",

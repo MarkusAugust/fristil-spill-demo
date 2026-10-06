@@ -286,11 +286,10 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
         /**
          * Sier fra til nettleseren om at spilltjeneren er borte, eller tilbake.
          *
-         * Å la strømmen ryke ville vært det opplagte, men Datastar kobler bare
-         * til igjen når lesingen kaster, og en strøm som avsluttes pent gir
-         * ingen ny forsøk. Enda verre: en app som ikke skriver noe, ryker
-         * aldri i det hele tatt. Skjermene ble stående helt normale og aldri
-         * oppdatert mer.
+         * Å la strømmen ryke ville vært det opplagte, men en app som ikke
+         * skriver noe, ryker aldri i det hele tatt. Skjermene ble stående
+         * helt normale og aldri oppdatert mer. Og en strøm som avsluttes pent
+         * ga, før `retry: 'always'`, heller ingen ny strøm.
          *
          * Derfor sies det over strømmen i stedet, på et merke skriptet i siden
          * lytter på. Da kan strømmen bli stående, og spillet tar seg inn igjen
@@ -402,11 +401,11 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
           // og en stakksporing for hver som går hjem gjør loggen ubrukelig.
           //
           // Bare denne fanges. En feil oppstrøms, altså at spilltjeneren er
-          // borte, må få strømmen til å ryke: Datastar kobler til igjen bare
-          // når lesingen kaster, og avslutter vi pent, står nettleseren igjen
-          // med en helt normal skjerm som aldri oppdaterer seg mer. Da hjelper
-          // ingenting annet enn F5, og i et rom med ti skjermer dør alle
-          // samtidig uten at noen ser det.
+          // borte, må få strømmen til å ryke, så Datastar prøver igjen og
+          // sambandslinja sier fra. Ble den svelget her, sto nettleseren
+          // igjen med en helt normal skjerm som aldri oppdaterer seg mer. Da
+          // hjelper ingenting annet enn F5, og i et rom med ti skjermer dør
+          // alle samtidig uten at noen ser det.
         } finally {
           spilltjener.avmeld(this@datastarModul)
         }

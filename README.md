@@ -271,9 +271,9 @@ skallet uten at noe annet sier fra.
 seg inn igjen. Det er feilen som ser ut som at spillet har stoppet: klokka
 teller til null, og så skjer ingenting. Serveren tikker videre fire ganger i
 sekundet, så den er ikke stanset; det er forbindelsen som er borte uten et ord.
-Datastar kobler til igjen bare når lesingen kaster, og en forbindelse som
-forsvinner mens telefonen sover kaster aldri. De to andre utgavene har hver
-sin vei ut: `EventSource` kobler til igjen av seg selv, og Astro henter en ny
+Datastar kobler til igjen når lesingen kaster, og med `retry: 'always'` også
+når strømmen slutter pent, men en forbindelse som forsvinner mens telefonen
+sover gjør ingen av delene. De to andre utgavene har hver sin vei ut: `EventSource` kobler til igjen av seg selv, og Astro henter en ny
 side når runden er en annen enn den siden ble tegnet med.
 
 Den samme testen krever to ting til, som skal hindre at vakthunden i det
@@ -685,8 +685,8 @@ nettleseren fortsatt i orden, og da måtte serveren si det selv: den patcher
 et skjult merke, og skriptet i siden melder det videre til komponenten.
 
 Den andre veien var ikke åpenbar. Det opplagte var å la strømmen ryke, men
-Datastar kobler bare til igjen når lesingen kaster, og en app som ikke
-skriver noe ryker aldri. Skjermene ble stående helt normale og aldri
+en app som ikke skriver noe ryker aldri, og uten `retry: 'always'`, som kom
+senere, ga en strøm som sluttet pent heller ingen ny strøm. Skjermene ble stående helt normale og aldri
 oppdatert mer. Prøvd ved å drepe spilltjeneren med en nettleser åpen, og
 starte den igjen: linja kommer, og spillet tar seg inn av seg selv.
 
