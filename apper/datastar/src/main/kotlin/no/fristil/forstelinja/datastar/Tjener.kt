@@ -1,5 +1,6 @@
 package no.fristil.forstelinja.datastar
 
+import io.github.markusaugust.streamlord.core.SignalsMediaTypeException
 import io.github.markusaugust.streamlord.core.SignalsTooLargeException
 import io.github.markusaugust.streamlord.core.StreamlordException
 import io.github.markusaugust.streamlord.core.domain.ElementPatchMode
@@ -12,10 +13,8 @@ import io.ktor.server.util.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.util.cio.ChannelWriteException
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Appserveren.
@@ -211,13 +210,21 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
       val spillerId = call.request.cookies[KAPSEL]
       // Signalene Datastar sender med en `@post`. Streamlord leser dem etter
       // protokollen: i kroppen her, i `?datastar=` for GET. En kropp over
-      // grensen og ugyldig JSON er feil hos avsenderen og ikke hos oss, så de
-      // svares med 413 og 400, ikke med en stakksporing i loggen.
+      // grensen, en kropp som ikke er merket `application/json` og ugyldig
+      // JSON er feil hos avsenderen og ikke hos oss, så de svares med 413, 415
+      // og 400, ikke med en stakksporing i loggen.
+      //
+      // Merkingen kreves fordi et skjema på en annen side kan poste
+      // JSON-lignende tekst som `text/plain` uten at nettleseren spør først.
+      // Datastar merker alltid kroppen selv.
       val signaler =
         try {
           call.readSignals()
         } catch (e: SignalsTooLargeException) {
           call.respondText(e.message ?: "For store signaler", status = HttpStatusCode.PayloadTooLarge)
+          return@post
+        } catch (e: SignalsMediaTypeException) {
+          call.respondText(e.message ?: "Signalene må sendes som JSON", status = HttpStatusCode.UnsupportedMediaType)
           return@post
         } catch (e: StreamlordException) {
           call.respondText(e.message ?: "Ugyldige signaler", status = HttpStatusCode.BadRequest)
@@ -264,164 +271,161 @@ fun Application.datastarModul(spilltjener: Spilltjener, kommuner: List<String>) 
     get("/hendelser") {
       val spillerId = call.request.cookies[KAPSEL]
 
-      call.respondDatastar {
-        // Forrige tilstand, så vi kan sende bare det som faktisk har endret
-        // seg. Endres tavla, sendes tavla. Skifter runden, sendes saken også.
-        var forrige: Tilstand? = null
-        var sambandNede = false
+      /*
+       * Hjerteslaget: en kommentarlinje når strømmen har vært stille i femten
+       * sekunder, så den aldri er stille lenge.
+       *
+       * Pulsen fra spilltjeneren slår bare når noe skjer, og sitter én
+       * spiller alene, skjer det ingenting på to minutter. En stille strøm er
+       * det ingen i nettleseren som savner, men alt imellom kan gi den opp. På
+       * en iPhone i drift var strømmen borte ved hvert faseskifte: klokka sto
+       * på null i femten sekunder til vakthunden hentet siden, mens de to
+       * andre utgavene gikk rett videre fordi `EventSource` kobler til igjen
+       * av seg selv. Fra en Mac overlevde den samme strømmen to minutters
+       * stillhet mot Railway, så det er noe mellom telefonen og serveren som
+       * gir opp en forbindelse uten trafikk, og gjør det uten at lesingen i
+       * Datastar kaster.
+       *
+       * Datastar hopper over kommentarer, og panelet noterer bare rammer med
+       * `data:`, så ingen ser slaget. Mellomtjenerne og telefonen ser trafikk.
+       * Og en nettleser som har lukket forbindelsen blir synlig for oss ved
+       * neste slag: skrivingen kaster, og strømmen ryddes i stedet for å stå
+       * til neste faseskifte. En som bare er stille, som en telefon som sover,
+       * blir det først når TCP gir opp sendingene sine, men også det er
+       * tidligere enn aldri.
+       *
+       * Slaget er Streamlords eget. Det går ved siden av blokken og skriver
+       * bare når strømmen har vært stille så lenge, så en strøm med trafikk
+       * får ingen. Uten noe annet sagt slår Streamlord etter tretti sekunder,
+       * og driftssiden dens advarer om at en mellomtjener som gir opp etter
+       * nøyaktig tretti, kappløper med slaget. Femten er det vi hadde, og det
+       * ligger under hvert standard tidsavbrudd vi har møtt.
+       */
+      try {
+        call.respondDatastar(heartbeat = HJERTESLAG_MS.milliseconds) {
+          // Forrige tilstand, så vi kan sende bare det som faktisk har endret
+          // seg. Endres tavla, sendes tavla. Skifter runden, sendes saken også.
+          var forrige: Tilstand? = null
+          var sambandNede = false
 
-        /**
-         * Tømmer skjemaet når en ny sak kommer på bordet.
-         *
-         * Signalene bor i nettleseren og overlever en morfing. Uten dette sto
-         * forrige rundes vedtak ferdig avkrysset i den nye saken, sammen med
-         * hjemmelen og kommunen, og en spiller kunne sende inn uten å ha tatt
-         * stilling til noe. Serveren vet når en ny sak begynner, så det er
-         * serveren som nullstiller.
-         */
-        suspend fun tomSkjemaet() {
-          patchSignals("vedtak" to "", "hjemmel" to "", "kommune" to "", "felle" to "")
-        }
+          /**
+           * Tømmer skjemaet når en ny sak kommer på bordet.
+           *
+           * Signalene bor i nettleseren og overlever en morfing. Uten dette sto
+           * forrige rundes vedtak ferdig avkrysset i den nye saken, sammen med
+           * hjemmelen og kommunen, og en spiller kunne sende inn uten å ha tatt
+           * stilling til noe. Serveren vet når en ny sak begynner, så det er
+           * serveren som nullstiller.
+           */
+          suspend fun tomSkjemaet() {
+            patchSignals("vedtak" to "", "hjemmel" to "", "kommune" to "", "felle" to "")
+          }
 
-        /**
-         * Sier fra til nettleseren om at spilltjeneren er borte.
-         *
-         * Å la strømmen ryke ville vært det opplagte, men en strøm som ikke
-         * feiler, ryker aldri i det hele tatt. Skjermene ble stående helt
-         * normale og aldri oppdatert mer. Og en strøm som avsluttes pent ga,
-         * før `retry: 'always'`, heller ingen ny strøm.
-         *
-         * Derfor sies det over strømmen i stedet, på et merke skriptet i siden
-         * lytter på. Da kan strømmen bli stående, og spillet tar seg inn igjen
-         * av seg selv når spilltjeneren er tilbake.
-         *
-         * Merket følger også med i hele brettet når en strøm åpnes. Merket
-         * lever i siden, strømmen gjør det ikke: skjules siden, slutter
-         * strømmen pent, eller kommer appen opp igjen etter et deploy, er det
-         * en ny strøm som ikke vet at den forrige rakk å si «nede». Da sa
-         * ingen «tilbake», og linja sto over et brett som levde.
-         */
-        fun sambandMerke(nede: Boolean) = """<div id="samband" hidden data-nede="$nede"></div>"""
+          /**
+           * Sier fra til nettleseren om at spilltjeneren er borte.
+           *
+           * Å la strømmen ryke ville vært det opplagte, men en strøm som ikke
+           * feiler, ryker aldri i det hele tatt. Skjermene ble stående helt
+           * normale og aldri oppdatert mer. Og en strøm som avsluttes pent ga,
+           * før `retry: 'always'`, heller ingen ny strøm.
+           *
+           * Derfor sies det over strømmen i stedet, på et merke skriptet i siden
+           * lytter på. Da kan strømmen bli stående, og spillet tar seg inn igjen
+           * av seg selv når spilltjeneren er tilbake.
+           *
+           * Merket følger også med i hele brettet når en strøm åpnes. Merket
+           * lever i siden, strømmen gjør det ikke: skjules siden, slutter
+           * strømmen pent, eller kommer appen opp igjen etter et deploy, er det
+           * en ny strøm som ikke vet at den forrige rakk å si «nede». Da sa
+           * ingen «tilbake», og linja sto over et brett som levde.
+           */
+          fun sambandMerke(nede: Boolean) = """<div id="samband" hidden data-nede="$nede"></div>"""
 
-        suspend fun meldSambandNede() {
-          patchElements(sambandMerke(true))
-        }
+          suspend fun meldSambandNede() {
+            patchElements(sambandMerke(true))
+          }
 
-        suspend fun send() {
-          val na =
-            try {
-              spilltjener.tilstand(spillerId)
-            } catch (e: Exception) {
-              if (!sambandNede) {
-                sambandNede = true
-                meldSambandNede()
+          suspend fun send() {
+            val na =
+              try {
+                spilltjener.tilstand(spillerId)
+              } catch (e: Exception) {
+                if (!sambandNede) {
+                  sambandNede = true
+                  meldSambandNede()
+                }
+                return
               }
+
+            if (sambandNede) {
+              sambandNede = false
+              // Alt kan ha skjedd mens vi var borte, så neste patch skal være
+              // hele brettet, og det bærer merket om at sambandet står igjen.
+              forrige = null
+            }
+
+            val forr = forrige
+            forrige = na
+
+            val nyRunde =
+              forr == null ||
+                forr.fase != na.fase ||
+                forr.rundeNr != na.rundeNr ||
+                forr.sak.id != na.sak.id ||
+                forr.meg?.navn != na.meg?.navn ||
+                forr.meg?.harSvart != na.meg?.harSvart
+
+            if (nyRunde) {
+              // `forr == null` betyr at strømmen nettopp ble åpnet, og det
+              // skjer også når Datastar kobler til igjen etter et nettblink.
+              // Å tømme skjemaet da ville tatt et halvutfylt vedtak fra
+              // spilleren midt i runden.
+              if (forr != null && erNySak(forr, na)) tomSkjemaet()
+
+              // Hele brettet. Her er det serveren som eier innholdet uansett.
+              // En ny strøm sier også at sambandet står, se `meldSambandNede`.
+              val deler = listOfNotNull(
+                if (forr == null) sambandMerke(false) else null,
+                topp(na),
+                brett(na, na.meg?.navn, kommuner),
+              )
+              patchElements(biter(*deler.toTypedArray()))
               return
             }
 
-          if (sambandNede) {
-            sambandNede = false
-            // Alt kan ha skjedd mens vi var borte, så neste patch skal være
-            // hele brettet, og det bærer merket om at sambandet står igjen.
-            forrige = null
-          }
-
-          val forr = forrige
-          forrige = na
-
-          val nyRunde =
-            forr == null ||
-              forr.fase != na.fase ||
-              forr.rundeNr != na.rundeNr ||
-              forr.sak.id != na.sak.id ||
-              forr.meg?.navn != na.meg?.navn ||
-              forr.meg?.harSvart != na.meg?.harSvart
-
-          if (nyRunde) {
-            // `forr == null` betyr at strømmen nettopp ble åpnet, og det
-            // skjer også når Datastar kobler til igjen etter et nettblink.
-            // Å tømme skjemaet da ville tatt et halvutfylt vedtak fra
-            // spilleren midt i runden.
-            if (forr != null && erNySak(forr, na)) tomSkjemaet()
-
-            // Hele brettet. Her er det serveren som eier innholdet uansett.
-            // En ny strøm sier også at sambandet står, se `meldSambandNede`.
-            val deler = listOfNotNull(
-              if (forr == null) sambandMerke(false) else null,
-              topp(na),
-              brett(na, na.meg?.navn, kommuner),
-            )
-            patchElements(biter(*deler.toTypedArray()))
-            return
-          }
-
-          if (forr.tavle != na.tavle) {
-            // Bare tavla. Skjemaet brukeren står i røres ikke i det hele tatt,
-            // og da kan heller ingenting gå tapt.
-            patchElements(tavle(na), selector = "#tavle", mode = ElementPatchMode.INNER)
-          }
-        }
-
-        // Én seer til. Oppstrømsforbindelsen åpnes her, første gang, og
-        // lukkes når den siste fanen er borte. Da kan tjenestene sove når
-        // ingen spiller.
-        spilltjener.abonner(this@datastarModul)
-
-        try {
-          coroutineScope {
-            /*
-             * Hjerteslaget: en kommentarlinje hvert femtende sekund, så
-             * strømmen aldri er stille lenge.
-             *
-             * Pulsen fra spilltjeneren slår bare når noe skjer, og sitter én
-             * spiller alene, skjer det ingenting på to minutter. En stille
-             * strøm er det ingen i nettleseren som savner, men alt imellom
-             * kan gi den opp. På en iPhone i drift var strømmen borte ved
-             * hvert faseskifte: klokka sto på null i femten sekunder til
-             * vakthunden hentet siden, mens de to andre utgavene gikk rett
-             * videre fordi `EventSource` kobler til igjen av seg selv. Fra
-             * en Mac overlevde den samme strømmen to minutters stillhet mot
-             * Railway, så det er noe mellom telefonen og serveren som gir
-             * opp en forbindelse uten trafikk, og gjør det uten at lesingen
-             * i Datastar kaster.
-             *
-             * Datastar hopper over kommentarer, og panelet noterer bare rammer
-             * med `data:`, så ingen ser slaget. Mellomtjenerne og telefonen
-             * ser trafikk. Og en nettleser som har lukket forbindelsen blir
-             * synlig for oss ved neste slag: skrivingen kaster, og strømmen
-             * ryddes i stedet for å stå til neste faseskifte. En som bare er
-             * stille, som en telefon som sover, blir det først når TCP gir
-             * opp sendingene sine, men også det er tidligere enn aldri.
-             *
-             * Femten sekunder er det Streamlords egen driftsside anbefaler:
-             * under hvert standard tidsavbrudd de har møtt.
-             */
-            val hjerteslag = launch {
-              while (true) {
-                delay(HJERTESLAG_MS)
-                comment("hjerteslag")
-              }
-            }
-            try {
-              send()
-              spilltjener.puls.collect { send() }
-            } finally {
-              hjerteslag.cancel()
+            if (forr.tavle != na.tavle) {
+              // Bare tavla. Skjemaet brukeren står i røres ikke i det hele tatt,
+              // og da kan heller ingenting gå tapt.
+              patchElements(tavle(na), selector = "#tavle", mode = ElementPatchMode.INNER)
             }
           }
-        } catch (_: ChannelWriteException) {
-          // Nettleseren lukket fanen midt i en skriving. Det er ikke en feil,
-          // og en stakksporing for hver som går hjem gjør loggen ubrukelig.
-          //
-          // Bare denne fanges. En spilltjener som er borte håndteres i
-          // `send()` og når aldri hit. Alt annet, som at tegningen av
-          // brettet kaster, må få strømmen til å ryke, så Datastar prøver
-          // igjen og sambandslinja sier fra. Ble det svelget her, sluttet
-          // strømmen pent, Datastar åpnet den igjen etter et sekund, og den
-          // samme feilen gjentok seg hvert sekund uten en linje i loggen.
-        } finally {
-          spilltjener.avmeld(this@datastarModul)
+
+          // Én seer til. Oppstrømsforbindelsen åpnes her, første gang, og
+          // lukkes når den siste fanen er borte. Da kan tjenestene sove når
+          // ingen spiller.
+          spilltjener.abonner(this@datastarModul)
+
+          try {
+            send()
+            spilltjener.puls.collect { send() }
+          } finally {
+            spilltjener.avmeld(this@datastarModul)
+          }
         }
+      } catch (_: ChannelWriteException) {
+        // Nettleseren lukket fanen midt i en skriving. Det er ikke en feil, og
+        // en stakksporing for hver som går hjem gjør loggen ubrukelig.
+        //
+        // Feilen fanges her, utenfor blokken, fordi det er hit den kommer.
+        // Ryker et slag, avbrytes blokken, og `finally` der melder av seeren,
+        // mens selve skrivefeilen kastes ut av `respondDatastar`.
+        //
+        // Bare denne fanges. En spilltjener som er borte håndteres i `send()`
+        // og når aldri hit. Alt annet, som at tegningen av brettet kaster, må
+        // få strømmen til å ryke, så Datastar prøver igjen og sambandslinja
+        // sier fra. Ble det svelget her, sluttet strømmen pent, Datastar åpnet
+        // den igjen etter et sekund, og den samme feilen gjentok seg hvert
+        // sekund uten en linje i loggen.
       }
     }
   }
