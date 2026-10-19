@@ -502,10 +502,10 @@ Kotlin med Ktor. Den kan ikke kalle `fs.field()`, så den skriver klassene selv 
 
 Den henter Fristil **fra CDN, uten npm**. Det er sporet «Uten byggverktøy» i Fristils egen dokumentasjon, og denne appen er beviset på at det virker fra en JVM.
 
-Strømmen ned til nettleseren har et hjerteslag hvert femtende sekund, en
-kommentarlinje som holder forbindelsen i live når ingenting skjer i spillet.
-`HJERTESLAG_MS` i Datastar-appen overstyrer takten, og går aldri under et
-sekund.
+Strømmen ned til nettleseren har et hjerteslag når den har vært stille i
+femten sekunder, en kommentarlinje som holder forbindelsen i live når
+ingenting skjer i spillet. Slaget er Streamlords eget. `HJERTESLAG_MS` i
+Datastar-appen overstyrer takten, og går aldri under et sekund.
 
 Fire ting kostet tid, og alle fire er notert i koden:
 
